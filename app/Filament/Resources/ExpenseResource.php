@@ -30,8 +30,6 @@ use Filament\Tables\Columns\TextColumn\TextColumnSize;
 use Filament\Tables\Columns\Summarizers\Sum;
 use Filament\Tables\Grouping\Group as TableGroup;
 use Filament\Tables\Filters\SelectFilter;
-use Filament\Tables\Filters\QueryBuilderFilter;
-use Filament\Tables\Filters\QueryBuilder\Constraints\NumberConstraint;
 
 use Illuminate\Support\Str;
 use Illuminate\Database\Eloquent\Builder;
@@ -362,11 +360,7 @@ class ExpenseResource extends BaseResource
                     ->relationship('supplier', 'name')
                     ->multiple()
                     ->preload(),
-                QueryBuilderFilter::make('sum')
-                    ->constraints([
-                        NumberConstraint::make('sum')
-                            ->label('Сумма'),
-                    ]),
+             
 
             ])
             ->actions([
