@@ -1,0 +1,35 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+.filepond--drop-label,
+.filepond--root.filepond--hopper {
+    min-height: 128px !important;
+}
+
+.fi-ta-image img {
+    width: 100%;
+    height: auto !important;
+}
+
+.fi-icon-btn {
+    color: rgb(217, 119, 6);
+}
+
+.fi-ta-record>.flex.items-center,
+.fi-ta-record>.flex.items-center>.flex {
+    @apply h-full;
+}
+
+.fi-ta-group-header {
+    width: auto !important;
+}
+
+div[x-data*="tableSortColumn"][x-data*="tableSortDirection"] {
+    @apply flex-wrap gap-y-3;
+}
+
+.choices__inner {
+    display: flex;
+}
