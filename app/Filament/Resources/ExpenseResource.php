@@ -361,6 +361,42 @@ class ExpenseResource extends BaseResource
                     ->multiple()
                     ->preload(),
              
+//                     use Filament\Tables\Filters\Filter;
+// use Filament\Tables\Filters\Indicator;
+// use Filament\Forms\Components\DatePicker;
+// use Illuminate\Database\Eloquent\Builder;
+// use Carbon\Carbon;
+
+// Filter::make('issued_range')
+//     ->label('Issued between')
+//     ->indicator('Issued between')
+//     ->schema([
+//         DatePicker::make('issued_from')->label('Issued from'),
+//         DatePicker::make('issued_until')->label('Issued until'),
+//     ])
+//     ->columns(2)
+//     ->indicateUsing(function (array $data): array {
+//         $indicators = [];
+
+//         if (filled($data['issued_from'] ?? null)) {
+//             $indicators[] = Indicator::make('Issued from ' . Carbon::parse($data['issued_from'])->toFormattedDateString())
+//                 ->removeField('issued_from');
+//         }
+
+//         if (filled($data['issued_until'] ?? null)) {
+//             $indicators[] = Indicator::make('Issued until ' . Carbon::parse($data['issued_until'])->toFormattedDateString())
+//                 ->removeField('issued_until');
+//         }
+
+//         return $indicators;
+//     })
+//     ->query(function (Builder $query, array $data): Builder {
+//         return $query
+//             ->when(filled($data['issued_from'] ?? null), fn (Builder $query) => $query->whereDate('issued_at', '>=', $data['issued_from']))
+//             ->when(filled($data['issued_until'] ?? null), fn (Builder $query) => $query->whereDate('issued_at', '<=', $data['issued_until']));
+//     });
+
+
 
             ])
             ->actions([
