@@ -135,7 +135,6 @@ class SupplierResource extends BaseResource
                                             return static::getCleanOptionString($category);
                                         })
                                         ->optionsLimit(10)
-                                        ->searchable()
                                         ->preload()
                                         ->selectablePlaceholder(false)
                                         ->loadingMessage(__('resources.notifications.load.categories'))
@@ -172,10 +171,11 @@ class SupplierResource extends BaseResource
                                 ])->grow(false),
                             Stack::make([
                                 TextColumn::make('name')
-                                    ->label(__('resources.fields.name.inanimate'))
+                                    ->label(__('resources.fields.supplier'))
                                     ->size(TextColumnSize::Medium)
                                     ->weight(FontWeight::Bold)
-                                    ->searchable(),
+                                    ->searchable()
+                                    ->sortable(),
 
                                 TextColumn::make('created_at')
                                     ->label(__('resources.fields.created_at'))
@@ -211,7 +211,13 @@ class SupplierResource extends BaseResource
                     ->label(__('resources.fields.category'))
                     ->relationship('category', 'name')
                     ->multiple()
-                    ->preload(),
+                    ->preload()
+                    ->placeholder(''),
+                SelectFilter::make('name')
+                    ->label(__('resources.fields.supplier'))
+                    ->options(fn() => Supplier::orderBy('name')->pluck('name', 'id')->toArray())
+                    ->multiple()
+                    ->placeholder('')
             ])
 
             ->actions([

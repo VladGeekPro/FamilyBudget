@@ -8,7 +8,7 @@ use App\Filament\Resources\Base\BaseResource;
 use App\Models\Category;
 use App\Models\Supplier;
 use App\Models\User;
-
+use BcMath\Number;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Group;
 use Filament\Forms\Components\TextInput;
@@ -27,12 +27,15 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\Layout\Split;
 use Filament\Tables\Columns\Layout\Stack;
 use Filament\Tables\Columns\TextColumn\TextColumnSize;
-use Filament\Tables\Columns\Summarizers\Sum;
 use Filament\Tables\Grouping\Group as TableGroup;
 use Filament\Tables\Filters\SelectFilter;
 
-use Illuminate\Support\Str;
+use Filament\Tables\Filters\Filter;
+use Filament\Tables\Filters\Indicator;
 use Illuminate\Database\Eloquent\Builder;
+use Carbon\Carbon;
+
+use Illuminate\Support\Str;
 
 use Filament\Support\Enums\FontWeight;
 
@@ -50,9 +53,9 @@ class ExpenseResource extends BaseResource
 
     protected static ?string $navigationIcon = 'heroicon-o-banknotes';
 
-    protected static ?string $defaultSortColumn = 'date';
+    protected static ?string $defaultSortColumn = null;
 
-    protected static string  $defaultSortDirection = 'desc';
+    //protected static string  $defaultSortDirection = 'desc';
 
     public static function getNavigationBadge(): ?string
     {
@@ -267,7 +270,6 @@ class ExpenseResource extends BaseResource
                             ->label(__('resources.fields.date'))
                             ->dateTime('d M. Y')
                             ->color('info')
-                            ->sortable()
                             ->columnSpan(1),
                         ImageColumn::make('user.image')
                             ->circular()
@@ -343,61 +345,111 @@ class ExpenseResource extends BaseResource
                     ->titlePrefixedWithLabel(false)
                     ->collapsible()
             )
+            // ->defaultGroup(
+            //     TableGroup::make('date')
+            //         ->getTitleFromRecordUsing(function (Expense $record, Builder $query): string {
+            //             $monthKey = $record->date->format('Y-m');
+
+            //             // Клонируем текущий query‑билдер, чтобы учесть фильтры
+            //             $filteredQuery = (clone $query)
+            //                 ->whereYear('date', $record->date->year)
+            //                 ->whereMonth('date', $record->date->month);
+
+            //             $sum = $filteredQuery->sum('sum');
+
+            //             $monthName = mb_convert_case(
+            //                 $record->date->locale('ru')->translatedFormat('F Y'),
+            //                 MB_CASE_TITLE,
+            //                 'UTF-8'
+            //             );
+
+            //             return "{$monthName} — " . number_format($sum, 2, ',', ' ') . " MDL";
+            //         })
+            //         ->orderQueryUsing(
+            //             fn(Builder $query, string $direction) => $query->orderBy('date', $direction)
+            //         )
+            //         ->titlePrefixedWithLabel(false)
+            //         ->collapsible()
+            // )
+
             ->filters([
 
                 SelectFilter::make('user')
                     ->label(__('resources.fields.user'))
                     ->relationship('user', 'name')
                     ->multiple()
-                    ->preload(),
+                    ->preload()
+                    ->placeholder(''),
                 SelectFilter::make('category')
                     ->label(__('resources.fields.category'))
                     ->relationship('category', 'name')
                     ->multiple()
-                    ->preload(),
+                    ->preload()
+                    ->placeholder(''),
                 SelectFilter::make('supplier')
                     ->label(__('resources.fields.supplier'))
                     ->relationship('supplier', 'name')
                     ->multiple()
-                    ->preload(),
-             
-//                     use Filament\Tables\Filters\Filter;
-// use Filament\Tables\Filters\Indicator;
-// use Filament\Forms\Components\DatePicker;
-// use Illuminate\Database\Eloquent\Builder;
-// use Carbon\Carbon;
+                    ->preload()
+                    ->placeholder(''),
+                Filter::make('date')
+                    ->label(__('resources.fields.date'))
+                    ->form([
+                        DatePicker::make("date_from")->label(__('resources.filters.date_from')),
+                        DatePicker::make("date_until")->label(__('resources.filters.date_until')),
+                    ])->columns(2)
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query
+                            ->when(
+                                $data['date_from'],
+                                fn(Builder $query, $date): Builder => $query->whereDate('date', '>=', $date),
+                            )
+                            ->when(
+                                $data['date_until'],
+                                fn(Builder $query, $date): Builder => $query->whereDate('date', '<=', $date),
+                            );
+                    })
+                    ->indicateUsing(function (array $data): ?string {
+                        if (! $data['date_from'] && ! $data['date_until']) {
+                            return null;
+                        } elseif ($data['date_from'] && ! $data['date_until']) {
+                            return 'С ' . Carbon::parse($data['date_from'])->translatedFormat('d F Y');
+                        } elseif (! $data['date_from'] && $data['date_until']) {
+                            return 'До ' . Carbon::parse($data['date_until'])->translatedFormat('d F Y');
+                        } else {
+                            return 'Период: ' . Carbon::parse($data['date_from'])->translatedFormat('d F Y') . ' – ' . Carbon::parse($data['date_until'])->translatedFormat('d F Y');
+                        }
+                    }),
+                Filter::make('sum')
+                    ->label(__('resources.fields.sum'))
+                    ->form([
+                        TextInput::make('sum_min')
+                            ->numeric()
+                            ->label(__('resources.filters.sum_min')),
+                        TextInput::make('sum_max')
+                            ->numeric()
+                            ->label(__('resources.filters.sum_max')),
+                    ])
+                    ->columns(2)
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query
+                            ->when($data['sum_min'], fn(Builder $query, $min) => $query->where('sum', '>=', $min))
+                            ->when($data['sum_max'], fn(Builder $query, $max) => $query->where('sum', '<=', $max));
+                    })
+                    ->indicateUsing(function (array $data): ?string {
+                        $min = $data['sum_min'] ?? null;
+                        $max = $data['sum_max'] ?? null;
 
-// Filter::make('issued_range')
-//     ->label('Issued between')
-//     ->indicator('Issued between')
-//     ->schema([
-//         DatePicker::make('issued_from')->label('Issued from'),
-//         DatePicker::make('issued_until')->label('Issued until'),
-//     ])
-//     ->columns(2)
-//     ->indicateUsing(function (array $data): array {
-//         $indicators = [];
-
-//         if (filled($data['issued_from'] ?? null)) {
-//             $indicators[] = Indicator::make('Issued from ' . Carbon::parse($data['issued_from'])->toFormattedDateString())
-//                 ->removeField('issued_from');
-//         }
-
-//         if (filled($data['issued_until'] ?? null)) {
-//             $indicators[] = Indicator::make('Issued until ' . Carbon::parse($data['issued_until'])->toFormattedDateString())
-//                 ->removeField('issued_until');
-//         }
-
-//         return $indicators;
-//     })
-//     ->query(function (Builder $query, array $data): Builder {
-//         return $query
-//             ->when(filled($data['issued_from'] ?? null), fn (Builder $query) => $query->whereDate('issued_at', '>=', $data['issued_from']))
-//             ->when(filled($data['issued_until'] ?? null), fn (Builder $query) => $query->whereDate('issued_at', '<=', $data['issued_until']));
-//     });
-
-
-
+                        if (! $min && ! $max) {
+                            return null;
+                        } elseif ($min && ! $max) {
+                            return 'С ' . number_format($min, 2, ',', ' ') . ' MDL';
+                        } elseif (! $min && $max) {
+                            return 'До ' . number_format($max, 2, ',', ' ') . ' MDL';
+                        } else {
+                            return 'Интервал суммы: ' . number_format($min, 2, ',', ' ') . ' – ' . number_format($max, 2, ',', ' ') . ' MDL';
+                        }
+                    }),
             ])
             ->actions([
                 Action::make('copy')

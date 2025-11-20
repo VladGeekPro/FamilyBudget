@@ -28,9 +28,6 @@ use Illuminate\Support\Str;
 
 use Filament\Support\Enums\FontWeight;
 
-
-
-
 class CategoryResource extends BaseResource
 {
 
@@ -142,10 +139,11 @@ class CategoryResource extends BaseResource
                                 ])->grow(false),
                             Stack::make([
                                 TextColumn::make('name')
-                                    ->label(__('resources.fields.name.inanimate'))
+                                    ->label(__('resources.fields.category'))
                                     ->size(TextColumnSize::Medium)
                                     ->weight(FontWeight::Bold)
-                                    ->searchable(),
+                                    ->searchable()
+                                    ->sortable(),
                                 ImageColumn::make('suppliers.image')
                                     ->circular()
                                     ->stacked()

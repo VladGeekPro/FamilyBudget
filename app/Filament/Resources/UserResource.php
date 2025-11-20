@@ -198,17 +198,14 @@ class UserResource extends BaseResource
                                 TextColumn::make('created_at')
                                     ->label(__('resources.fields.created_at'))
                                     ->dateTime('d M. Y H:i:s')
-                                    ->sortable()
                                     ->toggleable(isToggledHiddenByDefault: true),
                                 TextColumn::make('updated_at')
                                     ->label(__('resources.fields.updated_at'))
                                     ->dateTime('d M. Y H:i:s')
-                                    ->sortable()
                                     ->toggleable(),
                                 TextColumn::make('email_verified_at')
                                     ->label(__('resources.fields.email_verified_at'))
                                     ->dateTime('d M. Y H:i:s')
-                                    ->sortable()
                                     ->toggleable(isToggledHiddenByDefault: true),
                             ])->grow(),
                         ])

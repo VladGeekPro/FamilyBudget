@@ -33,3 +33,7 @@ div[x-data*="tableSortColumn"][x-data*="tableSortDirection"] {
 .choices__inner {
     display: flex;
 }
+
+.fi-ta-search-field {
+    min-width: 250px;
+}
