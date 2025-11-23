@@ -26,11 +26,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\Layout\Split;
 use Filament\Tables\Columns\Layout\Stack;
 use Filament\Tables\Columns\TextColumn\TextColumnSize;
-use Filament\Tables\Actions\Action;
 
-
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Str;
 
 use Filament\Support\Enums\FontWeight;
@@ -251,18 +247,6 @@ class SuppliersRelationManager extends RelationManager
                                     ->size(TextColumnSize::Medium)
                                     ->weight(FontWeight::Bold)
                                     ->searchable(),
-
-                                TextColumn::make('created_at')
-                                    ->label(__('resources.fields.created_at'))
-                                    ->dateTime('d M. Y H:i:s')
-                                    ->sortable()
-                                    ->toggleable(isToggledHiddenByDefault: true),
-
-                                TextColumn::make('updated_at')
-                                    ->label(__('resources.fields.updated_at'))
-                                    ->dateTime('d M. Y H:i:s')
-                                    ->sortable()
-                                    ->toggleable(isToggledHiddenByDefault: true),
                             ])->grow(),
                         ])
                     ])
@@ -289,7 +273,8 @@ class SuppliersRelationManager extends RelationManager
             ])
 
             ->bulkActions([
-                Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\DeleteBulkAction::make(),
             ]);
+
     }
 }

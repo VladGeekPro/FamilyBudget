@@ -8,7 +8,7 @@ use App\Filament\Resources\Base\BaseResource;
 use App\Models\Category;
 use App\Models\Supplier;
 use App\Models\User;
-use BcMath\Number;
+
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Group;
 use Filament\Forms\Components\TextInput;
@@ -31,12 +31,10 @@ use Filament\Tables\Grouping\Group as TableGroup;
 use Filament\Tables\Filters\SelectFilter;
 
 use Filament\Tables\Filters\Filter;
-use Filament\Tables\Filters\Indicator;
 use Illuminate\Database\Eloquent\Builder;
 use Carbon\Carbon;
 
 use Illuminate\Support\Str;
-
 use Filament\Support\Enums\FontWeight;
 
 use Filament\Notifications\Notification;
@@ -54,8 +52,6 @@ class ExpenseResource extends BaseResource
     protected static ?string $navigationIcon = 'heroicon-o-banknotes';
 
     protected static ?string $defaultSortColumn = null;
-
-    //protected static string  $defaultSortDirection = 'desc';
 
     public static function getNavigationBadge(): ?string
     {
@@ -308,9 +304,9 @@ class ExpenseResource extends BaseResource
                             ->label(__('resources.fields.notes'))
                             ->html()
                             ->formatStateUsing(fn($state) => Str::markdown($state))
+                            ->searchable()
                             ->color("gray")
                             ->limit(100)
-                            ->searchable()
                             ->toggleable(),
                     ])
                 ])->extraAttributes(['class' => 'py-2'])
@@ -320,57 +316,6 @@ class ExpenseResource extends BaseResource
                 'xl' => 2,
                 '2xl' => 3,
             ])
-            ->defaultGroup(
-                TableGroup::make('date')
-                    ->getTitleFromRecordUsing(function (Expense $record): string {
-                        $month = $record->date->format('Y');
-                        $year = $record->date->format('m');
-
-                        $sum = Expense::query()
-                            ->whereYear('date', $month)
-                            ->whereMonth('date', $year)
-                            ->sum('sum');
-
-                        $monthName = mb_convert_case(
-                            $record->date->locale('ru')->translatedFormat('F Y'),
-                            MB_CASE_TITLE,
-                            'UTF-8'
-                        );
-
-                        return "{$monthName} — " . number_format($sum, 2, ',', ' ') . " MDL";
-                    })
-                    ->orderQueryUsing(
-                        fn(Builder $query, string $direction) => $query->orderBy('date', 'desc')
-                    )
-                    ->titlePrefixedWithLabel(false)
-                    ->collapsible()
-            )
-            // ->defaultGroup(
-            //     TableGroup::make('date')
-            //         ->getTitleFromRecordUsing(function (Expense $record, Builder $query): string {
-            //             $monthKey = $record->date->format('Y-m');
-
-            //             // Клонируем текущий query‑билдер, чтобы учесть фильтры
-            //             $filteredQuery = (clone $query)
-            //                 ->whereYear('date', $record->date->year)
-            //                 ->whereMonth('date', $record->date->month);
-
-            //             $sum = $filteredQuery->sum('sum');
-
-            //             $monthName = mb_convert_case(
-            //                 $record->date->locale('ru')->translatedFormat('F Y'),
-            //                 MB_CASE_TITLE,
-            //                 'UTF-8'
-            //             );
-
-            //             return "{$monthName} — " . number_format($sum, 2, ',', ' ') . " MDL";
-            //         })
-            //         ->orderQueryUsing(
-            //             fn(Builder $query, string $direction) => $query->orderBy('date', $direction)
-            //         )
-            //         ->titlePrefixedWithLabel(false)
-            //         ->collapsible()
-            // )
 
             ->filters([
 
@@ -451,6 +396,73 @@ class ExpenseResource extends BaseResource
                         }
                     }),
             ])
+            ->defaultGroup(
+                TableGroup::make('date')
+                    ->getTitleFromRecordUsing(function (Expense $record): string {
+
+                        $filters = session('tableFilters', []);
+
+                        $filteredQuery = Expense::query();
+
+                        if (!empty($filters['user'])) {
+                            $filteredQuery->whereIn('expenses.user_id', $filters['user']);
+                        }
+
+                        if (!empty($filters['category'])) {
+                            $filteredQuery->whereIn('expenses.category_id', $filters['category']);
+                        }
+
+                        if (!empty($filters['supplier'])) {
+                            $filteredQuery->whereIn('expenses.supplier_id', $filters['supplier']);
+                        }
+
+                        if (!empty($filters['date']['date_from'])) {
+                            $filteredQuery->whereDate('expenses.date', '>=', $filters['date']['date_from']);
+                        }
+
+                        if (!empty($filters['date']['date_until'])) {
+                            $filteredQuery->whereDate('expenses.date', '<=', $filters['date']['date_until']);
+                        }
+
+                        if (!empty($filters['sum']['sum_min'])) {
+                            $filteredQuery->where('expenses.sum', '>=', $filters['sum']['sum_min']);
+                        }
+
+                        if (!empty($filters['sum']['sum_max'])) {
+                            $filteredQuery->where('expenses.sum', '<=', $filters['sum']['sum_max']);
+                        }
+
+                        if (!empty($filters['search'])) {
+                            $search = $filters['search'];
+                            $filteredQuery
+                                ->leftJoin('suppliers', 'expenses.supplier_id', '=', 'suppliers.id')
+                                ->where(function ($query) use ($search) {
+                                    $query->where('expenses.notes', 'like', "%{$search}%")
+                                        ->orWhere('suppliers.name', 'like', "%{$search}%");
+                                });
+                        }
+
+                        $month = $record->date->format('Y');
+                        $year  = $record->date->format('m');
+
+                        $filteredQuery->whereYear('expenses.date', $month)->whereMonth('expenses.date', $year);
+
+                        $sum = $filteredQuery->sum('expenses.sum');
+
+                        $monthName = mb_convert_case(
+                            $record->date->locale('ru')->translatedFormat('F Y'),
+                            MB_CASE_TITLE,
+                            'UTF-8'
+                        );
+
+                        return "{$monthName} — " . number_format($sum, 2, ',', ' ') . " MDL";
+                    })
+                    ->orderQueryUsing(
+                        fn(Builder $query) => $query->orderBy('date', 'desc')
+                    )
+                    ->titlePrefixedWithLabel(false)
+                    ->collapsible()
+            )
             ->actions([
                 Action::make('copy')
                     ->label(__('resources.buttons.copy'))

@@ -35,7 +35,7 @@ class CategoryResource extends BaseResource
 
     protected static ?int $navigationSort = 3;
 
-    protected static ?string $modelLabel = 'категорий';
+    protected static ?string $modelLabel = 'категории';
 
     protected static ?string $pluralModelLabel = 'Категории';
 
