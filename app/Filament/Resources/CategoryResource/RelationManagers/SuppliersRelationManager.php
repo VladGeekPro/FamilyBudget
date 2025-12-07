@@ -2,12 +2,11 @@
 
 namespace App\Filament\Resources\CategoryResource\RelationManagers;
 
+use App\Filament\Resources\BaseRelationManager\BaseRelationManager;
+
 use App\Filament\Resources\Base\BaseResource;
 use App\Models\Category;
 use App\Models\Supplier;
-
-
-use Filament\Resources\RelationManagers\RelationManager;
 
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Group;
@@ -15,7 +14,6 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Grid as FormGrid;
-use Filament\Forms\Components\MarkdownEditor;
 use Filament\Forms\Components\Select;
 
 use Filament\Tables;
@@ -31,11 +29,9 @@ use Illuminate\Support\Str;
 
 use Filament\Support\Enums\FontWeight;
 
-class SuppliersRelationManager extends RelationManager
+class SuppliersRelationManager extends BaseRelationManager
 {
     protected static string $relationship = 'suppliers';
-
-
 
     public function form(Form $form): Form
     {
@@ -68,7 +64,6 @@ class SuppliersRelationManager extends RelationManager
                                     ])
                                     ->required()
                                     ->afterStateUpdated(fn($livewire) => $livewire->validateOnly('mountedTableActionsData.0.image'))
-                                    // ->afterStateUpdated(fn($livewire) => dd($livewire))
                                     ->columnSpan([
                                         'default' => 1,
                                         'sm' => 2,
@@ -136,80 +131,7 @@ class SuppliersRelationManager extends RelationManager
                                         ->selectablePlaceholder(false)
                                         ->loadingMessage(__('resources.notifications.load.categories'))
                                         ->noSearchResultsMessage(__('resources.notifications.skip.categories'))
-                                        ->columnSpanFull()
-                                        ->createOptionForm([
-                                            Section::make(__('resources.sections.category.main'))
-                                                ->icon('heroicon-o-document-text')
-                                                ->iconColor('warning')
-                                                ->schema([
-
-                                                    FormGrid::make([
-                                                        'default' => 1,
-                                                        'sm' => 6,
-                                                        'xl' => 12,
-                                                    ])
-                                                        ->schema([
-
-                                                            FileUpload::make('image')
-                                                                ->label(__('resources.fields.image'))
-                                                                ->avatar()
-                                                                ->image()
-                                                                ->imageEditor()
-                                                                ->circleCropper()
-                                                                ->imageEditorAspectRatios([
-                                                                    null,
-                                                                    '16:9',
-                                                                    '4:3',
-                                                                    '1:1',
-                                                                ])
-                                                                ->required()
-                                                                ->afterStateUpdated(fn($livewire) => $livewire->validateOnly('data.image'))
-                                                                ->directory('categories')
-                                                                ->columnSpan([
-                                                                    'default' => 1,
-                                                                    'sm' => 2,
-                                                                    'xl' => 2,
-                                                                ]),
-
-                                                            Group::make([
-                                                                TextInput::make('name')
-                                                                    ->label(__('resources.fields.name.inanimate'))
-                                                                    ->required()
-                                                                    ->maxLength(255)
-                                                                    ->live(onBlur: true)
-                                                                    ->afterStateUpdated(fn($state, $set) => $set('slug', Str::slug($state)))
-                                                                    ->columnSpan('full'),
-                                                                TextInput::make('slug')
-                                                                    ->label(__('resources.fields.slug'))
-                                                                    ->required()
-                                                                    ->maxLength(255)
-                                                                    ->disabled()
-                                                                    ->dehydrated(true)
-                                                                    ->unique(Category::class, 'slug', ignoreRecord: true)
-                                                                    ->columnSpan('full'),
-                                                            ])->columnSpan([
-                                                                'default' => 1,
-                                                                'sm' => 4,
-                                                                'xl' => 10,
-                                                            ]),
-                                                        ]),
-
-                                                    MarkdownEditor::make('notes')
-                                                        ->label(__('resources.fields.notes'))
-                                                        ->required()
-                                                        ->live(onBlur: true)
-                                                        ->afterStateUpdated(fn($livewire) => $livewire->validateOnly('data.notes'))
-                                                        ->disableToolbarButtons([
-                                                            'attachFiles',
-                                                            'blockquote',
-                                                            'codeBlock',
-                                                            'heading',
-                                                            'table',
-                                                            'link',
-                                                        ])
-                                                        ->columnSpanFull(),
-                                                ])
-                                        ]),
+                                        ->columnSpanFull(),
                                 ])
                                     ->columnSpan([
                                         'default' => 1,
@@ -223,6 +145,8 @@ class SuppliersRelationManager extends RelationManager
 
     public function table(Table $table): Table
     {
+        $table = parent::table($table);
+
         return $table
             ->heading('Поставщики')
 
@@ -261,20 +185,6 @@ class SuppliersRelationManager extends RelationManager
 
             ->filters([
                 //
-            ])
-
-            ->headerActions([
-                Tables\Actions\CreateAction::make(),
-            ])
-
-            ->actions([
-                Tables\Actions\EditAction::make()->extraAttributes(['style' => 'margin-left: auto;']),
-                Tables\Actions\DeleteAction::make(),
-            ])
-
-            ->bulkActions([
-                    Tables\Actions\DeleteBulkAction::make(),
             ]);
-
     }
 }

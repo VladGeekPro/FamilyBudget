@@ -75,6 +75,25 @@ class ExpenseResource extends BaseResource
         return "{$oleaCurrentMonthExpenses} 😇 {$vladCurrentMonthExpenses} 😎";
     }
 
+    protected static function getTableActions(): array
+    {
+        return array_merge(
+            [
+                Action::make('copy')
+                    ->label(__('resources.buttons.copy'))
+                    ->color('info')
+                    ->icon('heroicon-o-document-duplicate')
+                    ->action(function ($record) {
+                        $data = array_merge(
+                            $record->only(['user_id', 'category_id', 'supplier_id', 'notes']),
+                            ['date' => now() -> format('Y-m-d')]
+                        );
+                        return redirect()->route('filament.admin.resources.expenses.create', ['data' => $data]);
+                    }),
+            ],
+            parent::getTableActions()
+        );
+    }
 
     public static function form(Form $form): Form
     {
@@ -463,22 +482,7 @@ class ExpenseResource extends BaseResource
                     ->titlePrefixedWithLabel(false)
                     ->collapsible()
             )
-            ->actions([
-                Action::make('copy')
-                    ->label(__('resources.buttons.copy'))
-                    ->color('info')
-                    ->icon('heroicon-o-document-duplicate')
-                    ->action(function ($record) {
-                        $data = array_merge(
-                            $record->only(['user_id', 'category_id', 'supplier_id', 'sum', 'notes']),
-                            ['date' => optional($record->date)->format('Y-m-d')]
-                        );
-                        return redirect()->route('filament.admin.resources.expenses.create', ['data' => $data]);
-                    })->extraAttributes(['style' => 'margin-right: auto;']),
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
 
-            ])
             ->bulkActions([]);
     }
 

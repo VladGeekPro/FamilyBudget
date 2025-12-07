@@ -55,27 +55,27 @@ class UserResource extends BaseResource
                         ])
                             ->schema([
 
-                                    FileUpload::make('image')
-                                        ->label(__('resources.fields.image'))
-                                        ->avatar()
-                                        ->image()
-                                        ->imageEditor()
-                                        ->circleCropper()
-                                        ->imageEditorAspectRatios([
-                                            null,
-                                            '16:9',
-                                            '4:3',
-                                            '1:1',
-                                        ])
-                                        ->required()
-                                        ->afterStateUpdated(fn($livewire) => $livewire->validateOnly('data.image'))
-                                        ->columnSpan([
+                                FileUpload::make('image')
+                                    ->label(__('resources.fields.image'))
+                                    ->avatar()
+                                    ->image()
+                                    ->imageEditor()
+                                    ->circleCropper()
+                                    ->imageEditorAspectRatios([
+                                        null,
+                                        '16:9',
+                                        '4:3',
+                                        '1:1',
+                                    ])
+                                    ->required()
+                                    ->afterStateUpdated(fn($livewire) => $livewire->validateOnly('data.image'))
+                                    ->columnSpan([
                                         'default' => 1,
                                         'sm' => 2,
                                         'xl' => 2,
                                     ]),
 
-                                    
+
 
                                 Group::make([
                                     TextInput::make('name')
@@ -217,16 +217,12 @@ class UserResource extends BaseResource
                 'xl' => 2,
                 '2xl' => 3,
             ])
-         
+
             ->filters([
                 //
             ])
-            ->actions([
-                Tables\Actions\EditAction::make()->extraAttributes(['style' => 'margin-left: auto;']),
-                Tables\Actions\DeleteAction::make(),
-            ])
-            ->bulkActions([
-            ]);
+
+            ->bulkActions([]);
     }
 
     public static function getRelations(): array

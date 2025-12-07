@@ -2,8 +2,11 @@
 
 namespace App\Filament\Resources\Base;
 
+use Filament\Actions\DeleteAction;
 use Filament\Resources\Resource;
+use Filament\Tables;
 use Filament\Tables\Table;
+use Filament\Tables\Actions\Action;
 
 use Illuminate\Support\Facades\Lang;
 use Illuminate\Support\Str;
@@ -19,6 +22,24 @@ abstract class BaseResource extends Resource
     protected static int    $defaultPerPage   = 10;
     protected static array  $defaultPerPageOptions   = [10, 25, 50, 100, 'all'];
 
+    protected static function getModelBase(): string
+    {
+        return Str::snake(class_basename(static::getModel()));
+    }
+
+    protected static function getTableActions(): array
+    {
+        $modelBase = static::getModelBase();
+
+        return [
+            Tables\Actions\EditAction::make()
+                ->extraAttributes(['style' => 'margin-left: auto;']),
+
+            Tables\Actions\DeleteAction::make()
+                ->successNotificationTitle(__("resources.notifications.delete.{$modelBase}")),
+        ];
+    }
+
     public static function table(Table $table): Table
     {
         // пагинация
@@ -26,14 +47,13 @@ abstract class BaseResource extends Resource
             ->defaultPaginationPageOption(static::$defaultPerPage)
             ->paginated(static::$defaultPerPageOptions);
 
-
         // дефолтная сортировка (если указана колонка)
         if (filled(static::$defaultSortColumn)) {
             $table->defaultSort(static::$defaultSortColumn, static::$defaultSortDirection);
         }
 
         // плейсхолдер поиска из переводов:
-        $modelBase = Str::snake(class_basename(static::getModel()));
+        $modelBase = static::getModelBase();
         $key = "resources.search_placeholder.resource.{$modelBase}";
         $table->searchPlaceholder(
             Lang::has($key)
@@ -41,7 +61,10 @@ abstract class BaseResource extends Resource
                 : __('resources.search_placeholder.missing')
         );
 
-
+        //действия
+        $table->actions(
+            static::getTableActions()
+        );
 
         return $table;
     }
@@ -52,5 +75,12 @@ abstract class BaseResource extends Resource
             ->with('name', $model?->name)
             ->with('image', $model?->image)
             ->render();
+    }
+
+    protected function getDefaultDeleteAction(?string $label = null): DeleteAction
+    {
+        return DeleteAction::make()
+            ->label($label ?? __('Удалить'))
+            ->successNotificationTitle(__('Удалено!'));
     }
 }

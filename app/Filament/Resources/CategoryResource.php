@@ -35,7 +35,7 @@ class CategoryResource extends BaseResource
 
     protected static ?int $navigationSort = 3;
 
-    protected static ?string $modelLabel = 'категории';
+    protected static ?string $modelLabel = 'категорию';
 
     protected static ?string $pluralModelLabel = 'Категории';
 
@@ -185,12 +185,8 @@ class CategoryResource extends BaseResource
             ->filters([
                 //
             ])
-            ->actions([
-                Tables\Actions\EditAction::make()->extraAttributes(['style' => 'margin-left: auto;']),
-                Tables\Actions\DeleteAction::make(),
-            ])
-            ->bulkActions([
-            ]);
+
+            ->bulkActions([]);
     }
 
     public static function getRelations(): array

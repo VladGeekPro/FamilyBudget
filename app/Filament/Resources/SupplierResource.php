@@ -136,7 +136,7 @@ class SupplierResource extends BaseResource
                                         })
                                         ->optionsLimit(10)
                                         ->preload()
-                                        ->selectablePlaceholder(false)
+                                        ->searchable()
                                         ->loadingMessage(__('resources.notifications.load.categories'))
                                         ->noSearchResultsMessage(__('resources.notifications.skip.categories'))
                                         ->columnSpanFull(),
@@ -220,10 +220,6 @@ class SupplierResource extends BaseResource
                     ->placeholder('')
             ])
 
-            ->actions([
-                Tables\Actions\EditAction::make()->extraAttributes(['style' => 'margin-left: auto;']),
-                Tables\Actions\DeleteAction::make(),
-            ])
             ->bulkActions([]);
     }
 
