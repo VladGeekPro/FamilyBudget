@@ -3,7 +3,6 @@
 namespace App\Filament\Resources\ExpenseResource\Pages;
 
 use App\Filament\Resources\ExpenseResource;
-use Filament\Actions;
 use App\Filament\Resources\Base\CreateBase;
 
 class CreateExpense extends CreateBase
