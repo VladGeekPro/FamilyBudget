@@ -21,73 +21,94 @@ class CalculateMonthlyDebts extends Command
 
         try {
             [$month, $year] = explode('.', $period);
-            // $date = \Carbon\Carbon::createFromDate((int)$year, (int)$month, 1);
+            $date = Carbon::createFromDate($year, $month, 1);
         } catch (\Exception $e) {
             $this->error('Неверный формат периода. Используйте mm.yyyy');
             return;
         }
 
-        // [$month, $year] = explode('.', $period);        
-        // $targetDate = Carbon::createFromFormat('Y-m', $month . '-' . $year);
+        $this->info("Выполняется расчет долгов за период: {$date->translatedFormat('f Y')}");
 
-        // $this->info("Расчет долгов за {$targetDate->format('F Y')}");
+        $users = User::all();
 
-        // // Получить всех пользователей (предполагаем семейный бюджет с 2 пользователями)
-        // $users = User::all();
+        if ($users->count() < 2) {
+            $this->error('Недостаточно пользователей для расчета долгов');
+            return;
+        }
 
-        // if ($users->count() < 2) {
-        //     $this->error('Недостаточно пользователей для расчета долгов');
-        //     return;
-        // }
+        $expenses = [];
+        foreach ($users as $user) {
+            $sum = Expense::where('user_id', $user->id)
+                ->whereMonth('date', $date->month)
+                ->whereYear('date', $date->year)
+                ->sum('sum');
 
-        // // Рассчитать суммы расходов каждого пользователя за месяц
-        // $expenses = [];
-        // foreach ($users as $user) {
-        //     $sum = Expense::where('user_id', $user->id)
-        //         ->whereMonth('date', $targetDate->month)
-        //         ->whereYear('date', $targetDate->year)
-        //         ->sum('sum');
+            $expenses[$user->id] = [
+                'user' => $user,
+                'sum' => $sum
+            ];
 
-        //     $expenses[$user->id] = [
-        //         'user' => $user,
-        //         'sum' => $sum
-        //     ];
+            $this->line("{$user->name}: {$sum} MDL");
+        }
 
-        //     $this->line("{$user->name}: {$sum} MDL");
-        // }
+        $minExpenseUser = collect($expenses)->sortBy('sum')->first();
+        $maxExpenseUser = collect($expenses)->sortByDesc('sum')->first();
 
-        // // Найти пользователя с максимальными расходами
-        // $maxExpenseUser = collect($expenses)->sortByDesc('sum')->first();
-        // $minExpenseUser = collect($expenses)->sortBy('sum')->first();
+        $difference = ($maxExpenseUser['sum'] - $minExpenseUser['sum']) / 2;
 
-        // $difference = $maxExpenseUser['sum'] - $minExpenseUser['sum'];
+        $overpayment = Overpayment::latest('created_at')->first();
 
-        // if ($difference <= 0) {
-        //     $this->info('Расходы равны, долги не созданы');
-        //     return;
-        // }
+        if ($overpayment) {
+            if ($minExpenseUser['user']->id === $overpayment->user_id) {
+                $difference += $overpayment->sum;
+            } else {
+                $difference = $difference - $overpayment->sum;
+                if ($difference < 0) {
+                    $minExpenseUser = $maxExpenseUser;
+                    $difference = abs($difference);
+                }
+            }
+        }
 
-        // // Проверить, существует ли уже долг за этот месяц для этого пользователя
-        // $existingDebt = Debt::where('user_id', $minExpenseUser['user']->id)
-        //     ->whereMonth('date', $targetDate->month)
-        //     ->whereYear('date', $targetDate->year)
-        //     ->where('notes', 'like', "%{$targetDate->format('F Y')}%")
-        //     ->first();
+        $existingDebt = Debt::where('date', $date->endOfMonth())->first();
 
-        // if ($existingDebt) {
-        //     $this->warn("Долг за {$targetDate->format('F Y')} уже существует");
-        //     return;
-        // }
+        if ($existingDebt) {
+            $this->warn("Долг за {$date->translatedFormat('F Y')} уже существует для пользователя {$minExpenseUser['user']->name}❗");
+            if ($this->option('period')) {
+                if (!$this->confirm('Вы хотите пересчитать долг?', false)) {
+                    $this->info('Операция отменена');
+                    return;
+                }
 
-        // // Создать долг
-        // Debt::create([
-        //     'user_id' => $minExpenseUser['user']->id,
-        //     'sum' => $difference,
-        //     'date' => $targetDate->endOfMonth(),
-        //     'notes' => "Долг за {$targetDate->format('F Y')} (расходы {$maxExpenseUser['user']->name}: {$maxExpenseUser['sum']} MDL, {$minExpenseUser['user']->name}: {$minExpenseUser['sum']} MDL)",
-        //     'paid' => false,
-        // ]);
+                $existingDebt->delete();
+            } else {
+                $existingDebt->delete();
+            }
+        }
 
-        // $this->info("Создан долг для {$minExpenseUser['user']->name} на сумму {$difference} MDL");
+        if ($difference == 0) {
+
+            Debt::create([
+                'date' => $date->endOfMonth(),
+                'user_id' => null,
+                'sum' => 0,
+                'overpayment_id' => $overpayment?->id,
+                'paid' => true,
+                'notes' => 'Расходы были равны, никто никому не должен.',
+            ]);
+
+            $this->info('Расходы одинаковые, долг не создан');
+        } else {
+
+            Debt::create([
+                'date' => $date->endOfMonth(),
+                'user_id' => $minExpenseUser['user']->id,
+                'sum' => $difference,
+                'overpayment_id' => $overpayment?->id,
+                'notes' => "Создан долг для {$minExpenseUser['user']->name} на сумму {$difference} MDL",
+            ]);
+
+            $this->info("Создан долг для {$minExpenseUser['user']->name} на сумму {$difference} MDL");
+        };
     }
 }

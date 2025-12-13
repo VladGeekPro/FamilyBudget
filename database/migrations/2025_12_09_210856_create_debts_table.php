@@ -14,11 +14,12 @@ return new class extends Migration
         Schema::create('debts', function (Blueprint $table) {
             $table->id();
             $table->date('date');
-            $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
+            $table->foreignId('user_id')->nullable()->constrained('users')->nullOnDelete();
             $table->decimal('sum', 12, 2);
+            $table->foreignId('overpayment_id')->nullable()->constrained('overpayments')->nullOnDelete();
+            $table->date('date_paid')->nullable();
             $table->boolean('paid')->default(false);
             $table->text('notes')->nullable();
-            $table->date('date_paid')->nullable();
             $table->timestamps();
         });
     }
