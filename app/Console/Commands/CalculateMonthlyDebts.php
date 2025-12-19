@@ -52,8 +52,13 @@ class CalculateMonthlyDebts extends Command
             $this->line("{$user->name}: {$sum} MDL");
         }
 
-        $minExpenseUser = collect($expenses)->sortBy('sum')->first();
-        $maxExpenseUser = collect($expenses)->sortByDesc('sum')->first();
+        $minExpenseUser = collect($expenses)
+            ->sortBy(fn($item, $key) => [$item['sum'], $key])
+            ->first();
+
+        $maxExpenseUser = collect($expenses)
+            ->sortByDesc(fn($item, $key) => [$item['sum'], -$key])
+            ->first();
 
         $difference = ($maxExpenseUser['sum'] - $minExpenseUser['sum']) / 2;
 
