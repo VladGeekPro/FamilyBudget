@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Models\Debt;
 use App\Models\Expense;
+use App\Models\Overpayment;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
@@ -51,8 +52,13 @@ class CalculateMonthlyDebts extends Command
             $this->line("{$user->name}: {$sum} MDL");
         }
 
-        $minExpenseUser = collect($expenses)->sortBy('sum')->first();
-        $maxExpenseUser = collect($expenses)->sortByDesc('sum')->first();
+        $minExpenseUser = collect($expenses)
+            ->sortBy(fn($item, $key) => [$item['sum'], $key])
+            ->first();
+
+        $maxExpenseUser = collect($expenses)
+            ->sortByDesc(fn($item, $key) => [$item['sum'], -$key])
+            ->first();
 
         $difference = ($maxExpenseUser['sum'] - $minExpenseUser['sum']) / 2;
 
@@ -100,15 +106,15 @@ class CalculateMonthlyDebts extends Command
             $this->info('Расходы одинаковые, долг не создан');
         } else {
 
-            Debt::create([
-                'date' => $date->endOfMonth(),
-                'user_id' => $minExpenseUser['user']->id,
-                'sum' => $difference,
-                'overpayment_id' => $overpayment?->id,
-                'notes' => "Создан долг для {$minExpenseUser['user']->name} на сумму {$difference} MDL",
-            ]);
+            // Debt::create([
+            //     'date' => $date->endOfMonth(),
+            //     'user_id' => $minExpenseUser['user']->id,
+            //     'sum' => $difference,
+            //     'overpayment_id' => $overpayment?->id,
+            //     'notes' => "Создан долг для {$minExpenseUser['user']->name} на сумму {$difference} MDL",
+            // ]);
 
-            $this->info("Создан долг для {$minExpenseUser['user']->name} на сумму {$difference} MDL");
+            // $this->info("Создан долг для {$minExpenseUser['user']->name} на сумму {$difference} MDL");
         };
     }
 }

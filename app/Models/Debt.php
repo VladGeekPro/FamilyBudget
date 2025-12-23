@@ -6,16 +6,17 @@ use Illuminate\Database\Eloquent\Model;
 
 class Debt extends Model
 {
-    
+
     protected $table = 'debts';
 
     protected $fillable = [
         'date',
         'user_id',
         'sum',
+        'overpayment_id',
+        'date_paid',
         'paid',
         'notes',
-        'date_paid',
     ];
 
     protected $casts = [
@@ -31,6 +32,11 @@ class Debt extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function overpayment()
+    {
+        return $this->belongsTo(Overpayment::class);
     }
 
     /**
