@@ -65,4 +65,14 @@ class User extends Authenticatable implements FilamentUser
     {
         return $this->hasMany(Expense::class);
     }
+
+    public static function getIcon(string $email): string
+    {
+        $icons = [
+            'vladret0@gmail.com' => '😎',
+            'criclivaia.olga@gmail.com' => '😇',
+        ];
+
+        return $icons[$email] ?? '👤';
+    }
 }

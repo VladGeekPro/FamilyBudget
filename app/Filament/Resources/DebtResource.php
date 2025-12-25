@@ -1,106 +1,8 @@
 <?php
 
-// namespace App\Filament\Resources;
-
-// use App\Filament\Resources\DebtResource\Pages;
-// use App\Filament\Resources\DebtResource\RelationManagers;
-// use App\Models\Debt;
-// use Filament\Forms;
-// use Filament\Forms\Form;
-// use Filament\Resources\Resource;
-// use Filament\Tables;
-// use Filament\Tables\Table;
-// use Illuminate\Database\Eloquent\Builder;
-// use Illuminate\Database\Eloquent\SoftDeletingScope;
-
-// class DebtResource extends Resource
-// {
-//     protected static ?string $model = Debt::class;
-
-//     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
-
-//     public static function form(Form $form): Form
-//     {
-//         return $form
-//             ->schema([
-//                 Forms\Components\DatePicker::make('date')
-//                     ->required(),
-//                 Forms\Components\TextInput::make('user_id')
-//                     ->required()
-//                     ->numeric(),
-//                 Forms\Components\TextInput::make('sum')
-//                     ->required()
-//                     ->numeric(),
-//                 Forms\Components\Toggle::make('paid')
-//                     ->required(),
-//                 Forms\Components\Textarea::make('notes')
-//                     ->columnSpanFull(),
-//                 Forms\Components\DatePicker::make('date_paid'),
-//             ]);
-//     }
-
-//     public static function table(Table $table): Table
-//     {
-//         return $table
-//             ->columns([
-//                 Tables\Columns\TextColumn::make('date')
-//                     ->date()
-//                     ->sortable(),
-//                 Tables\Columns\TextColumn::make('user_id')
-//                     ->numeric()
-//                     ->sortable(),
-//                 Tables\Columns\TextColumn::make('sum')
-//                     ->numeric()
-//                     ->sortable(),
-//                 Tables\Columns\IconColumn::make('paid')
-//                     ->boolean(),
-//                 Tables\Columns\TextColumn::make('date_paid')
-//                     ->date()
-//                     ->sortable(),
-//                 Tables\Columns\TextColumn::make('created_at')
-//                     ->dateTime()
-//                     ->sortable()
-//                     ->toggleable(isToggledHiddenByDefault: true),
-//                 Tables\Columns\TextColumn::make('updated_at')
-//                     ->dateTime()
-//                     ->sortable()
-//                     ->toggleable(isToggledHiddenByDefault: true),
-//             ])
-//             ->filters([
-//                 //
-//             ])
-//             ->actions([
-//                 Tables\Actions\EditAction::make(),
-//             ])
-//             ->bulkActions([
-//                 Tables\Actions\BulkActionGroup::make([
-//                     Tables\Actions\DeleteBulkAction::make(),
-//                 ]),
-//             ]);
-//     }
-
-//     public static function getRelations(): array
-//     {
-//         return [
-//             //
-//         ];
-//     }
-
-//     public static function getPages(): array
-//     {
-//         return [
-//             'index' => Pages\ListDebts::route('/'),
-//             'create' => Pages\CreateDebt::route('/create'),
-//             'edit' => Pages\EditDebt::route('/{record}/edit'),
-//         ];
-//     }
-// }
-
-
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\DebtResource\Pages;
-use App\Filament\Resources\DebtResource\RelationManagers;
 use App\Models\Debt;
 use App\Models\User;
 use App\Filament\Resources\Base\BaseResource;
@@ -126,7 +28,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\Layout\Split;
 use Filament\Tables\Columns\Layout\Stack;
 use Filament\Tables\Columns\TextColumn\TextColumnSize;
-use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Columns\ToggleColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\Filter;
 use Illuminate\Database\Eloquent\Builder;
@@ -145,7 +47,7 @@ class DebtResource extends BaseResource
 
     protected static ?string $pluralModelLabel = 'Задолженности';
 
-    protected static ?string $navigationIcon = 'heroicon-o-exclamation-circle';
+    protected static ?string $navigationIcon = 'heroicon-o-document-currency-dollar';
 
     protected static ?string $defaultSortColumn = 'date';
 
@@ -153,14 +55,29 @@ class DebtResource extends BaseResource
 
     public static function getNavigationBadge(): ?string
     {
-        $unpaidCount = Debt::unpaid()->count();
-        $unpaidSum = Debt::unpaid()->sum('sum');
+        $unpaidRecords = Debt::unpaid()->get();
 
-        if ($unpaidCount === 0) {
+        if ($unpaidRecords->isEmpty()) {
             return null;
         }
 
-        return "{$unpaidCount} ({$unpaidSum} MDL)";
+        $badgeMessage = "";
+        foreach ($unpaidRecords as $record) {
+            $icon = User::getIcon($record->user_email);
+            $badgeMessage .= "{$record->unpaid_count} {$icon}";
+        }
+
+        return trim($badgeMessage);
+    }
+
+    public static function getNavigationBadgeColor(): ?string
+    {
+        return 'danger';
+    }
+
+    protected static function getTableActions(): array
+    {
+        return [];
     }
 
     public static function form(Form $form): Form
@@ -213,12 +130,16 @@ class DebtResource extends BaseResource
                         ->selectablePlaceholder(false)
                         ->loadingMessage(__('resources.notifications.load.users'))
                         ->noSearchResultsMessage(__('resources.notifications.skip.users'))
+                        ->disabled()
+                        ->dehydrated(false)
                         ->columnSpanFull(),
 
                     DatePicker::make('date')
                         ->label(__('resources.fields.date'))
                         ->required()
                         ->default(now())
+                        ->disabled()
+                        ->dehydrated(false)
                         ->columnSpan([
                             'default' => 1,
                             'sm' => 1,
@@ -229,6 +150,8 @@ class DebtResource extends BaseResource
                         ->required()
                         ->suffix('MDL')
                         // ->numeric(decimalPlaces: 2)
+                        ->disabled()
+                        ->dehydrated(false)
                         ->columnSpan([
                             'default' => 1,
                             'sm' => 1,
@@ -238,6 +161,8 @@ class DebtResource extends BaseResource
                         ->label(__('resources.fields.notes'))
                         ->placeholder('Описание задолженности...')
                         ->rows(3)
+                        ->disabled()
+                        ->dehydrated(false)
                         ->columnSpanFull(),
                 ]),
         ]);
@@ -257,6 +182,10 @@ class DebtResource extends BaseResource
                     Toggle::make('paid')
                         ->label('Оплачено')
                         ->live(onBlur: true)
+                        ->onIcon('heroicon-m-bolt')
+                        ->offIcon('heroicon-m-user')
+                        ->onColor('success')
+                        ->offColor('danger')
                         ->columnSpan([
                             'default' => 1,
                             'sm' => 1,
@@ -285,7 +214,7 @@ class DebtResource extends BaseResource
         return $table
             ->columns([
                 TableGrid::make([
-                    'default' => 2
+                    'default' => 3
                 ])
                     ->schema([
                         TextColumn::make('date')
@@ -293,11 +222,24 @@ class DebtResource extends BaseResource
                             ->dateTime('d M. Y')
                             ->color('info')
                             ->columnSpan(1),
-                        ImageColumn::make('user.image')
-                            ->circular()
-                            ->height(40)
-                            ->width(40)
-                            ->extraAttributes(['style' => 'margin-left:auto;']),
+
+                        Split::make([
+                            ImageColumn::make('overpayment.user.image')
+                                ->circular()
+                                ->height(40)
+                                ->width(40)
+                                ->extraAttributes(['style' => 'margin-left:auto;']),
+                            Stack::make([
+                                TextColumn::make('')
+                                    ->state(__('resources.fields.overpayment'))
+                                    ->color('primary')
+                                    ->weight(FontWeight::Bold),
+                                TextColumn::make('overpayment.sum')
+                                    ->label('')
+                                    ->numeric(decimalPlaces: 2)
+                                    ->money('MDL')
+                            ])->grow(false),
+                        ])->columnSpan(2),
                     ]),
                 Split::make([
                     TableGrid::make()
@@ -319,39 +261,51 @@ class DebtResource extends BaseResource
                                     ->weight(FontWeight::Bold)
                                     ->searchable()
                                     ->columnSpan(1),
-                                TextColumn::make('sum')
-                                    ->numeric(decimalPlaces: 2)
-                                    ->color('warning')
-                                    ->money('MDL')
-                                    ->extraAttributes(['class' => 'justify-end']),
-                            ])->grow(),
-
-                        TextColumn::make('notes')
-                            ->label(__('resources.fields.notes'))
-                            ->color('gray')
-                            ->limit(100)
-                            ->toggleable(isToggledHiddenByDefault: true),
-
-                        TableGrid::make([
-                            'default' => 2
-                        ])
-                            ->schema([
-                                IconColumn::make('paid')
-                                    ->label('Статус')
-                                    ->boolean()
-                                    ->trueIcon('heroicon-o-check-circle')
-                                    ->falseIcon('heroicon-o-x-circle')
-                                    ->trueColor('success')
-                                    ->falseColor('danger'),
                                 TextColumn::make('date_paid')
                                     ->label('Дата оплаты')
                                     ->dateTime('d M. Y')
                                     ->color('success')
                                     ->icon('heroicon-o-calendar')
-                                    // ->visible(fn($record) => $record->paid),
-                            ])->grow(),
+                                    ->visible(fn($record) => $record && $record->paid),
+                            ])->grow()
+                            ->visible(fn($record) => $record && $record->user_id),
+
+                        TableGrid::make([
+                            'default' => 2
+                        ])
+                            ->schema([
+                                TextColumn::make('sum')
+                                    ->numeric(decimalPlaces: 2)
+                                    ->color('warning')
+                                    ->money('MDL'),
+
+                                ToggleColumn::make('paid')
+                                    ->label('Статус')
+                                    ->onColor('success')
+                                    ->offColor('danger')
+                                    ->onIcon('heroicon-o-check')
+                                    ->offIcon('heroicon-o-x-mark')
+                                    ->updateStateUsing(function ($record, $state) {
+                                        $record->update(['paid' => $state]);
+                                        $record->update(['date_paid' => now()]);
+                                    }),
+                            ])->grow()
+                            ->visible(fn($record) => $record && $record->user_id),
+
+                        TextColumn::make('notes')
+                            ->label(__('resources.fields.notes'))
+                            ->color('gray')
+                            ->toggleable(isToggledHiddenByDefault: false)
+                            ->visible(fn($record) => $record && $record->user_id),
+
                     ])
-                ])->extraAttributes(['class' => 'py-2'])
+                ])->extraAttributes(['class' => 'py-2']),
+
+                TextColumn::make('notes')
+                    ->label(__('resources.fields.notes'))
+                    ->color('gray')
+                    ->toggleable(isToggledHiddenByDefault: false),
+
             ])->contentGrid([
                 'md' => 2,
                 'lg' => 1,
@@ -448,8 +402,6 @@ class DebtResource extends BaseResource
     {
         return [
             'index' => Pages\ListDebts::route('/'),
-            'create' => Pages\CreateDebt::route('/create'),
-            'edit' => Pages\EditDebt::route('/{record}/edit'),
         ];
     }
 }

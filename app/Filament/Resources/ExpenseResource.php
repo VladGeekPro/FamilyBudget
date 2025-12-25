@@ -53,28 +53,6 @@ class ExpenseResource extends BaseResource
 
     protected static ?string $defaultSortColumn = null;
 
-    public static function getNavigationBadge(): ?string
-    {
-
-        $vladCurrentMonthExpenses = Expense::whereHas('user', function ($query) {
-            $query->where('email', 'vladret0@gmail.com');
-        })
-            ->whereMonth('date', now()->month)
-            ->whereYear('date', now()->year)
-            ->count();
-
-        // $oleaCurrentMonthExpenses = Expense::whereHas('user', function ($query) {
-        //     $query->where('email', 'vladret0@gmail.com');
-        // })
-        //     ->whereMonth('date', now()->month)
-        //     ->whereYear('date', now()->year)
-        //     ->count();
-
-        $oleaCurrentMonthExpenses = 0;
-
-        return "{$oleaCurrentMonthExpenses} 😇 {$vladCurrentMonthExpenses} 😎";
-    }
-
     protected static function getTableActions(): array
     {
         return array_merge(
@@ -86,7 +64,7 @@ class ExpenseResource extends BaseResource
                     ->action(function ($record) {
                         $data = array_merge(
                             $record->only(['user_id', 'category_id', 'supplier_id', 'notes']),
-                            ['date' => now() -> format('Y-m-d')]
+                            ['date' => now()->format('Y-m-d')]
                         );
                         return redirect()->route('filament.admin.resources.expenses.create', ['data' => $data]);
                     }),

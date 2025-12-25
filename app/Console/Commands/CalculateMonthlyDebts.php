@@ -22,13 +22,13 @@ class CalculateMonthlyDebts extends Command
 
         try {
             [$month, $year] = explode('.', $period);
-            $date = Carbon::createFromDate($year, $month, 1);
+            $date = Carbon::create($year, $month)->endOfMonth();
         } catch (\Exception $e) {
             $this->error('Неверный формат периода. Используйте mm.yyyy');
             return;
         }
 
-        $this->info("Выполняется расчет долгов за период: {$date->translatedFormat('f Y')}");
+        $this->info("Выполняется расчет долгов за период: " . $date->translatedFormat('F Y'));
 
         $users = User::all();
 
@@ -52,13 +52,11 @@ class CalculateMonthlyDebts extends Command
             $this->line("{$user->name}: {$sum} MDL");
         }
 
-        $minExpenseUser = collect($expenses)
-            ->sortBy(fn($item, $key) => [$item['sum'], $key])
-            ->first();
+        $collection = collect($expenses)
+            ->sortBy(fn($item, $key) => [$item['sum'], $key]);
 
-        $maxExpenseUser = collect($expenses)
-            ->sortByDesc(fn($item, $key) => [$item['sum'], -$key])
-            ->first();
+        $minExpenseUser = $collection->first();
+        $maxExpenseUser = $collection->last();
 
         $difference = ($maxExpenseUser['sum'] - $minExpenseUser['sum']) / 2;
 
@@ -76,10 +74,10 @@ class CalculateMonthlyDebts extends Command
             }
         }
 
-        $existingDebt = Debt::where('date', $date->endOfMonth())->first();
+        $existingDebt = Debt::where('date', $date)->first();
 
         if ($existingDebt) {
-            $this->warn("Долг за {$date->translatedFormat('F Y')} уже существует для пользователя {$minExpenseUser['user']->name}❗");
+            $this->warn("Долг за {$date->translatedFormat('d F Y')} уже существует для пользователя {$minExpenseUser['user']->name}❗");
             if ($this->option('period')) {
                 if (!$this->confirm('Вы хотите пересчитать долг?', false)) {
                     $this->info('Операция отменена');
@@ -95,7 +93,7 @@ class CalculateMonthlyDebts extends Command
         if ($difference == 0) {
 
             Debt::create([
-                'date' => $date->endOfMonth(),
+                'date' => $date,
                 'user_id' => null,
                 'sum' => 0,
                 'overpayment_id' => $overpayment?->id,
@@ -106,15 +104,15 @@ class CalculateMonthlyDebts extends Command
             $this->info('Расходы одинаковые, долг не создан');
         } else {
 
-            // Debt::create([
-            //     'date' => $date->endOfMonth(),
-            //     'user_id' => $minExpenseUser['user']->id,
-            //     'sum' => $difference,
-            //     'overpayment_id' => $overpayment?->id,
-            //     'notes' => "Создан долг для {$minExpenseUser['user']->name} на сумму {$difference} MDL",
-            // ]);
+            Debt::create([
+                'date' => $date,
+                'user_id' => $minExpenseUser['user']->id,
+                'sum' => $difference,
+                'overpayment_id' => $overpayment?->id,
+                'notes' => "Создан долг для {$minExpenseUser['user']->name} на сумму {$difference} MDL.",
+            ]);
 
-            // $this->info("Создан долг для {$minExpenseUser['user']->name} на сумму {$difference} MDL");
+            $this->info("Создан долг для {$minExpenseUser['user']->name} на сумму {$difference} MDL.");
         };
     }
 }
