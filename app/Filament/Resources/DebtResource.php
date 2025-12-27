@@ -223,23 +223,23 @@ class DebtResource extends BaseResource
                             ->color('info')
                             ->columnSpan(1),
 
-                        Split::make([
-                            ImageColumn::make('overpayment.user.image')
-                                ->circular()
-                                ->height(40)
-                                ->width(40)
-                                ->extraAttributes(['style' => 'margin-left:auto;']),
-                            Stack::make([
-                                TextColumn::make('')
-                                    ->state(__('resources.fields.overpayment'))
-                                    ->color('primary')
-                                    ->weight(FontWeight::Bold),
-                                TextColumn::make('overpayment.sum')
-                                    ->label('')
-                                    ->numeric(decimalPlaces: 2)
-                                    ->money('MDL')
-                            ])->grow(false),
-                        ])->columnSpan(2),
+                        Stack::make([
+                            TextColumn::make('')
+                                ->state(fn($record) => __('resources.fields.overpayment', [
+                                    'user' => $record->overpayment?->user?->name ?? 'Null'
+                                ]))
+                                ->color('primary')
+                                ->alignment('right'),
+
+                            TextColumn::make('overpayment.sum')
+                                ->numeric(decimalPlaces: 2)
+                                ->money('MDL')
+                                ->color('gray')
+                                ->alignment('right'),
+                        ])->columnSpan(2)
+
+                    ])->extraAttributes([
+                        'class' => 'justify-end px-3 py-1 rounded-t-xl bg-gray-100 dark:bg-white/5',
                     ]),
                 Split::make([
                     TableGrid::make()
@@ -255,20 +255,22 @@ class DebtResource extends BaseResource
                             'default' => 2
                         ])
                             ->schema([
+
                                 TextColumn::make('user.name')
-                                    ->label(__('resources.fields.debtor'))
                                     ->size(TextColumnSize::Medium)
                                     ->weight(FontWeight::Bold)
+                                    ->getStateUsing(fn($record) => $record->user?->name ?? 'Null')
                                     ->searchable()
                                     ->columnSpan(1),
+
                                 TextColumn::make('date_paid')
-                                    ->label('Дата оплаты')
                                     ->dateTime('d M. Y')
                                     ->color('success')
-                                    ->icon('heroicon-o-calendar')
-                                    ->visible(fn($record) => $record && $record->paid),
+                                    ->visible(fn($record) => $record?->paid)
+                                    ->alignment('right')
+
                             ])->grow()
-                            ->visible(fn($record) => $record && $record->user_id),
+                            ->extraAttributes(fn($record) => $record->user_id ? [] : ['class' => 'invisible']),
 
                         TableGrid::make([
                             'default' => 2
@@ -279,32 +281,79 @@ class DebtResource extends BaseResource
                                     ->color('warning')
                                     ->money('MDL'),
 
-                                ToggleColumn::make('paid')
+                                TextColumn::make('paid')
                                     ->label('Статус')
-                                    ->onColor('success')
-                                    ->offColor('danger')
-                                    ->onIcon('heroicon-o-check')
-                                    ->offIcon('heroicon-o-x-mark')
-                                    ->updateStateUsing(function ($record, $state) {
-                                        $record->update(['paid' => $state]);
-                                        $record->update(['date_paid' => now()]);
-                                    }),
+                                    ->badge()
+                                    ->color(fn($state) => match ($state) {
+                                        true => 'success',
+                                        false => 'danger',
+                                    })
+                                    ->formatStateUsing(fn($state) => $state ? 'Оплачено' : 'Не оплачено')
+                                    ->alignment('right'),
                             ])->grow()
-                            ->visible(fn($record) => $record && $record->user_id),
+                            ->extraAttributes(fn($record) => $record->user_id ? ['class' => 'py-2'] : ['class' => 'py-2 invisible']),
 
                         TextColumn::make('notes')
                             ->label(__('resources.fields.notes'))
                             ->color('gray')
-                            ->toggleable(isToggledHiddenByDefault: false)
-                            ->visible(fn($record) => $record && $record->user_id),
+                            ->toggleable(isToggledHiddenByDefault: false),
+
+                        TextColumn::make('payment_action')
+                            ->label('')
+                            ->state('Оплатить долг')
+                            ->icon('heroicon-o-currency-dollar')
+                            ->iconPosition('before')
+                            ->color('success')
+                            ->action(
+                                Action::make('payDebt')
+                                    ->label('Оплатить долг')
+                                    ->icon('heroicon-o-currency-dollar')
+                                    ->color('success')
+                                    ->slideOver()
+                                    ->form([
+                                        DatePicker::make('date_paid')
+                                            ->label('Дата оплаты')
+                                            ->required()
+                                            ->default(now()),
+
+                                        Select::make('payment_status')
+                                            ->label('Статус оплаты')
+                                            ->required()
+                                            ->options([
+                                                'unpaid' => 'Не оплачено',
+                                                'partial' => 'Оплачено частично',
+                                                'paid' => 'Оплачено полностью',
+                                            ])
+                                            ->default('paid')
+                                            ->live(),
+
+                                        TextInput::make('payment_amount')
+                                            ->label('Сумма оплаты')
+                                            ->required()
+                                            ->numeric()
+                                            ->suffix('MDL')
+                                            ->default(fn($record) => $record->sum),
+                                    ])
+                                    ->action(function ($record, array $data) {
+                                        $isPaid = $data['payment_status'] === 'paid';
+
+                                        $record->update([
+                                            'paid' => $isPaid,
+                                            'date_paid' => $data['date_paid'],
+                                        ]);
+
+                                        Notification::make()
+                                            ->title('Долг обновлен')
+                                            ->success()
+                                            ->send();
+                                    })
+                            )
+                            ->visible(fn($record) => $record?->user_id && !$record->paid),
 
                     ])
-                ])->extraAttributes(['class' => 'py-2']),
-
-                TextColumn::make('notes')
-                    ->label(__('resources.fields.notes'))
-                    ->color('gray')
-                    ->toggleable(isToggledHiddenByDefault: false),
+                ])->extraAttributes(fn($record) => $record->user_id
+                    ? ['class' => 'py-2 ps-4 pe-4']
+                    : ['class' => 'py-2 ps-4 pe-4', 'style' => 'gap: 0;']),
 
             ])->contentGrid([
                 'md' => 2,
@@ -312,6 +361,7 @@ class DebtResource extends BaseResource
                 'xl' => 2,
                 '2xl' => 3,
             ])
+            ->recordClasses('debt-record')
 
             ->filters([
                 Filter::make('paid')

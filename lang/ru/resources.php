@@ -39,7 +39,7 @@ return [
         'change_password' => 'Изменить пароль',
         'notes' => 'Описание',
         'payer' => 'Плательщик',
-        'overpayment' => 'Переплачено на:',
+        'overpayment' => ':user переплачивает на:',
     ],
     'notifications' => [
         'create' => [
