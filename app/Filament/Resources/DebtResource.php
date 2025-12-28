@@ -15,6 +15,7 @@ use Filament\Forms\Form;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Grid as FormGrid;
 use Filament\Forms\Components\Toggle;
+use Filament\Forms\Components\ToggleButtons;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Hidden;
@@ -43,7 +44,7 @@ class DebtResource extends BaseResource
 
     protected static ?int $navigationSort = 2;
 
-    protected static ?string $modelLabel = 'задолженность';
+    protected static ?string $modelLabel = 'задолженности';
 
     protected static ?string $pluralModelLabel = 'Задолженности';
 
@@ -75,135 +76,105 @@ class DebtResource extends BaseResource
         return 'danger';
     }
 
-    protected static function getTableActions(): array
-    {
-        return [];
-    }
-
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-                Section::make(__('resources.sections.debt.main'))
-                    ->icon('heroicon-o-exclamation-circle')
-                    ->iconColor('warning')
+                Section::make(__('resources.sections.main'))
+                    ->icon('heroicon-o-document-text')
+                    ->iconColor('primary')
                     ->schema([
-                        self::getDebtInfoSection(),
-                        self::getPaymentStatusSection(),
+                        Group::make([
+                            FormGrid::make([
+                                'default' => 1,
+                                'sm' => 2,
+                            ])
+                                ->schema([
+                                    Select::make('user_id')
+                                        ->label(__('resources.fields.debtor'))
+                                        ->required()
+                                        ->allowHtml()
+                                        ->options(fn() => User::all()->mapWithKeys(function ($user) {
+                                            return [$user->getKey() => static::formatOptionWithIcon($user->name, $user->image)];
+                                        })->toArray())
+                                        ->searchable()
+                                        ->disabled()
+                                        ->dehydrated(false)
+                                        ->columnSpanFull(),
+
+                                    DatePicker::make('date')
+                                        ->label(__('resources.fields.date'))
+                                        ->required()
+                                        ->disabled()
+                                        ->dehydrated(false)
+                                        ->columnSpan([
+                                            'default' => 1,
+                                        ]),
+
+                                    TextInput::make('debt_sum')
+                                        ->label(__('resources.fields.debt_sum'))
+                                        ->required()
+                                        ->suffix('MDL')
+                                        ->numeric()
+                                        ->disabled()
+                                        ->dehydrated(false)
+                                        ->columnSpan([
+                                            'default' => 1,
+                                        ]),
+
+                                    Textarea::make('notes')
+                                        ->label(__('resources.fields.notes'))
+                                        ->rows(3)
+                                        ->disabled()
+                                        ->dehydrated(false)
+                                        ->columnSpanFull(),
+                                ]),
+                        ]),
+                        Group::make([
+                            Select::make('payment_status')
+                                ->label(__('resources.fields.payment_status'))
+                                ->options(fn() => collect(['unpaid', 'partial', 'paid'])
+                                    ->mapWithKeys(function ($key) {
+                                        $icon = __("resources.toggleButtons.image.$key");
+                                        $name = __("resources.toggleButtons.options.$key");
+                                        $color = __("resources.toggleButtons.color.$key");
+
+                                        return [$key => static::formatOptionWithIcon($name, $icon, $color)];
+                                    })
+                                    ->toArray())
+                                ->native(false)
+                                ->allowHtml()
+                                ->live()
+                                ->required()
+                                ->columnSpanFull(),
+
+
+                            TextInput::make('partial_sum')
+                                ->label(__('resources.fields.partial_sum'))
+                                ->suffix('MDL')
+                                ->numeric()
+                                ->visible(fn($get) => $get('payment_status') === 'partial')
+                                ->required(fn($get) => $get('payment_status') === 'partial')
+                                ->columnSpan([
+                                    'default' => 1,
+                                    'sm' => 1,
+                                ]),
+
+                            DatePicker::make('date_paid')
+                                ->label(__('resources.fields.date_paid'))
+                                ->visible(fn($get) => in_array($get('payment_status'), ['partial', 'paid']))
+                                ->required(fn($get) => in_array($get('payment_status'), ['partial', 'paid']))
+                                ->columnSpan([
+                                    'default' => 1,
+                                    'sm' => 1,
+                                ]),
+                        ])
+                            ->columns([
+                                'default' => 1,
+                                'sm' => 2,
+                            ]),
                     ]),
-            ]);
-    }
 
-    /**
-     * Основной раздел информации о задолженности
-     */
-    private static function getDebtInfoSection(): Group
-    {
-        return Group::make([
-            FormGrid::make([
-                'default' => 1,
-                'sm' => 2,
-            ])
-                ->schema([
-                    Select::make('user_id')
-                        ->label(__('resources.fields.debtor'))
-                        ->required()
-                        ->live(onBlur: true)
-                        ->afterStateUpdated(fn($livewire) => $livewire->validateOnly('data.user_id'))
-                        ->allowHtml()
-                        ->options(fn() => User::all()->mapWithKeys(function ($user) {
-                            return [$user->getKey() => static::getCleanOptionString($user)];
-                        })->toArray())
-                        ->getSearchResultsUsing(function (string $search) {
-                            $users = User::where('name', 'like', "%{$search}%")->limit(50)->get();
-                            return $users->mapWithKeys(function ($user) {
-                                return [$user->getKey() => static::getCleanOptionString($user)];
-                            })->toArray();
-                        })
-                        ->getOptionLabelUsing(function ($value): string {
-                            $user = User::find($value);
-                            return static::getCleanOptionString($user);
-                        })
-                        ->optionsLimit(10)
-                        ->searchable()
-                        ->preload()
-                        ->selectablePlaceholder(false)
-                        ->loadingMessage(__('resources.notifications.load.users'))
-                        ->noSearchResultsMessage(__('resources.notifications.skip.users'))
-                        ->disabled()
-                        ->dehydrated(false)
-                        ->columnSpanFull(),
-
-                    DatePicker::make('date')
-                        ->label(__('resources.fields.date'))
-                        ->required()
-                        ->default(now())
-                        ->disabled()
-                        ->dehydrated(false)
-                        ->columnSpan([
-                            'default' => 1,
-                            'sm' => 1,
-                        ]),
-
-                    TextInput::make('sum')
-                        ->label(__('resources.fields.sum'))
-                        ->required()
-                        ->suffix('MDL')
-                        // ->numeric(decimalPlaces: 2)
-                        ->disabled()
-                        ->dehydrated(false)
-                        ->columnSpan([
-                            'default' => 1,
-                            'sm' => 1,
-                        ]),
-
-                    Textarea::make('notes')
-                        ->label(__('resources.fields.notes'))
-                        ->placeholder('Описание задолженности...')
-                        ->rows(3)
-                        ->disabled()
-                        ->dehydrated(false)
-                        ->columnSpanFull(),
-                ]),
-        ]);
-    }
-
-    /**
-     * Раздел статуса оплаты
-     */
-    private static function getPaymentStatusSection(): Section
-    {
-        return Section::make('Статус оплаты')
-            ->icon('heroicon-o-check-badge')
-            ->iconColor('success')
-            ->collapsible()
-            ->schema([
-                Group::make([
-                    Toggle::make('paid')
-                        ->label('Оплачено')
-                        ->live(onBlur: true)
-                        ->onIcon('heroicon-m-bolt')
-                        ->offIcon('heroicon-m-user')
-                        ->onColor('success')
-                        ->offColor('danger')
-                        ->columnSpan([
-                            'default' => 1,
-                            'sm' => 1,
-                        ]),
-
-                    DatePicker::make('date_paid')
-                        ->label('Дата оплаты')
-                        ->visible(fn($get) => $get('paid'))
-                        ->required(fn($get) => $get('paid'))
-                        ->columnSpan([
-                            'default' => 1,
-                            'sm' => 1,
-                        ]),
-                ])
-                    ->columns([
-                        'default' => 1,
-                        'sm' => 2,
-                    ]),
             ]);
     }
 
@@ -232,7 +203,7 @@ class DebtResource extends BaseResource
                                 ->alignment('right'),
 
                             TextColumn::make('overpayment.sum')
-                                ->numeric(decimalPlaces: 2)
+                                ->numeric()
                                 ->money('MDL')
                                 ->color('gray')
                                 ->alignment('right'),
@@ -242,14 +213,11 @@ class DebtResource extends BaseResource
                         'class' => 'justify-end px-3 py-1 rounded-t-xl bg-gray-100 dark:bg-white/5',
                     ]),
                 Split::make([
-                    TableGrid::make()
-                        ->columns(1)
-                        ->schema([
-                            ImageColumn::make('user.image')
-                                ->circular()
-                                ->height(100)
-                                ->width(100)
-                        ])->grow(false),
+                    ImageColumn::make('user.image')
+                        ->circular()
+                        ->height(100)
+                        ->width(100)
+                        ->grow(false),
                     Stack::make([
                         TableGrid::make([
                             'default' => 2
@@ -266,7 +234,7 @@ class DebtResource extends BaseResource
                                 TextColumn::make('date_paid')
                                     ->dateTime('d M. Y')
                                     ->color('success')
-                                    ->visible(fn($record) => $record?->paid)
+                                    ->visible(fn($record) => $record?->payment_status === 'paid')
                                     ->alignment('right')
 
                             ])->grow()
@@ -276,19 +244,25 @@ class DebtResource extends BaseResource
                             'default' => 2
                         ])
                             ->schema([
-                                TextColumn::make('sum')
-                                    ->numeric(decimalPlaces: 2)
+                                TextColumn::make('debt_sum')
+                                    ->numeric()
                                     ->color('warning')
                                     ->money('MDL'),
 
-                                TextColumn::make('paid')
+                                TextColumn::make('payment_status')
                                     ->label('Статус')
                                     ->badge()
                                     ->color(fn($state) => match ($state) {
-                                        true => 'success',
-                                        false => 'danger',
+                                        'paid' => 'success',
+                                        'partial' => 'warning',
+                                        'unpaid' => 'danger',
                                     })
-                                    ->formatStateUsing(fn($state) => $state ? 'Оплачено' : 'Не оплачено')
+                                    ->formatStateUsing(fn($state) => match($state) {
+                                        'paid' => '🟢 Полностью оплачено',
+                                        'partial' => '🟡 Частично оплачено',
+                                        'unpaid' => '🔴 Не оплачено',
+                                        default => $state,
+                                    })
                                     ->alignment('right'),
                             ])->grow()
                             ->extraAttributes(fn($record) => $record->user_id ? ['class' => 'py-2'] : ['class' => 'py-2 invisible']),
@@ -297,58 +271,6 @@ class DebtResource extends BaseResource
                             ->label(__('resources.fields.notes'))
                             ->color('gray')
                             ->toggleable(isToggledHiddenByDefault: false),
-
-                        TextColumn::make('payment_action')
-                            ->label('')
-                            ->state('Оплатить долг')
-                            ->icon('heroicon-o-currency-dollar')
-                            ->iconPosition('before')
-                            ->color('success')
-                            ->action(
-                                Action::make('payDebt')
-                                    ->label('Оплатить долг')
-                                    ->icon('heroicon-o-currency-dollar')
-                                    ->color('success')
-                                    ->slideOver()
-                                    ->form([
-                                        DatePicker::make('date_paid')
-                                            ->label('Дата оплаты')
-                                            ->required()
-                                            ->default(now()),
-
-                                        Select::make('payment_status')
-                                            ->label('Статус оплаты')
-                                            ->required()
-                                            ->options([
-                                                'unpaid' => 'Не оплачено',
-                                                'partial' => 'Оплачено частично',
-                                                'paid' => 'Оплачено полностью',
-                                            ])
-                                            ->default('paid')
-                                            ->live(),
-
-                                        TextInput::make('payment_amount')
-                                            ->label('Сумма оплаты')
-                                            ->required()
-                                            ->numeric()
-                                            ->suffix('MDL')
-                                            ->default(fn($record) => $record->sum),
-                                    ])
-                                    ->action(function ($record, array $data) {
-                                        $isPaid = $data['payment_status'] === 'paid';
-
-                                        $record->update([
-                                            'paid' => $isPaid,
-                                            'date_paid' => $data['date_paid'],
-                                        ]);
-
-                                        Notification::make()
-                                            ->title('Долг обновлен')
-                                            ->success()
-                                            ->send();
-                                    })
-                            )
-                            ->visible(fn($record) => $record?->user_id && !$record->paid),
 
                     ])
                 ])->extraAttributes(fn($record) => $record->user_id
@@ -362,14 +284,23 @@ class DebtResource extends BaseResource
                 '2xl' => 3,
             ])
             ->recordClasses('debt-record')
-
+            ->actions([
+                Tables\Actions\EditAction::make()
+                    ->label(__('resources.buttons.pay_off_debt'))
+                    ->icon('heroicon-o-check')
+                    ->visible(fn($record) => $record->payment_status !== 'paid')
+                    ->extraAttributes(['style' => 'margin-left: auto;']),
+            ])
             ->filters([
                 Filter::make('paid')
                     ->label('Оплачено')
-                    ->query(fn(Builder $query) => $query->where('paid', true)),
+                    ->query(fn(Builder $query) => $query->where('payment_status', 'paid')),
+                Filter::make('partial')
+                    ->label('Частично оплачено')
+                    ->query(fn(Builder $query) => $query->where('payment_status', 'partial')),
                 Filter::make('unpaid')
                     ->label('Не оплачено')
-                    ->query(fn(Builder $query) => $query->where('paid', false)),
+                    ->query(fn(Builder $query) => $query->where('payment_status', 'unpaid')),
 
                 SelectFilter::make('user')
                     ->label(__('resources.fields.user'))
@@ -420,8 +351,8 @@ class DebtResource extends BaseResource
                     ->columns(2)
                     ->query(function (Builder $query, array $data): Builder {
                         return $query
-                            ->when($data['sum_min'], fn(Builder $query, $min) => $query->where('sum', '>=', $min))
-                            ->when($data['sum_max'], fn(Builder $query, $max) => $query->where('sum', '<=', $max));
+                            ->when($data['sum_min'], fn(Builder $query, $min) => $query->where('debt_sum', '>=', $min))
+                            ->when($data['sum_max'], fn(Builder $query, $max) => $query->where('debt_sum', '<=', $max));
                     })
                     ->indicateUsing(function (array $data): ?string {
                         $min = $data['sum_min'] ?? null;
@@ -452,6 +383,7 @@ class DebtResource extends BaseResource
     {
         return [
             'index' => Pages\ListDebts::route('/'),
+            'edit' => Pages\EditDebt::route('/{record}/edit'),
         ];
     }
 }

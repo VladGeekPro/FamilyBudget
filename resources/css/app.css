@@ -53,3 +53,7 @@ div[x-data*="tableSortColumn"][x-data*="tableSortDirection"] {
 .fi-ta-search-field {
     min-width: 250px;
 }
+
+.choices__list.choices__list--single {
+    width: 100%;
+}

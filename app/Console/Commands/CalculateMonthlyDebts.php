@@ -60,7 +60,9 @@ class CalculateMonthlyDebts extends Command
 
         $difference = ($maxExpenseUser['sum'] - $minExpenseUser['sum']) / 2;
 
-        $overpayment = Overpayment::latest('created_at')->first();
+        $overpayment = Overpayment::where('created_at', '<=', $date)
+            ->orderBy('created_at', 'desc')
+            ->first();
 
         if ($overpayment) {
             if ($minExpenseUser['user']->id === $overpayment->user_id) {
@@ -73,6 +75,32 @@ class CalculateMonthlyDebts extends Command
                 }
             }
         }
+
+        $previousDebts = [];
+        foreach ($users as $user) {
+            $debts = Debt::where('user_id', $user->id)
+                ->whereIn('payment_status', ['unpaid', 'partial'])
+                ->where('date', '<', $date)
+                ->get();
+
+            $totalPreviousDebt = $debts->sum(function ($debt) {
+                if ($debt->payment_status === 'unpaid') {
+                    return $debt->debt_sum;
+                }
+                return $debt->debt_sum - $debt->partial_sum;
+            });
+
+            $previousDebts[$user->id] = [
+                'user' => $user,
+                'sum' => $totalPreviousDebt
+            ];
+
+            if ($totalPreviousDebt > 0) {
+                $this->line("Предыдущий долг {$user->name}: {$totalPreviousDebt} MDL");
+            }
+        }
+
+        // Написать код, который учитывает предыдущие долги при расчете текущего долга
 
         $existingDebt = Debt::where('date', $date)->first();
 
@@ -95,9 +123,9 @@ class CalculateMonthlyDebts extends Command
             Debt::create([
                 'date' => $date,
                 'user_id' => null,
-                'sum' => 0,
                 'overpayment_id' => $overpayment?->id,
-                'paid' => true,
+                'payment_status' => 'paid',
+                'date_paid' => now(),
                 'notes' => 'Расходы были равны, никто никому не должен.',
             ]);
 
@@ -107,12 +135,12 @@ class CalculateMonthlyDebts extends Command
             Debt::create([
                 'date' => $date,
                 'user_id' => $minExpenseUser['user']->id,
-                'sum' => $difference,
                 'overpayment_id' => $overpayment?->id,
-                'notes' => "Создан долг для {$minExpenseUser['user']->name} на сумму {$difference} MDL.",
+                'debt_sum' => $difference,
+                'notes' => "{$minExpenseUser['user']->name} должен заплатить {$maxExpenseUser['user']->name} {$difference} MDL.",
             ]);
 
-            $this->info("Создан долг для {$minExpenseUser['user']->name} на сумму {$difference} MDL.");
+            $this->info("{$minExpenseUser['user']->name} должен заплатить {$maxExpenseUser['user']->name} {$difference} MDL.");
         };
     }
 }

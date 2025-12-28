@@ -78,9 +78,9 @@ class ExpenseResource extends BaseResource
         return $form
             ->schema([
 
-                Section::make(__('resources.sections.expense.main'))
-                    ->icon('heroicon-o-shopping-bag')
-                    ->iconColor('warning')
+                Section::make(__('resources.sections.main'))
+                    ->icon('heroicon-o-document-text')
+                    ->iconColor('primary    ')
                     ->schema([
 
                         FormGrid::make([
@@ -97,17 +97,17 @@ class ExpenseResource extends BaseResource
                                         ->afterStateUpdated(fn($livewire) => $livewire->validateOnly('data.user_id'))
                                         ->allowHtml()
                                         ->options(fn() => User::all()->mapWithKeys(function ($user) {
-                                            return [$user->getKey() => static::getCleanOptionString($user)];
+                                            return [$user->getKey() => static::formatOptionWithIcon($user->name, $user->image)];
                                         })->toArray())
                                         ->getSearchResultsUsing(function (string $search) {
                                             $users = User::where('name', 'like', "%{$search}%")->limit(50)->get();
                                             return $users->mapWithKeys(function ($user) {
-                                                return [$user->getKey() => static::getCleanOptionString($user)];
+                                                return [$user->getKey() => static::formatOptionWithIcon($user->name, $user->image)];
                                             })->toArray();
                                         })
                                         ->getOptionLabelUsing(function ($value): string {
                                             $user = User::find($value);
-                                            return static::getCleanOptionString($user);
+                                            return static::formatOptionWithIcon($user->name, $user->image);
                                         })
                                         ->optionsLimit(10)
                                         ->searchable()
@@ -156,17 +156,17 @@ class ExpenseResource extends BaseResource
                                         })
                                         ->allowHtml()
                                         ->options(fn() => Category::all()->mapWithKeys(function ($category) {
-                                            return [$category->getKey() => static::getCleanOptionString($category)];
+                                            return [$category->getKey() => static::formatOptionWithIcon($category->name, $category->image)];
                                         })->toArray())
                                         ->getSearchResultsUsing(function (string $search) {
                                             $categories = Category::where('name', 'like', "%{$search}%")->limit(50)->get();
                                             return $categories->mapWithKeys(function ($category) {
-                                                return [$category->getKey() => static::getCleanOptionString($category)];
+                                                return [$category->getKey() => static::formatOptionWithIcon($category->name, $category->image)];
                                             })->toArray();
                                         })
                                         ->getOptionLabelUsing(function ($value): string {
                                             $category = Category::find($value);
-                                            return static::getCleanOptionString($category);
+                                            return static::formatOptionWithIcon($category->name, $category->image);
                                         })
                                         ->optionsLimit(10)
                                         ->searchable()
@@ -195,7 +195,7 @@ class ExpenseResource extends BaseResource
                                             }
 
                                             return $query->get()->mapWithKeys(function ($supplier) {
-                                                return [$supplier->getKey() => static::getCleanOptionString($supplier)];
+                                                return [$supplier->getKey() => static::formatOptionWithIcon($supplier->name, $supplier->image)];
                                             })->toArray();
                                         })
                                         ->getSearchResultsUsing(function (string $search, $get) {
@@ -206,12 +206,12 @@ class ExpenseResource extends BaseResource
                                             }
 
                                             return $query->limit(50)->get()->mapWithKeys(function ($supplier) {
-                                                return [$supplier->getKey() => static::getCleanOptionString($supplier)];
+                                                return [$supplier->getKey() => static::formatOptionWithIcon($supplier->name, $supplier->image)];
                                             })->toArray();
                                         })
                                         ->getOptionLabelUsing(function ($value): string {
                                             $supplier = Supplier::find($value);
-                                            return static::getCleanOptionString($supplier);
+                                            return static::formatOptionWithIcon($supplier->name, $supplier->image);
                                         })
                                         ->optionsLimit(10)
                                         ->searchable()

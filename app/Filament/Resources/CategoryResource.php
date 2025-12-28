@@ -45,9 +45,9 @@ class CategoryResource extends BaseResource
     {
         return $form
             ->schema([
-                Section::make(__('resources.sections.category.main'))
+                Section::make(__('resources.sections.main'))
                     ->icon('heroicon-o-document-text')
-                    ->iconColor('warning')
+                    ->iconColor('primary')
                     ->schema([
 
                         FormGrid::make([

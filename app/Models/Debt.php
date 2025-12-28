@@ -12,18 +12,20 @@ class Debt extends Model
     protected $fillable = [
         'date',
         'user_id',
-        'sum',
+        'debt_sum',
         'overpayment_id',
         'date_paid',
-        'paid',
+        'payment_status',
+        'partial_sum',
         'notes',
     ];
 
     protected $casts = [
         'date' => 'datetime',
         'date_paid' => 'datetime',
-        'paid' => 'boolean',
-        'sum' => 'decimal:2',
+        'payment_status' => 'string',
+        'debt_sum' => 'decimal:2',
+        'partial_sum' => 'decimal:2',
     ];
 
     /**
@@ -43,7 +45,7 @@ class Debt extends Model
     {
         return $query
             ->selectRaw('debts.user_id, COUNT(*) as unpaid_count')
-            ->where('paid', false)
+            ->where('payment_status', 'unpaid')
             ->groupBy('user_id')
             ->join('users', 'debts.user_id', '=', 'users.id')
             ->addSelect('users.name as user_name', 'users.email as user_email')

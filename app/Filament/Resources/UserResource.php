@@ -43,9 +43,9 @@ class UserResource extends BaseResource
     {
         return $form
             ->schema([
-                Section::make(__('resources.sections.user.main'))
-                    ->icon('heroicon-o-identification')
-                    ->iconColor('warning')
+                Section::make(__('resources.sections.main'))
+                    ->icon('heroicon-o-document-text')
+                    ->iconColor('primary')
                     ->schema([
 
                         FormGrid::make([

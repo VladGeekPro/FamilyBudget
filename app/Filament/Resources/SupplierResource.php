@@ -48,9 +48,9 @@ class SupplierResource extends BaseResource
         return $form
             ->schema([
 
-                Section::make(__('resources.sections.supplier.main'))
+                Section::make(__('resources.sections.main'))
                     ->icon('heroicon-o-document-text')
-                    ->iconColor('warning')
+                    ->iconColor('primary')
                     ->schema([
 
                         FormGrid::make([
@@ -122,17 +122,17 @@ class SupplierResource extends BaseResource
                                         ->afterStateUpdated(fn($livewire) => $livewire->validateOnly('data.category_id'))
                                         ->allowHtml()
                                         ->options(fn() => Category::all()->mapWithKeys(function ($category) {
-                                            return [$category->getKey() => static::getCleanOptionString($category)];
+                                            return [$category->getKey() => static::formatOptionWithIcon($category->name, $category->image)];
                                         })->toArray())
                                         ->getSearchResultsUsing(function (string $search) {
                                             $categories = Category::where('name', 'like', "%{$search}%")->limit(50)->get();
                                             return $categories->mapWithKeys(function ($category) {
-                                                return [$category->getKey() => static::getCleanOptionString($category)];
+                                                return [$category->getKey() => static::formatOptionWithIcon($category->name, $category->image)];
                                             })->toArray();
                                         })
                                         ->getOptionLabelUsing(function ($value): string {
                                             $category = Category::find($value);
-                                            return static::getCleanOptionString($category);
+                                            return static::formatOptionWithIcon($category->name, $category->image);
                                         })
                                         ->optionsLimit(10)
                                         ->preload()

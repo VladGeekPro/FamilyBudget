@@ -113,17 +113,17 @@ class SuppliersRelationManager extends BaseRelationManager
                                         ->afterStateUpdated(fn($livewire) => $livewire->validateOnly('data.category_id'))
                                         ->allowHtml()
                                         ->options(fn() => Category::all()->mapWithKeys(function ($category) {
-                                            return [$category->getKey() => BaseResource::getCleanOptionString($category)];
+                                            return [$category->getKey() => BaseResource::formatOptionWithIcon($category->name, $category->image)];
                                         })->toArray())
                                         ->getSearchResultsUsing(function (string $search) {
                                             $categories = Category::where('name', 'like', "%{$search}%")->limit(50)->get();
                                             return $categories->mapWithKeys(function ($category) {
-                                                return [$category->getKey() => BaseResource::getCleanOptionString($category)];
+                                                return [$category->getKey() => BaseResource::formatOptionWithIcon($category->name, $category->image)];
                                             })->toArray();
                                         })
                                         ->getOptionLabelUsing(function ($value): string {
                                             $category = Category::find($value);
-                                            return BaseResource::getCleanOptionString($category);
+                                            return BaseResource::formatOptionWithIcon($category->name, $category->image);
                                         })
                                         ->optionsLimit(10)
                                         ->searchable()
