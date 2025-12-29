@@ -54,6 +54,32 @@ class DebtResource extends BaseResource
 
     protected static string $defaultSortDirection = 'desc';
 
+    protected static function updateDebtNotes(callable $get, callable $set, ?float $paidAmount = null): void
+    {
+        $debtSum = $get('debt_sum') ?? 0;
+        $paymentStatus = $get('payment_status');
+        $userId = $get('user_id');
+
+        if (!$userId || !$paymentStatus) {
+            return;
+        }
+
+        $difference = $paidAmount !== null
+            ? $debtSum - $paidAmount
+            : $debtSum;
+
+        $debtor = User::find($userId);
+        $creditor = User::whereNot('id', $userId)->first();
+
+        $notes = __("resources.fields.notes_message.{$paymentStatus}", [
+            'debtor' => $debtor?->name ?? 'Unknown',
+            'creditor' => $creditor?->name ?? 'Unknown',
+            'sum' => number_format($difference, 2, ',', ' '),
+        ]);
+
+        $set('notes', $notes);
+    }
+
     public static function getNavigationBadge(): ?string
     {
         $unpaidRecords = Debt::unpaid()->get();
@@ -126,7 +152,7 @@ class DebtResource extends BaseResource
                                         ->label(__('resources.fields.notes'))
                                         ->rows(3)
                                         ->disabled()
-                                        ->dehydrated(false)
+                                        ->dehydrated()
                                         ->columnSpanFull(),
                                 ]),
                         ]),
@@ -135,19 +161,30 @@ class DebtResource extends BaseResource
                                 ->label(__('resources.fields.payment_status'))
                                 ->options(fn() => collect(['unpaid', 'partial', 'paid'])
                                     ->mapWithKeys(function ($key) {
-                                        $icon = __("resources.toggleButtons.image.$key");
                                         $name = __("resources.toggleButtons.options.$key");
                                         $color = __("resources.toggleButtons.color.$key");
 
-                                        return [$key => static::formatOptionWithIcon($name, $icon, $color)];
+                                        return [$key => static::formatOptionWithIcon($name, null, $color)];
                                     })
                                     ->toArray())
                                 ->native(false)
                                 ->allowHtml()
                                 ->live()
+                                ->afterStateUpdated(function ($state, $set, $get) {
+                                    if (in_array($state, ['paid', 'partial'])) {
+                                        if (empty($get('date_paid'))) {
+                                            $set('date_paid', now()->format('Y-m-d'));
+                                        }
+                                    } else {
+                                        $set('date_paid', null);
+                                    }
+
+                                    $set('partial_sum', $state === 'paid' ? $get('debt_sum') : 0);
+
+                                    static::updateDebtNotes($get, $set);
+                                })
                                 ->required()
                                 ->columnSpanFull(),
-
 
                             TextInput::make('partial_sum')
                                 ->label(__('resources.fields.partial_sum'))
@@ -155,6 +192,23 @@ class DebtResource extends BaseResource
                                 ->numeric()
                                 ->visible(fn($get) => $get('payment_status') === 'partial')
                                 ->required(fn($get) => $get('payment_status') === 'partial')
+                                ->live(onBlur: true)
+                                ->afterStateUpdated(function ($state, $set, $get) {
+                                    if ($get('payment_status') === 'partial' && $state >= $get('debt_sum')) {
+                                        $set('partial_sum', 0);
+                                        $state = 0;
+
+                                        Notification::make()
+                                            ->title(__('resources.notifications.warn.debt.title'))
+                                            ->body(__('resources.notifications.warn.debt.body'))
+                                            ->warning()
+                                            ->color('warning')
+                                            ->duration(5000)
+                                            ->send();
+                                    }
+
+                                    static::updateDebtNotes($get, $set, $state);
+                                })
                                 ->columnSpan([
                                     'default' => 1,
                                     'sm' => 1,
@@ -232,38 +286,46 @@ class DebtResource extends BaseResource
                                     ->columnSpan(1),
 
                                 TextColumn::make('date_paid')
+                                    ->label(__('resources.fields.date_paid'))
                                     ->dateTime('d M. Y')
-                                    ->color('success')
-                                    ->visible(fn($record) => $record?->payment_status === 'paid')
+                                    ->color(fn($record) => match ($record?->payment_status) {
+                                        'paid' => 'success',
+                                        'partial' => 'warning',
+                                        default => 'gray',
+                                    })
+                                    ->visible(fn($record) => in_array($record?->payment_status, ['paid', 'partial']))
                                     ->alignment('right')
+                                    ->tooltip(fn($record) => $record?->payment_status === 'partial'
+                                        ? 'Частично: ' . number_format($record->partial_sum ?? 0, 2, ',', ' ') . ' MDL'
+                                        : null)
 
                             ])->grow()
                             ->extraAttributes(fn($record) => $record->user_id ? [] : ['class' => 'invisible']),
 
                         TableGrid::make([
-                            'default' => 2
+                            'default' => 3
                         ])
                             ->schema([
                                 TextColumn::make('debt_sum')
                                     ->numeric()
                                     ->color('warning')
-                                    ->money('MDL'),
+                                    ->money('MDL')
+                                    ->columnSpan(1),
 
                                 TextColumn::make('payment_status')
-                                    ->label('Статус')
                                     ->badge()
                                     ->color(fn($state) => match ($state) {
                                         'paid' => 'success',
                                         'partial' => 'warning',
                                         'unpaid' => 'danger',
                                     })
-                                    ->formatStateUsing(fn($state) => match($state) {
-                                        'paid' => '🟢 Полностью оплачено',
-                                        'partial' => '🟡 Частично оплачено',
-                                        'unpaid' => '🔴 Не оплачено',
-                                        default => $state,
+                                    ->formatStateUsing(fn($state) => match ($state) {
+                                        'paid' => 'Полностью оплачено',
+                                        'partial' => 'Частично оплачено',
+                                        'unpaid' => 'Не оплачено',
                                     })
-                                    ->alignment('right'),
+                                    ->alignment('right')
+                                    ->columnSpan(2),
                             ])->grow()
                             ->extraAttributes(fn($record) => $record->user_id ? ['class' => 'py-2'] : ['class' => 'py-2 invisible']),
 
@@ -288,7 +350,7 @@ class DebtResource extends BaseResource
                 Tables\Actions\EditAction::make()
                     ->label(__('resources.buttons.pay_off_debt'))
                     ->icon('heroicon-o-check')
-                    ->visible(fn($record) => $record->payment_status !== 'paid')
+                    // ->visible(fn($record) => $record->payment_status !== 'paid')
                     ->extraAttributes(['style' => 'margin-left: auto;']),
             ])
             ->filters([

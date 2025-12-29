@@ -69,7 +69,7 @@ abstract class BaseResource extends Resource
         return $table;
     }
 
-    public static function formatOptionWithIcon(string $name, string $image, ?string $bgColor = null): string
+    public static function formatOptionWithIcon(string $name, ?string $image, ?string $bgColor = null): string
     {
         return view('filament.components.select-user-result')
             ->with('name', $name)

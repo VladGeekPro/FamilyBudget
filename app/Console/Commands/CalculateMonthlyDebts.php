@@ -70,37 +70,11 @@ class CalculateMonthlyDebts extends Command
             } else {
                 $difference = $difference - $overpayment->sum;
                 if ($difference < 0) {
-                    $minExpenseUser = $maxExpenseUser;
+                    [$minExpenseUser, $maxExpenseUser] = [$maxExpenseUser, $minExpenseUser];
                     $difference = abs($difference);
                 }
             }
         }
-
-        $previousDebts = [];
-        foreach ($users as $user) {
-            $debts = Debt::where('user_id', $user->id)
-                ->whereIn('payment_status', ['unpaid', 'partial'])
-                ->where('date', '<', $date)
-                ->get();
-
-            $totalPreviousDebt = $debts->sum(function ($debt) {
-                if ($debt->payment_status === 'unpaid') {
-                    return $debt->debt_sum;
-                }
-                return $debt->debt_sum - $debt->partial_sum;
-            });
-
-            $previousDebts[$user->id] = [
-                'user' => $user,
-                'sum' => $totalPreviousDebt
-            ];
-
-            if ($totalPreviousDebt > 0) {
-                $this->line("Предыдущий долг {$user->name}: {$totalPreviousDebt} MDL");
-            }
-        }
-
-        // Написать код, который учитывает предыдущие долги при расчете текущего долга
 
         $existingDebt = Debt::where('date', $date)->first();
 
@@ -131,16 +105,22 @@ class CalculateMonthlyDebts extends Command
 
             $this->info('Расходы одинаковые, долг не создан');
         } else {
+            $formattedDifference = number_format($difference, 2, '.', ' ');
+            $debtMessage = __('resources.fields.notes_message.unpaid', [
+                'debtor' => $minExpenseUser['user']->name,
+                'creditor' => $maxExpenseUser['user']->name,
+                'sum' => $formattedDifference,
+            ]);
 
             Debt::create([
                 'date' => $date,
                 'user_id' => $minExpenseUser['user']->id,
                 'overpayment_id' => $overpayment?->id,
                 'debt_sum' => $difference,
-                'notes' => "{$minExpenseUser['user']->name} должен заплатить {$maxExpenseUser['user']->name} {$difference} MDL.",
+                'notes' => $debtMessage,
             ]);
 
-            $this->info("{$minExpenseUser['user']->name} должен заплатить {$maxExpenseUser['user']->name} {$difference} MDL.");
+            $this->info($debtMessage);
         };
     }
 }
