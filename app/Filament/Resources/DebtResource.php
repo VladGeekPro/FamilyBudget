@@ -264,7 +264,7 @@ class DebtResource extends BaseResource
                         ])->columnSpan(2)
 
                     ])->extraAttributes([
-                        'class' => 'justify-end px-3 py-1 rounded-t-xl bg-gray-100 dark:bg-white/5',
+                        'class' => 'min-h-[56px] justify-end px-3 py-1 rounded-t-xl bg-gray-100 dark:bg-white/5',
                     ]),
                 Split::make([
                     ImageColumn::make('user.image')
@@ -295,12 +295,8 @@ class DebtResource extends BaseResource
                                     })
                                     ->visible(fn($record) => in_array($record?->payment_status, ['paid', 'partial']))
                                     ->alignment('right')
-                                    ->tooltip(fn($record) => $record?->payment_status === 'partial'
-                                        ? 'Частично: ' . number_format($record->partial_sum ?? 0, 2, ',', ' ') . ' MDL'
-                                        : null)
 
-                            ])->grow()
-                            ->extraAttributes(fn($record) => $record->user_id ? [] : ['class' => 'invisible']),
+                            ])->extraAttributes(fn($record) => $record->user_id ? [] : ['class' => 'invisible']),
 
                         TableGrid::make([
                             'default' => 3
@@ -319,11 +315,7 @@ class DebtResource extends BaseResource
                                         'partial' => 'warning',
                                         'unpaid' => 'danger',
                                     })
-                                    ->formatStateUsing(fn($state) => match ($state) {
-                                        'paid' => 'Полностью оплачено',
-                                        'partial' => 'Частично оплачено',
-                                        'unpaid' => 'Не оплачено',
-                                    })
+                                    ->formatStateUsing(fn($state) => __('resources.toggleButtons.options.' . $state))
                                     ->alignment('right')
                                     ->columnSpan(2),
                             ])->grow()
@@ -350,7 +342,7 @@ class DebtResource extends BaseResource
                 Tables\Actions\EditAction::make()
                     ->label(__('resources.buttons.pay_off_debt'))
                     ->icon('heroicon-o-check')
-                    // ->visible(fn($record) => $record->payment_status !== 'paid')
+                    ->visible(fn($record) => $record->payment_status !== 'paid')
                     ->extraAttributes(['style' => 'margin-left: auto;']),
             ])
             ->filters([
