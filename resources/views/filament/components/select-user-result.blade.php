@@ -1,7 +1,7 @@
 <div class="flex rounded-md relative" style="{{ $bgColor ?? '' }}">
     <div class="flex">
         @if ($image)
-        <div class="flex items-center {{ $bgColor ? '' : 'px-2'}}">
+        <div class="flex items-center">
             <div class="h-10 w-10">
                 <img src="{{ url('/storage/'.$image.'') }}" alt="{{ $name }}" role="img" class="h-full w-full rounded-full overflow-hidden shadow object-cover" />
             </div>

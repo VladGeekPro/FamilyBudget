@@ -2,8 +2,10 @@
 
 namespace App\Notifications;
 
+use App\Filament\Resources\DebtResource;
 use App\Models\Debt;
 use App\Models\User;
+use Filament\Notifications\Actions\Action;
 use Filament\Notifications\Notification as FilamentNotification;
 use Illuminate\Notifications\Notification;
 
@@ -11,30 +13,47 @@ class DebtEditedNotification extends Notification
 {
     public function __construct(
         public Debt $debt,
-        public User $editor
+        public User|string $editor
     ) {}
 
     public function via($notifiable): array
     {
-        return ['database']; // можно добавить 'mail', 'broadcast'
+        return ['database'];
     }
 
     public function toDatabase($notifiable): array
     {
+        $editedByProgram = is_string($this->editor);
+        $editorName = $editedByProgram ? $this->editor : $this->editor->name;
+        
+        $notification = $editedByProgram ? 'created_debt' : 'edited_debt';
+        
+        $body = __('resources.notifications.warn.' . $notification . '.body', [
+            'user' => $editorName,
+            'date' => $this->debt->date->format('d.m.Y'),
+            'sum' => number_format($this->debt->debt_sum, 2, ',', ' '),
+            'notes' => $this->debt->notes,
+        ]);
+
         return FilamentNotification::make()
-            ->title('Задолженность отредактирована')
-            ->body("Пользователь {$this->editor->name} отредактировал задолженность на сумму " . number_format($this->debt->debt_sum, 2, ',', ' ') . " MDL")
+            ->title(__('resources.notifications.warn.' . $notification . '.title'))
+            ->body(new \Illuminate\Support\HtmlString($body))
             ->icon('heroicon-o-pencil-square')
-            ->iconColor('warning')
+            ->iconColor('info')
+            ->actions([
+                Action::make('view')
+                    ->label(__('resources.buttons.view'))
+                    ->icon('heroicon-o-eye')
+                    ->button()
+                    ->url(DebtResource::getUrl('edit', ['record' => $this->debt])),
+
+                Action::make('markAsRead')
+                    ->label(__('resources.buttons.mark_as_read'))
+                    ->icon('heroicon-o-check')
+                    ->button()
+                    ->color('success')
+                    ->markAsRead(),
+            ])
             ->getDatabaseMessage();
     }
-
-    // Если нужно добавить email:
-    // public function toMail($notifiable): MailMessage
-    // {
-    //     return (new MailMessage)
-    //         ->subject('Задолженность отредактирована')
-    //         ->line("Пользователь {$this->editor->name} отредактировал задолженность")
-    //         ->action('Посмотреть', url('/admin/debts'));
-    // }
 }

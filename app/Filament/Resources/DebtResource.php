@@ -4,6 +4,8 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\DebtResource\Pages;
 use App\Models\Debt;
+use App\Models\Expense;
+use App\Models\Overpayment;
 use App\Models\User;
 use App\Filament\Resources\Base\BaseResource;
 
@@ -34,6 +36,7 @@ use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\Filter;
 use Illuminate\Database\Eloquent\Builder;
 use Carbon\Carbon;
+use Illuminate\Support\HtmlString;
 
 use Filament\Support\Enums\FontWeight;
 use Filament\Notifications\Notification;
@@ -156,6 +159,11 @@ class DebtResource extends BaseResource
                                         ->columnSpanFull(),
                                 ]),
                         ]),
+
+                        Group::make([
+                            Forms\Components\View::make('filament.components.debt-calculation-details')
+                        ]),
+
                         Group::make([
                             Select::make('payment_status')
                                 ->label(__('resources.fields.payment_status'))

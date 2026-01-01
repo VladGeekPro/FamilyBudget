@@ -6,6 +6,7 @@ use App\Models\Debt;
 use App\Models\Expense;
 use App\Models\Overpayment;
 use App\Models\User;
+use App\Notifications\DebtEditedNotification;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
 
@@ -94,7 +95,7 @@ class CalculateMonthlyDebts extends Command
 
         if ($difference == 0) {
 
-            Debt::create([
+            $debt = Debt::create([
                 'date' => $date,
                 'user_id' => null,
                 'overpayment_id' => $overpayment?->id,
@@ -112,7 +113,7 @@ class CalculateMonthlyDebts extends Command
                 'sum' => $formattedDifference,
             ]);
 
-            Debt::create([
+            $debt = Debt::create([
                 'date' => $date,
                 'user_id' => $minExpenseUser['user']->id,
                 'overpayment_id' => $overpayment?->id,
@@ -122,5 +123,12 @@ class CalculateMonthlyDebts extends Command
 
             $this->info($debtMessage);
         };
+
+        $editor = 'Программа расчёта долгов';
+
+        $users = User::all();
+        foreach ($users as $user) {
+            $user->notify(new DebtEditedNotification($debt, $editor));
+        }
     }
 }
