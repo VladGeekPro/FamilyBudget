@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\Base;
 
+use App\Models\Expense;
+use App\Models\Overpayment;
 use Filament\Actions\DeleteAction;
 use Filament\Resources\Resource;
 use Filament\Tables;
@@ -83,5 +85,31 @@ abstract class BaseResource extends Resource
         return DeleteAction::make()
             ->label($label ?? __('Удалить'))
             ->successNotificationTitle(__('Удалено!'));
+    }
+    
+    public static function canEdit(Model $record): bool
+    {
+        if ($record instanceof Overpayment) {
+            return false;
+        }
+
+        if ($record instanceof Expense) {
+            return $record->date->gte(now()->startOfMonth());
+        }
+
+        return true;
+    }
+
+    public static function canDelete(Model $record): bool
+    {
+        if ($record instanceof Overpayment) {
+            return false;
+        }
+
+        if ($record instanceof Expense) {
+            return $record->date->gte(now()->startOfMonth());
+        }
+
+        return true;
     }
 }

@@ -3,12 +3,10 @@
 namespace App\Filament\Resources\OverpaymentResource\Pages;
 
 use App\Filament\Resources\OverpaymentResource;
-use App\Filament\Resources\Base\EditBase;
 use Filament\Actions;
+use Filament\Resources\Pages\ViewRecord;
 
-class EditOverpayment extends EditBase
+class ViewOverpayment extends ViewRecord
 {
     protected static string $resource = OverpaymentResource::class;
-
 }
-

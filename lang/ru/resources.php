@@ -39,6 +39,7 @@ return [
         'notes' => 'Описание',
         'payer' => 'Плательщик',
         'overpayment' => ':user переплачивает на:',
+        'no_overpayment' => 'Без переплаты',
     ],
     'notifications' => [
         'create' => [

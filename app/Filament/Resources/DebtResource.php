@@ -121,7 +121,8 @@ class DebtResource extends BaseResource
                                 ->schema([
                                     Select::make('user_id')
                                         ->label(__('resources.fields.debtor'))
-                                        ->required()
+                                        ->required(fn($record) => $record->user_id !== null)
+                                        ->visible(fn($record) => $record->user_id !== null)
                                         ->allowHtml()
                                         ->options(fn() => User::all()->mapWithKeys(function ($user) {
                                             return [$user->getKey() => static::formatOptionWithIcon($user->name, $user->image)];
@@ -258,9 +259,10 @@ class DebtResource extends BaseResource
 
                         Stack::make([
                             TextColumn::make('')
-                                ->state(fn($record) => __('resources.fields.overpayment', [
-                                    'user' => $record->overpayment?->user?->name ?? 'Null'
-                                ]))
+                                ->state(fn($record) => $record->overpayment 
+                                    ? __('resources.fields.overpayment', ['user' => $record->overpayment->user->name])
+                                    : __('resources.fields.no_overpayment')
+                                )
                                 ->color('primary')
                                 ->alignment('right'),
 
@@ -347,11 +349,13 @@ class DebtResource extends BaseResource
             ])
             ->recordClasses('debt-record')
             ->actions([
+                Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make()
                     ->label(__('resources.buttons.pay_off_debt'))
                     ->icon('heroicon-o-check')
                     ->visible(fn($record) => $record->payment_status !== 'paid')
                     ->extraAttributes(['style' => 'margin-left: auto;']),
+
             ])
             ->filters([
                 Filter::make('paid')

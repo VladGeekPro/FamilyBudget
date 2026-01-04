@@ -45,7 +45,7 @@ class DebtEditedNotification extends Notification
                     ->label(__('resources.buttons.view'))
                     ->icon('heroicon-o-eye')
                     ->button()
-                    ->url(DebtResource::getUrl('edit', ['record' => $this->debt])),
+                    ->url(fn() => DebtResource::getUrl('index') . '?tableAction=view&tableActionRecord=' . $this->debt->id),
 
                 Action::make('markAsRead')
                     ->label(__('resources.buttons.mark_as_read'))

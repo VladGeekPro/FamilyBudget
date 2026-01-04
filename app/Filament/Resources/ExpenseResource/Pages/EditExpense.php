@@ -4,7 +4,6 @@ namespace App\Filament\Resources\ExpenseResource\Pages;
 
 use App\Filament\Resources\ExpenseResource;
 use App\Filament\Resources\Base\EditBase;
-
 use Filament\Actions;
 
 class EditExpense extends EditBase

@@ -9,7 +9,7 @@ class Expense extends Model
     protected $fillable = ["user_id", "date", "category_id", "supplier_id", "sum", "notes"];
 
     protected $casts = [
-        'date' => 'datetime',
+        'date' => 'date',
     ];
 
     public function category()

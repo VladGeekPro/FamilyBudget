@@ -38,6 +38,7 @@ use Illuminate\Support\Str;
 use Filament\Support\Enums\FontWeight;
 
 use Filament\Notifications\Notification;
+use \Illuminate\Database\Eloquent\Model;
 
 class ExpenseResource extends BaseResource
 {
@@ -68,6 +69,9 @@ class ExpenseResource extends BaseResource
                         );
                         return redirect()->route('filament.admin.resources.expenses.create', ['data' => $data]);
                     }),
+                Tables\Actions\ViewAction::make()
+                    ->visible(fn($record) => $record->date->isBefore(now()->startOfMonth()))
+                    ->extraAttributes(['class' => 'ml-auto']),
             ],
             parent::getTableActions()
         );
@@ -122,6 +126,9 @@ class ExpenseResource extends BaseResource
                                     DatePicker::make('date')
                                         ->label(__('resources.fields.date'))
                                         ->required()
+                                        ->live(onBlur: true)
+                                        ->afterStateUpdated(fn($livewire) => $livewire->validateOnly('data.date'))
+                                        ->minDate(now()->startOfMonth())
                                         ->default(now()),
 
                                     Select::make('category_id')
@@ -477,6 +484,7 @@ class ExpenseResource extends BaseResource
             'index' => Pages\ListExpenses::route('/'),
             'create' => Pages\CreateExpense::route('/create'),
             'edit' => Pages\EditExpense::route('/{record}/edit'),
+            'view' => Pages\ViewExpense::route('/{record}'),
         ];
     }
 }
