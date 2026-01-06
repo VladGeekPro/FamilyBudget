@@ -33,7 +33,9 @@ class CategoryResource extends BaseResource
 
     protected static ?string $model = Category::class;
 
-    protected static ?int $navigationSort = 3;
+    protected static ?string $navigationGroup = 'Справочники';
+
+    protected static ?int $navigationSort = 2;
 
     protected static ?string $modelLabel = 'категорию';
 

@@ -39,13 +39,15 @@ class OverpaymentResource extends BaseResource
 {
     protected static ?string $model = Overpayment::class;
 
-    protected static ?int $navigationSort = 2;
+    protected static ?string $navigationGroup = 'Транзакции';
+
+    protected static ?int $navigationSort = 3;
 
     protected static ?string $modelLabel = 'переплату';
 
     protected static ?string $pluralModelLabel = 'Переплаты';
 
-    protected static ?string $navigationIcon = 'heroicon-o-credit-card';
+    protected static ?string $navigationIcon = 'heroicon-o-circle-stack';
 
     protected static ?string $defaultSortColumn = null;
 
@@ -323,7 +325,6 @@ class OverpaymentResource extends BaseResource
         return [
             'index' => Pages\ListOverpayments::route('/'),
             'create' => Pages\CreateOverpayment::route('/create'),
-            'edit' => Pages\EditOverpayment::route('/{record}/edit'),
             'view' => Pages\ViewOverpayment::route('/{record}'),
         ];
     }

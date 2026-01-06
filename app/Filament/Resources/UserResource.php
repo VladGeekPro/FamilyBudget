@@ -31,7 +31,9 @@ class UserResource extends BaseResource
 {
     protected static ?string $model = User::class;
 
-    protected static ?int $navigationSort = 4;
+    protected static ?string $navigationGroup = 'Справочники';
+
+    protected static ?int $navigationSort = 3;
 
     protected static ?string $modelLabel = 'пользователя';
 

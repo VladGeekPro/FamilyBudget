@@ -44,6 +44,8 @@ class ExpenseResource extends BaseResource
 {
     protected static ?string $model = Expense::class;
 
+    protected static ?string $navigationGroup = 'Транзакции';
+
     protected static ?int $navigationSort = 1;
 
     protected static ?string $modelLabel = 'затрату';

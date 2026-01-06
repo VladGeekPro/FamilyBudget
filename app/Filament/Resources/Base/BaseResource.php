@@ -86,12 +86,9 @@ abstract class BaseResource extends Resource
             ->label($label ?? __('Удалить'))
             ->successNotificationTitle(__('Удалено!'));
     }
-    
+
     public static function canEdit(Model $record): bool
     {
-        if ($record instanceof Overpayment) {
-            return false;
-        }
 
         if ($record instanceof Expense) {
             return $record->date->gte(now()->startOfMonth());
@@ -102,9 +99,6 @@ abstract class BaseResource extends Resource
 
     public static function canDelete(Model $record): bool
     {
-        if ($record instanceof Overpayment) {
-            return false;
-        }
 
         if ($record instanceof Expense) {
             return $record->date->gte(now()->startOfMonth());

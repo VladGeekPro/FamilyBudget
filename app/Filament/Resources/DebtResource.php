@@ -45,6 +45,8 @@ class DebtResource extends BaseResource
 {
     protected static ?string $model = Debt::class;
 
+    protected static ?string $navigationGroup = 'Транзакции';
+
     protected static ?int $navigationSort = 2;
 
     protected static ?string $modelLabel = 'задолженности';
