@@ -69,62 +69,50 @@ class OverpaymentResource extends BaseResource
                     ->iconColor('primary')
                     ->schema([
 
-                        FormGrid::make([
-                            'default' => 1,
-                            'sm' => 2,
-                        ])
-                            ->schema([
+                        Select::make('user_id')
+                            ->label(__('resources.fields.user'))
+                            ->required()
+                            ->live(onBlur: true)
+                            ->afterStateUpdated(fn($livewire) => $livewire->validateOnly('data.user_id'))
+                            ->allowHtml()
+                            ->options(fn() => User::all()->mapWithKeys(function ($user) {
+                                return [$user->getKey() => static::formatOptionWithIcon($user->name, $user->image)];
+                            })->toArray())
+                            ->getSearchResultsUsing(function (string $search) {
+                                $users = User::where('name', 'like', "%{$search}%")->limit(50)->get();
+                                return $users->mapWithKeys(function ($user) {
+                                    return [$user->getKey() => static::formatOptionWithIcon($user->name, $user->image)];
+                                })->toArray();
+                            })
+                            ->getOptionLabelUsing(function ($value): string {
+                                $user = User::find($value);
+                                return static::formatOptionWithIcon($user->name, $user->image);
+                            })
+                            ->optionsLimit(10)
+                            ->searchable()
+                            ->preload()
+                            ->selectablePlaceholder(false)
+                            ->loadingMessage(__('resources.notifications.load.users'))
+                            ->noSearchResultsMessage(__('resources.notifications.skip.users'))
+                            ->default(auth()->user()->id)
+                            ->columnSpanFull(),
 
-                                Group::make([
-                                    Select::make('user_id')
-                                        ->label(__('resources.fields.user'))
-                                        ->required()
-                                        ->live(onBlur: true)
-                                        ->afterStateUpdated(fn($livewire) => $livewire->validateOnly('data.user_id'))
-                                        ->allowHtml()
-                                        ->options(fn() => User::all()->mapWithKeys(function ($user) {
-                                            return [$user->getKey() => static::formatOptionWithIcon($user->name, $user->image)];
-                                        })->toArray())
-                                        ->getSearchResultsUsing(function (string $search) {
-                                            $users = User::where('name', 'like', "%{$search}%")->limit(50)->get();
-                                            return $users->mapWithKeys(function ($user) {
-                                                return [$user->getKey() => static::formatOptionWithIcon($user->name, $user->image)];
-                                            })->toArray();
-                                        })
-                                        ->getOptionLabelUsing(function ($value): string {
-                                            $user = User::find($value);
-                                            return static::formatOptionWithIcon($user->name, $user->image);
-                                        })
-                                        ->optionsLimit(10)
-                                        ->searchable()
-                                        ->preload()
-                                        ->selectablePlaceholder(false)
-                                        ->loadingMessage(__('resources.notifications.load.users'))
-                                        ->noSearchResultsMessage(__('resources.notifications.skip.users'))
-                                        ->default(auth()->user()->id)
-                                        ->columnSpanFull(),
+                        TextInput::make('sum')
+                            ->label(__('resources.fields.sum'))
+                            ->required()
+                            ->suffix('MDL')
+                            ->numeric(),
 
-                                    TextInput::make('sum')
-                                        ->label(__('resources.fields.sum'))
-                                        ->required()
-                                        ->suffix('MDL')
-                                        ->numeric(),
-                                ])
-                                    ->columnSpanFull(),
-
-                                MarkdownEditor::make('notes')
-                                    ->label(__('resources.fields.notes'))
-                                    ->required()
-                                    ->disableToolbarButtons([
-                                        'attachFiles',
-                                        'blockquote',
-                                        'codeBlock',
-                                        'heading',
-                                        'table',
-                                        'link',
-                                    ])
-                                    ->columnSpanFull(),
-
+                        MarkdownEditor::make('notes')
+                            ->label(__('resources.fields.notes'))
+                            ->required()
+                            ->disableToolbarButtons([
+                                'attachFiles',
+                                'blockquote',
+                                'codeBlock',
+                                'heading',
+                                'table',
+                                'link',
                             ]),
                     ])
             ]);
@@ -136,22 +124,20 @@ class OverpaymentResource extends BaseResource
 
         return $table
             ->columns([
-                TableGrid::make([
-                    'default' => 2
-                ])
-                    ->schema([
-                        TextColumn::make('created_at')
-                            ->label(__('resources.fields.date'))
-                            ->dateTime('d M. Y')
-                            ->color('info')
-                            ->columnSpan(1),
-                        ImageColumn::make('user.image')
-                            ->circular()
-                            ->height(40)
-                            ->width(40)
-                            ->extraAttributes(['style' => 'margin-left:auto;']),
-                    ]),
+                TextColumn::make('created_at')
+                    ->label(__('resources.fields.date'))
+                    ->dateTime('d M. Y')
+                    ->color('info'),
                 Split::make([
+                    TableGrid::make()
+                        ->columns(1)
+                        ->schema([
+                            ImageColumn::make('user.image')
+                                ->circular()
+                                ->height(100)
+                                ->width(100)
+                        ])->grow(false),
+
                     Stack::make([
                         TableGrid::make([
                             'default' => 2
@@ -161,11 +147,10 @@ class OverpaymentResource extends BaseResource
                                     ->label(__('resources.fields.user'))
                                     ->size(TextColumnSize::Medium)
                                     ->weight(FontWeight::Bold)
-                                    ->searchable()
                                     ->columnSpan(1),
                                 TextColumn::make('sum')
                                     ->numeric(decimalPlaces: 2)
-                                    ->color('success')
+                                    ->color('warning')
                                     ->money('MDL')
                                     ->extraAttributes(['class' => 'justify-end']),
                             ])->grow(),
@@ -178,7 +163,7 @@ class OverpaymentResource extends BaseResource
                             ->color("gray")
                             ->limit(100)
                             ->toggleable(),
-                    ])
+                    ]),
                 ])->extraAttributes(['class' => 'py-2'])
             ])->contentGrid([
                 'md' => 2,
@@ -256,52 +241,13 @@ class OverpaymentResource extends BaseResource
             ->defaultGroup(
                 TableGroup::make('created_at')
                     ->getTitleFromRecordUsing(function (Overpayment $record): string {
-
-                        $filters = session('tableFilters', []);
-
-                        $filteredQuery = Overpayment::query();
-
-                        if (!empty($filters['user'])) {
-                            $filteredQuery->whereIn('overpayments.user_id', $filters['user']);
-                        }
-
-                        if (!empty($filters['date']['date_from'])) {
-                            $filteredQuery->whereDate('overpayments.created_at', '>=', $filters['date']['date_from']);
-                        }
-
-                        if (!empty($filters['date']['date_until'])) {
-                            $filteredQuery->whereDate('overpayments.created_at', '<=', $filters['date']['date_until']);
-                        }
-
-                        if (!empty($filters['sum']['sum_min'])) {
-                            $filteredQuery->where('overpayments.sum', '>=', $filters['sum']['sum_min']);
-                        }
-
-                        if (!empty($filters['sum']['sum_max'])) {
-                            $filteredQuery->where('overpayments.sum', '<=', $filters['sum']['sum_max']);
-                        }
-
-                        if (!empty($filters['search'])) {
-                            $search = $filters['search'];
-                            $filteredQuery->where(function ($query) use ($search) {
-                                $query->where('overpayments.notes', 'like', "%{$search}%");
-                            });
-                        }
-
-                        $month = $record->created_at->format('Y');
-                        $year  = $record->created_at->format('m');
-
-                        $filteredQuery->whereYear('overpayments.created_at', $month)->whereMonth('overpayments.created_at', $year);
-
-                        $sum = $filteredQuery->sum('overpayments.sum');
-
                         $monthName = mb_convert_case(
                             $record->created_at->locale('ru')->translatedFormat('F Y'),
                             MB_CASE_TITLE,
                             'UTF-8'
                         );
 
-                        return "{$monthName} — " . number_format($sum, 2, ',', ' ') . " MDL";
+                        return $monthName;
                     })
                     ->orderQueryUsing(
                         fn(Builder $query) => $query->orderBy('created_at', 'desc')
@@ -309,7 +255,6 @@ class OverpaymentResource extends BaseResource
                     ->titlePrefixedWithLabel(false)
                     ->collapsible()
             )
-
             ->bulkActions([]);
     }
 

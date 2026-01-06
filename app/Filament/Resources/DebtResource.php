@@ -32,6 +32,7 @@ use Filament\Tables\Columns\Layout\Split;
 use Filament\Tables\Columns\Layout\Stack;
 use Filament\Tables\Columns\TextColumn\TextColumnSize;
 use Filament\Tables\Columns\ToggleColumn;
+use Filament\Tables\Grouping\Group as TableGroup;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\Filter;
 use Illuminate\Database\Eloquent\Builder;
@@ -261,9 +262,10 @@ class DebtResource extends BaseResource
 
                         Stack::make([
                             TextColumn::make('')
-                                ->state(fn($record) => $record->overpayment 
-                                    ? __('resources.fields.overpayment', ['user' => $record->overpayment->user->name])
-                                    : __('resources.fields.no_overpayment')
+                                ->state(
+                                    fn($record) => $record->overpayment
+                                        ? __('resources.fields.overpayment', ['user' => $record->overpayment->user->name])
+                                        : __('resources.fields.no_overpayment')
                                 )
                                 ->color('primary')
                                 ->alignment('right'),
@@ -294,7 +296,6 @@ class DebtResource extends BaseResource
                                     ->size(TextColumnSize::Medium)
                                     ->weight(FontWeight::Bold)
                                     ->getStateUsing(fn($record) => $record->user?->name ?? 'Null')
-                                    ->searchable()
                                     ->columnSpan(1),
 
                                 TextColumn::make('date_paid')
@@ -336,6 +337,7 @@ class DebtResource extends BaseResource
                         TextColumn::make('notes')
                             ->label(__('resources.fields.notes'))
                             ->color('gray')
+                            ->searchable()
                             ->toggleable(isToggledHiddenByDefault: false),
 
                     ])
@@ -360,21 +362,22 @@ class DebtResource extends BaseResource
 
             ])
             ->filters([
-                Filter::make('paid')
-                    ->label('Оплачено')
-                    ->query(fn(Builder $query) => $query->where('payment_status', 'paid')),
-                Filter::make('partial')
-                    ->label('Частично оплачено')
-                    ->query(fn(Builder $query) => $query->where('payment_status', 'partial')),
-                Filter::make('unpaid')
-                    ->label('Не оплачено')
-                    ->query(fn(Builder $query) => $query->where('payment_status', 'unpaid')),
-
+                
                 SelectFilter::make('user')
                     ->label(__('resources.fields.user'))
                     ->relationship('user', 'name')
                     ->multiple()
                     ->preload()
+                    ->placeholder(''),
+
+                SelectFilter::make('payment_status')
+                    ->label(__('resources.fields.payment_status'))
+                    ->options([
+                        'paid' => __('resources.toggleButtons.options.paid'),
+                        'partial' => __('resources.toggleButtons.options.partial'),
+                        'unpaid' => __('resources.toggleButtons.options.unpaid'),
+                    ])
+                    ->multiple()
                     ->placeholder(''),
 
                 Filter::make('date')
@@ -437,6 +440,13 @@ class DebtResource extends BaseResource
                         }
                     }),
             ])
+            ->defaultGroup(
+                TableGroup::make('date')
+                    ->getTitleFromRecordUsing(fn(Debt $record): string => Carbon::parse($record->date)->format('Y'))
+                    ->orderQueryUsing(fn(Builder $query) => $query->orderBy('date', 'desc'))
+                    ->titlePrefixedWithLabel(false)
+                    ->collapsible()
+            )
             ->bulkActions([]);
     }
 
