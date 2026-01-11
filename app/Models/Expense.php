@@ -37,4 +37,10 @@ class Expense extends Model
             ->addSelect('users.name as user_name', 'users.email as user_email')
             ->orderBy('user_email');
     }
+
+    public function scopePreviousMonthsExpenses($query)
+    {
+        return $query->whereDate('date', '<', now()->startOfMonth())
+            ->with(['supplier', 'category', 'user']);
+    }
 }

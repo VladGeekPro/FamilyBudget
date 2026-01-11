@@ -3,6 +3,7 @@
 return [
     'sections' => [
         'main' => 'Данные',
+        'change_data' => 'Данные для изменения',
     ],
     'fields' => [
         'category' => 'Категория',
@@ -40,6 +41,25 @@ return [
         'payer' => 'Плательщик',
         'overpayment' => ':user переплачивает на:',
         'no_overpayment' => 'Без переплаты',
+        'expense_change_request' => 'Запрос на изменение',
+        'action_type' => 'Тип операции',
+        'change_data' => 'Данные изменения',
+        'applied_at' => 'Дата применения',
+        'vote' => 'Голос',
+        'vote_comment' => 'Комментарий к голосу',
+        'reason' => 'Причина',
+        'id' => 'Идентификатор',
+        'change_expense' => 'Редактируемый расход',
+        'action_type' => [
+            'label' => 'Тип операции',
+            'options' => [
+                'create' => 'Создать новый расход',
+                'edit' => 'Редактировать расход',
+                'delete' => 'Удалить расход',
+            ],
+        ],
+        'change_reason' => 'Причина изменения',
+        'change_data_description' => 'Заполните только те поля, которые нужно изменить или создать',
     ],
     'notifications' => [
         'create' => [
@@ -48,6 +68,7 @@ return [
             'supplier' => 'Поставщик успешно создан',
             'user' => 'Пользователь успешно создан',
             'overpayment' => 'Переплата успешно создана',
+            'expense_change_request' => 'Запрос на изменение создан',
         ],
         'edit' => [
             'category' => 'Категория успешно отредактирована',
@@ -112,6 +133,7 @@ return [
         'pay_off_debt' => 'Погасить долг',
         'view' => 'Посмотреть',
         'mark_as_read' => 'Отметить прочитанным',
+        'select' => 'Выбрать',
     ],
     'toggleButtons' => [
         'options' => [

@@ -96,6 +96,13 @@ class ExpenseResource extends BaseResource
                             ->schema([
 
                                 Group::make([
+
+                                    TextInput::make('id')
+                                        ->label(__('resources.fields.id'))
+                                        ->disabled()
+                                        ->visible(fn(?Model $record) => $record !== null)
+                                        ->columnSpanFull(),
+
                                     Select::make('user_id')
                                         ->label(__('resources.fields.payer'))
                                         ->required()
