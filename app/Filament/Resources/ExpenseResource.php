@@ -5,18 +5,13 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\ExpenseResource\Pages;
 use App\Models\Expense;
 use App\Filament\Resources\Base\BaseResource;
-use App\Models\Category;
-use App\Models\Supplier;
-use App\Models\User;
 
-use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Group;
+use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Grid as FormGrid;
-use Filament\Forms\Components\MarkdownEditor;
-use Filament\Forms\Components\Select;
 
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -37,7 +32,6 @@ use Carbon\Carbon;
 use Illuminate\Support\Str;
 use Filament\Support\Enums\FontWeight;
 
-use Filament\Notifications\Notification;
 use \Illuminate\Database\Eloquent\Model;
 
 class ExpenseResource extends BaseResource
@@ -86,179 +80,13 @@ class ExpenseResource extends BaseResource
 
                 Section::make(__('resources.sections.main'))
                     ->icon('heroicon-o-document-text')
-                    ->iconColor('primary    ')
+                    ->iconColor('primary')
                     ->schema([
 
-                        FormGrid::make([
-                            'default' => 1,
-                            'sm' => 2,
-                        ])
-                            ->schema([
-
-                                Group::make([
-
-                                    TextInput::make('id')
-                                        ->label(__('resources.fields.id'))
-                                        ->disabled()
-                                        ->visible(fn(?Model $record) => $record !== null)
-                                        ->columnSpanFull(),
-
-                                    Select::make('user_id')
-                                        ->label(__('resources.fields.payer'))
-                                        ->required()
-                                        ->live(onBlur: true)
-                                        ->afterStateUpdated(fn($livewire) => $livewire->validateOnly('data.user_id'))
-                                        ->allowHtml()
-                                        ->options(fn() => User::all()->mapWithKeys(function ($user) {
-                                            return [$user->getKey() => static::formatOptionWithIcon($user->name, $user->image)];
-                                        })->toArray())
-                                        ->getSearchResultsUsing(function (string $search) {
-                                            $users = User::where('name', 'like', "%{$search}%")->limit(50)->get();
-                                            return $users->mapWithKeys(function ($user) {
-                                                return [$user->getKey() => static::formatOptionWithIcon($user->name, $user->image)];
-                                            })->toArray();
-                                        })
-                                        ->getOptionLabelUsing(function ($value): string {
-                                            $user = User::find($value);
-                                            return static::formatOptionWithIcon($user->name, $user->image);
-                                        })
-                                        ->optionsLimit(10)
-                                        ->searchable()
-                                        ->preload()
-                                        ->selectablePlaceholder(false)
-                                        ->loadingMessage(__('resources.notifications.load.users'))
-                                        ->noSearchResultsMessage(__('resources.notifications.skip.users'))
-                                        ->default(auth()->user()->id)
-                                        ->columnSpanFull(),
-
-
-                                    DatePicker::make('date')
-                                        ->label(__('resources.fields.date'))
-                                        ->required()
-                                        ->live(onBlur: true)
-                                        ->afterStateUpdated(fn($livewire) => $livewire->validateOnly('data.date'))
-                                        ->minDate(now()->startOfMonth())
-                                        ->default(now()),
-
-                                    Select::make('category_id')
-                                        ->label(__('resources.fields.category'))
-                                        ->required()
-                                        ->live(onBlur: true)
-                                        ->afterStateUpdated(function ($livewire, $set, $state, $get) {
-                                            $supplierId = $get('supplier_id');
-
-                                            if (filled($supplierId)) {
-                                                $supplier = Supplier::find($supplierId);
-
-                                                if (blank($state) || ($supplier && $supplier->category_id !== $state)) {
-                                                    $set('supplier_id', null);
-
-                                                    Notification::make()
-                                                        ->title(__('resources.notifications.warn.expense.title'))
-                                                        ->body(__('resources.notifications.warn.expense.body'))
-                                                        ->warning()
-                                                        ->color('warning')
-                                                        ->duration(5000)
-                                                        ->send();
-                                                }
-
-                                                $livewire->validate([
-                                                    'data.supplier_id' => 'required',
-                                                    'data.category_id' => 'required'
-                                                ]);
-                                            }
-
-                                            $livewire->validateOnly('data.category_id');
-                                        })
-                                        ->allowHtml()
-                                        ->options(fn() => Category::all()->mapWithKeys(function ($category) {
-                                            return [$category->getKey() => static::formatOptionWithIcon($category->name, $category->image)];
-                                        })->toArray())
-                                        ->getSearchResultsUsing(function (string $search) {
-                                            $categories = Category::where('name', 'like', "%{$search}%")->limit(50)->get();
-                                            return $categories->mapWithKeys(function ($category) {
-                                                return [$category->getKey() => static::formatOptionWithIcon($category->name, $category->image)];
-                                            })->toArray();
-                                        })
-                                        ->getOptionLabelUsing(function ($value): string {
-                                            $category = Category::find($value);
-                                            return static::formatOptionWithIcon($category->name, $category->image);
-                                        })
-                                        ->optionsLimit(10)
-                                        ->searchable()
-                                        ->preload()
-                                        ->loadingMessage(__('resources.notifications.load.categories'))
-                                        ->noSearchResultsMessage(__('resources.notifications.skip.categories'))
-                                        ->columnSpanFull(),
-
-                                    Select::make('supplier_id')
-                                        ->label(__('resources.fields.supplier'))
-                                        ->required()
-                                        ->live(onBlur: true)
-                                        ->afterStateUpdated(function ($livewire, $set, $state, $get) {
-                                            $livewire->validateOnly('data.supplier_id');
-                                            if (filled($state) && empty($get('category_id'))) {
-                                                $set('category_id', Supplier::find($state)->category_id);
-                                                $livewire->validateOnly('data.category_id');
-                                            }
-                                        })
-                                        ->allowHtml()
-                                        ->options(function ($get) {
-                                            $query = Supplier::query();
-
-                                            if (filled($get('category_id'))) {
-                                                $query->where('category_id', $get('category_id'));
-                                            }
-
-                                            return $query->get()->mapWithKeys(function ($supplier) {
-                                                return [$supplier->getKey() => static::formatOptionWithIcon($supplier->name, $supplier->image)];
-                                            })->toArray();
-                                        })
-                                        ->getSearchResultsUsing(function (string $search, $get) {
-                                            $query = Supplier::query()->where('name', 'like', "%{$search}%");
-
-                                            if (filled($get('category_id'))) {
-                                                $query->where('category_id', $get('category_id'));
-                                            }
-
-                                            return $query->limit(50)->get()->mapWithKeys(function ($supplier) {
-                                                return [$supplier->getKey() => static::formatOptionWithIcon($supplier->name, $supplier->image)];
-                                            })->toArray();
-                                        })
-                                        ->getOptionLabelUsing(function ($value): string {
-                                            $supplier = Supplier::find($value);
-                                            return static::formatOptionWithIcon($supplier->name, $supplier->image);
-                                        })
-                                        ->optionsLimit(10)
-                                        ->searchable()
-                                        ->preload()
-                                        ->selectablePlaceholder(false)
-                                        ->loadingMessage(__('resources.notifications.load.suppliers'))
-                                        ->noSearchResultsMessage(__('resources.notifications.skip.suppliers'))
-                                        ->columnSpanFull(),
-
-                                    TextInput::make('sum')
-                                        ->label(__('resources.fields.sum'))
-                                        ->required()
-                                        ->suffix('MDL')
-                                        ->numeric(),
-                                ])
-                                    ->columnSpanFull(),
-
-
-                                MarkdownEditor::make('notes')
-                                    ->label(__('resources.fields.notes'))
-                                    ->disableToolbarButtons([
-                                        'attachFiles',
-                                        'blockquote',
-                                        'codeBlock',
-                                        'heading',
-                                        'table',
-                                        'link',
-                                    ])
-                                    ->columnSpanFull(),
-
-                            ]),
+                        Group::make(
+                            static::getExpenseFormFields()
+                        )
+                           
                     ])
             ]);
     }
@@ -330,85 +158,8 @@ class ExpenseResource extends BaseResource
                 '2xl' => 3,
             ])
 
-            ->filters([
-
-                SelectFilter::make('user')
-                    ->label(__('resources.fields.user'))
-                    ->relationship('user', 'name')
-                    ->multiple()
-                    ->preload()
-                    ->placeholder(''),
-                SelectFilter::make('category')
-                    ->label(__('resources.fields.category'))
-                    ->relationship('category', 'name')
-                    ->multiple()
-                    ->preload()
-                    ->placeholder(''),
-                SelectFilter::make('supplier')
-                    ->label(__('resources.fields.supplier'))
-                    ->relationship('supplier', 'name')
-                    ->multiple()
-                    ->preload()
-                    ->placeholder(''),
-                Filter::make('date')
-                    ->label(__('resources.fields.date'))
-                    ->form([
-                        DatePicker::make("date_from")->label(__('resources.filters.date_from')),
-                        DatePicker::make("date_until")->label(__('resources.filters.date_until')),
-                    ])->columns(2)
-                    ->query(function (Builder $query, array $data): Builder {
-                        return $query
-                            ->when(
-                                $data['date_from'],
-                                fn(Builder $query, $date): Builder => $query->whereDate('date', '>=', $date),
-                            )
-                            ->when(
-                                $data['date_until'],
-                                fn(Builder $query, $date): Builder => $query->whereDate('date', '<=', $date),
-                            );
-                    })
-                    ->indicateUsing(function (array $data): ?string {
-                        if (! $data['date_from'] && ! $data['date_until']) {
-                            return null;
-                        } elseif ($data['date_from'] && ! $data['date_until']) {
-                            return 'С ' . Carbon::parse($data['date_from'])->translatedFormat('d F Y');
-                        } elseif (! $data['date_from'] && $data['date_until']) {
-                            return 'До ' . Carbon::parse($data['date_until'])->translatedFormat('d F Y');
-                        } else {
-                            return 'Период: ' . Carbon::parse($data['date_from'])->translatedFormat('d F Y') . ' – ' . Carbon::parse($data['date_until'])->translatedFormat('d F Y');
-                        }
-                    }),
-                Filter::make('sum')
-                    ->label(__('resources.fields.sum'))
-                    ->form([
-                        TextInput::make('sum_min')
-                            ->numeric()
-                            ->label(__('resources.filters.sum_min')),
-                        TextInput::make('sum_max')
-                            ->numeric()
-                            ->label(__('resources.filters.sum_max')),
-                    ])
-                    ->columns(2)
-                    ->query(function (Builder $query, array $data): Builder {
-                        return $query
-                            ->when($data['sum_min'], fn(Builder $query, $min) => $query->where('sum', '>=', $min))
-                            ->when($data['sum_max'], fn(Builder $query, $max) => $query->where('sum', '<=', $max));
-                    })
-                    ->indicateUsing(function (array $data): ?string {
-                        $min = $data['sum_min'] ?? null;
-                        $max = $data['sum_max'] ?? null;
-
-                        if (! $min && ! $max) {
-                            return null;
-                        } elseif ($min && ! $max) {
-                            return 'С ' . number_format($min, 2, ',', ' ') . ' MDL';
-                        } elseif (! $min && $max) {
-                            return 'До ' . number_format($max, 2, ',', ' ') . ' MDL';
-                        } else {
-                            return 'Интервал суммы: ' . number_format($min, 2, ',', ' ') . ' – ' . number_format($max, 2, ',', ' ') . ' MDL';
-                        }
-                    }),
-            ])
+            ->filters(static::getExpenseTableFilters(true))
+            ->recordClasses('expense-record')
             ->defaultGroup(
                 TableGroup::make('date')
                     ->getTitleFromRecordUsing(function (Expense $record): string {

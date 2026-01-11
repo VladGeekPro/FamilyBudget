@@ -9,22 +9,31 @@ use App\Models\ExpenseChangeRequestVote;
 use App\Models\User;
 use Filament\Forms;
 use Filament\Forms\Form;
-use Filament\Resources\Resource;
+use App\Filament\Resources\Base\BaseResource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Tables\Actions\Action;
+use Filament\Tables\Columns\Layout\Split;
+use Filament\Tables\Columns\Layout\Stack;
+use Filament\Tables\Columns\Layout\Grid as TableGrid;
+use Filament\Tables\Columns\Layout\Panel;
+use Filament\Tables\Columns\TextColumn\TextColumnSize;
+use Filament\Support\Enums\FontWeight;
 use Filament\Forms\Components\Actions\Action as FormAction;
 use Filament\Notifications\Notification;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Filament\Support\Enums\MaxWidth;
 use Filament\Forms\Components\Grid;
+use Filament\Forms\Components\Group;
 
-class ExpenseChangeRequestResource extends Resource
+class ExpenseChangeRequestResource extends BaseResource
 {
     protected static ?string $model = ExpenseChangeRequest::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-document-text';
+    protected static ?string $navigationGroup = 'Транзакции';
+
+    protected static ?string $navigationIcon = 'heroicon-o-document-arrow-up';
 
     protected static ?string $navigationLabel = 'Запросы на изменения';
 
@@ -32,12 +41,39 @@ class ExpenseChangeRequestResource extends Resource
 
     protected static ?string $pluralModelLabel = 'Запросы на изменения';
 
-    protected static ?int $navigationSort = 5;
+    protected static ?int $navigationSort = 4;
 
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
+
+                Forms\Components\Section::make('Информация о запросе')
+                    ->schema([
+                        Forms\Components\Select::make('user_id')
+                            ->label(__('resources.fields.user'))
+                            ->relationship('user', 'name')
+                            ->default(auth()->id())
+                            ->disabled()
+                            ->dehydrated(),
+
+                        Forms\Components\Select::make('status')
+                            ->label('Статус')
+                            ->options([
+                                'pending' => 'Ожидает голосования',
+                                'completed' => 'Завершён',
+                                'rejected' => 'Отклонён',
+                            ])
+                            ->disabled()
+                            ->default('pending'),
+
+                        Forms\Components\DateTimePicker::make('applied_at')
+                            ->label(__('resources.fields.applied_at'))
+                            ->disabled(),
+                    ])
+                    ->columns(3)
+                    ->visible(fn(string $operation) => $operation === 'edit'),
+
                 Grid::make(2)
                     ->schema([
                         Forms\Components\Select::make('action_type')
@@ -47,14 +83,17 @@ class ExpenseChangeRequestResource extends Resource
                             ->default('edit')
                             ->live()
                             ->afterStateUpdated(function ($state, Forms\Set $set) {
+
+                                $set('requested_user_id', null);
+                                $set('expense_id', null);
+                                $set('requested_date', null);
+                                $set('requested_category_id', null);
+                                $set('requested_supplier_id', null);
+                                $set('requested_sum', null);
+                                $set('requested_notes', null);
+
                                 if ($state === 'create') {
-                                    $set('expense_id', null);
                                     $set('requested_user_id', auth()->id());
-                                    $set('requested_date', null);
-                                    $set('requested_category_id', null);
-                                    $set('requested_supplier_id', null);
-                                    $set('requested_sum', null);
-                                    $set('requested_notes', null);
                                 }
                             }),
 
@@ -88,13 +127,15 @@ class ExpenseChangeRequestResource extends Resource
                                     $expense->id => "#{$expense->id} - {$expense->supplier->name} - {$expense->sum} MDL ({$expense->date->format('d.m.Y')})",
                                 ]))
                             ->getSearchResultsUsing(function (string $search) {
-                                return \App\Models\Expense::query()
+                                return Expense::previousMonthsExpenses()
+                                    ->orderBy('id', 'desc')
                                     ->where(function ($query) use ($search) {
                                         $query->whereHas('supplier', function ($q) use ($search) {
                                             $q->where('name', 'like', "%{$search}%");
                                         })
                                             ->orWhere('notes', 'like', "%{$search}%")
-                                            ->orWhere('sum', 'like', "%{$search}%");
+                                            ->orWhere('sum', 'like', "%{$search}%")
+                                            ->orWhere('id', $search);
                                     })
                                     ->limit(50)
                                     ->get()
@@ -110,6 +151,7 @@ class ExpenseChangeRequestResource extends Resource
                                     ->modalContent(fn() => view('filament.resources.expense-change-request.select-expense-table'))
                                     ->modalSubmitAction(false)
                                     ->modalCancelAction(false)
+                                    ->slideOver()
                             )
                             ->required(fn($get) => $get('action_type') !== 'create')
                             ->visible(fn(string $operation, $get) => $operation === 'create' && $get('action_type') !== 'create')
@@ -125,77 +167,13 @@ class ExpenseChangeRequestResource extends Resource
                 Forms\Components\Section::make(__('resources.sections.change_data'))
                     ->description(__('resources.fields.change_data_description'))
                     ->schema([
-                        Forms\Components\Select::make('requested_user_id')
-                            ->label(__('resources.fields.payer'))
-                            ->relationship('requestedUser', 'name')
-                            ->searchable()
-                            ->preload(),
 
-                        Forms\Components\DatePicker::make('requested_date')
-                            ->label(__('resources.fields.date'))
-                            ->displayFormat('d.m.Y'),
+                        Group::make(
+                            static::getExpenseFormFields('requested_', false, true)
+                        ),
 
-                        Forms\Components\Select::make('requested_category_id')
-                            ->label(__('resources.fields.category'))
-                            ->relationship('requestedCategory', 'name')
-                            ->searchable()
-                            ->preload()
-                            ->createOptionForm([
-                                Forms\Components\TextInput::make('name')
-                                    ->label(__('resources.fields.name.inanimate'))
-                                    ->required(),
-                            ]),
-
-                        Forms\Components\Select::make('requested_supplier_id')
-                            ->label(__('resources.fields.supplier'))
-                            ->relationship('requestedSupplier', 'name')
-                            ->searchable()
-                            ->preload()
-                            ->createOptionForm([
-                                Forms\Components\TextInput::make('name')
-                                    ->label(__('resources.fields.name.inanimate'))
-                                    ->required(),
-                            ]),
-
-                        Forms\Components\TextInput::make('requested_sum')
-                            ->label(__('resources.fields.sum'))
-                            ->numeric()
-                            ->step(0.01)
-                            ->placeholder('0.00'),
-
-                        Forms\Components\Textarea::make('requested_notes')
-                            ->label(__('resources.fields.notes'))
-                            ->maxLength(500)
-                            ->columnSpanFull(),
                     ])
-                    ->columns(2)
-                    ->columnSpanFull(),
-
-                Forms\Components\Section::make('Информация о запросе')
-                    ->schema([
-                        Forms\Components\Select::make('user_id')
-                            ->label(__('resources.fields.user'))
-                            ->relationship('user', 'name')
-                            ->default(auth()->id())
-                            ->disabled()
-                            ->dehydrated(),
-
-                        Forms\Components\Select::make('status')
-                            ->label('Статус')
-                            ->options([
-                                'pending' => 'Ожидает голосования',
-                                'completed' => 'Завершён',
-                                'rejected' => 'Отклонён',
-                            ])
-                            ->disabled()
-                            ->default('pending'),
-
-                        Forms\Components\DateTimePicker::make('applied_at')
-                            ->label(__('resources.fields.applied_at'))
-                            ->disabled(),
-                    ])
-                    ->columns(3)
-                    ->visible(fn(string $operation) => $operation === 'edit'),
+                    ->visible(fn($get) => $get('action_type') !== 'delete'),
             ]);
     }
 
@@ -203,136 +181,157 @@ class ExpenseChangeRequestResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('id')
-                    ->label('ID')
-                    ->sortable()
-                    ->searchable(),
+                TableGrid::make(['default' => 2])
+                    ->schema([
+                        Tables\Columns\TextColumn::make('created_at')
+                            ->label('Создан')
+                            ->dateTime('d M. Y H:i')
+                            ->color('info'),
+                        Tables\Columns\ImageColumn::make('user.image')
+                            ->circular()
+                            ->height(40)
+                            ->width(40)
+                            ->extraAttributes(['style' => 'margin-left:auto;']),
+                    ]),
 
-                Tables\Columns\BadgeColumn::make('action_type')
-                    ->label('Тип')
-                    ->colors([
-                        'success' => 'create',
-                        'warning' => 'edit',
-                        'danger' => 'delete',
-                    ])
-                    ->formatStateUsing(fn(string $state): string => match ($state) {
-                        'create' => 'Создать',
-                        'edit' => 'Изменить',
-                        'delete' => 'Удалить',
-                        default => $state,
-                    }),
+                Panel::make([
 
-                Tables\Columns\TextColumn::make('expense.supplier.name')
-                    ->label('Поставщик')
-                    ->searchable()
-                    ->sortable()
-                    ->getStateUsing(function (ExpenseChangeRequest $record) {
-                        // Показываем оригинальный поставщик или запрашиваемый
-                        if ($record->expense && $record->expense->supplier) {
-                            return $record->expense->supplier->name;
-                        }
-                        if ($record->requestedSupplier) {
-                            return $record->requestedSupplier->name . ' (новый)';
-                        }
-                        return 'Не указан';
-                    }),
+                    Split::make([
+                         Tables\Columns\IconColumn::make('action_type')
+                            ->label('')
+                            ->icon(fn(string $state): string => match ($state) {
+                                'create' => 'heroicon-o-plus-circle',
+                                'edit' => 'heroicon-o-pencil-square',
+                                'delete' => 'heroicon-o-trash',
+                                default => 'heroicon-o-question-mark-circle',
+                            })
+                            ->color(fn(string $state): string => match ($state) {
+                                'create' => 'success',
+                                'edit' => 'warning',
+                                'delete' => 'danger',
+                                default => 'gray',
+                            })
+                            ->tooltip(fn(string $state): string => match ($state) {
+                                'create' => 'Создать',
+                                'edit' => 'Изменить',
+                                'delete' => 'Удалить',
+                                default => $state,
+                            })
+                            ->size('md')
+                            ->grow(false),
 
-                Tables\Columns\TextColumn::make('sum_display')
-                    ->label('Сумма')
-                    ->getStateUsing(function (ExpenseChangeRequest $record) {
-                        if ($record->expense && $record->expense->sum) {
-                            $original = number_format($record->expense->sum, 2) . ' MDL';
-                            if ($record->requested_sum && $record->requested_sum != $record->expense->sum) {
-                                return $original . ' → ' . number_format($record->requested_sum, 2) . ' MDL';
-                            }
-                            return $original;
-                        }
-                        if ($record->requested_sum) {
-                            return number_format($record->requested_sum, 2) . ' MDL (новая)';
-                        }
-                        return 'Не указана';
-                    })
-                    ->sortable(),
+                        Tables\Columns\TextColumn::make('expense.supplier.name')
+                            ->label('Поставщик')
+                            ->size(TextColumnSize::Medium)
+                            ->weight(FontWeight::Bold)
+                            ->getStateUsing(function (ExpenseChangeRequest $record) {
+                                if ($record->expense && $record->expense->supplier) {
+                                    return $record->expense->supplier->name;
+                                }
+                                if ($record->requestedSupplier) {
+                                    return $record->requestedSupplier->name . ' (новый)';
+                                }
+                                return 'Не указан';
+                            }),
 
-                Tables\Columns\TextColumn::make('user.name')
-                    ->label('Автор')
-                    ->searchable()
-                    ->sortable(),
+                    ])->extraAttributes(['class' => 'gap-2']),
 
-                Tables\Columns\TextColumn::make('changes_summary')
-                    ->label('Изменения')
-                    ->getStateUsing(function (ExpenseChangeRequest $record) {
-                        $changes = [];
+                    Stack::make([
+                        Tables\Columns\TextColumn::make('sum_display')
+                            ->label('Сумма')
+                            ->color('warning')
+                            ->weight(FontWeight::SemiBold)
+                            ->getStateUsing(function (ExpenseChangeRequest $record) {
+                                if ($record->expense && $record->expense->sum) {
+                                    $original = number_format($record->expense->sum, 2) . ' MDL';
+                                    if ($record->requested_sum && $record->requested_sum != $record->expense->sum) {
+                                        return $original . ' → ' . number_format($record->requested_sum, 2) . ' MDL';
+                                    }
+                                    return $original;
+                                }
+                                if ($record->requested_sum) {
+                                    return number_format($record->requested_sum, 2) . ' MDL (новая)';
+                                }
+                                return 'Не указана';
+                            }),
 
-                        if ($record->action_type === 'create') {
-                            return 'Создание нового расхода';
-                        }
+                        Tables\Columns\TextColumn::make('changes_summary')
+                            ->label('Изменения')
+                            ->color('gray')
+                            ->size(TextColumnSize::Small)
+                            ->getStateUsing(function (ExpenseChangeRequest $record) {
+                                $changes = [];
 
-                        if ($record->action_type === 'delete') {
-                            return 'Удаление расхода';
-                        }
+                                if ($record->action_type === 'create') {
+                                    return 'Создание нового расхода';
+                                }
 
-                        // Для редактирования показываем что именно меняется
-                        if ($record->expense) {
-                            if ($record->requested_user_id && $record->requested_user_id != $record->expense->user_id) {
-                                $changes[] = 'Плательщик';
-                            }
-                            if ($record->requested_date && $record->requested_date != $record->expense->date) {
-                                $changes[] = 'Дата';
-                            }
-                            if ($record->requested_category_id && $record->requested_category_id != $record->expense->category_id) {
-                                $changes[] = 'Категория';
-                            }
-                            if ($record->requested_supplier_id && $record->requested_supplier_id != $record->expense->supplier_id) {
-                                $changes[] = 'Поставщик';
-                            }
-                            if ($record->requested_sum !== null && $record->requested_sum != $record->expense->sum) {
-                                $changes[] = 'Сумма';
-                            }
-                            if ($record->requested_notes !== null && $record->requested_notes != $record->expense->notes) {
-                                $changes[] = 'Заметки';
-                            }
-                        }
+                                if ($record->action_type === 'delete') {
+                                    return 'Удаление расхода';
+                                }
 
-                        return !empty($changes) ? implode(', ', $changes) : 'Без изменений';
-                    })
-                    ->wrap(),
+                                if ($record->expense) {
+                                    if ($record->requested_user_id && $record->requested_user_id != $record->expense->user_id) {
+                                        $changes[] = 'Плательщик';
+                                    }
+                                    if ($record->requested_date && $record->requested_date != $record->expense->date) {
+                                        $changes[] = 'Дата';
+                                    }
+                                    if ($record->requested_category_id && $record->requested_category_id != $record->expense->category_id) {
+                                        $changes[] = 'Категория';
+                                    }
+                                    if ($record->requested_supplier_id && $record->requested_supplier_id != $record->expense->supplier_id) {
+                                        $changes[] = 'Поставщик';
+                                    }
+                                    if ($record->requested_sum !== null && $record->requested_sum != $record->expense->sum) {
+                                        $changes[] = 'Сумма';
+                                    }
+                                    if ($record->requested_notes !== null && $record->requested_notes != $record->expense->notes) {
+                                        $changes[] = 'Заметки';
+                                    }
+                                }
 
-                Tables\Columns\BadgeColumn::make('status')
-                    ->label('Статус')
-                    ->colors([
-                        'warning' => 'pending',
-                        'success' => 'completed',
-                        'danger' => 'rejected',
-                    ])
-                    ->formatStateUsing(fn(string $state): string => match ($state) {
-                        'pending' => 'Ожидает',
-                        'completed' => 'Завершён',
-                        'rejected' => 'Отклонён',
-                        default => $state,
-                    }),
+                                return !empty($changes) ? implode(', ', $changes) : 'Без изменений';
+                            })
+                            ->wrap(),
+                    ]),
+                ])->extraAttributes(['class' => 'my-2']),
 
-                Tables\Columns\TextColumn::make('votes_summary')
-                    ->label('Голоса')
-                    ->getStateUsing(function (ExpenseChangeRequest $record) {
-                        $approved = $record->votes()->where('vote', 'approved')->count();
-                        $rejected = $record->votes()->where('vote', 'rejected')->count();
-                        $total = User::count();
-                        $pending = $total - $approved - $rejected;
+                Split::make([
+                    Tables\Columns\BadgeColumn::make('status')
+                        ->label('Статус')
+                        ->colors([
+                            'warning' => 'pending',
+                            'success' => 'completed',
+                            'danger' => 'rejected',
+                        ])
+                        ->formatStateUsing(fn(string $state): string => match ($state) {
+                            'pending' => 'Ожидает',
+                            'completed' => 'Завершён',
+                            'rejected' => 'Отклонён',
+                            default => $state,
+                        }),
 
-                        return "✅ {$approved} | ❌ {$rejected} | ⏳ {$pending}";
-                    }),
+                    Tables\Columns\TextColumn::make('votes_summary')
+                        ->label('Голоса')
+                        ->getStateUsing(function (ExpenseChangeRequest $record) {
+                            $approved = $record->votes()->where('vote', 'approved')->count();
+                            $rejected = $record->votes()->where('vote', 'rejected')->count();
+                            $total = User::count();
+                            $pending = $total - $approved - $rejected;
 
-                Tables\Columns\TextColumn::make('created_at')
-                    ->label('Создан')
-                    ->dateTime('d.m.Y H:i')
-                    ->sortable(),
+                            return "✅ {$approved} | ❌ {$rejected} | ⏳ {$pending}";
+                        })->extraAttributes(['class' => 'justify-end']),
+                ]),
 
-                Tables\Columns\TextColumn::make('applied_at')
-                    ->label('Применён')
-                    ->dateTime('d.m.Y H:i')
-                    ->sortable(),
             ])
+            ->contentGrid([
+                'md' => 2,
+                'lg' => 1,
+                'xl' => 2,
+                '2xl' => 3,
+            ])
+            ->recordClasses('expense-change-request-record')
             ->filters([
                 Tables\Filters\SelectFilter::make('status')
                     ->label('Статус')
