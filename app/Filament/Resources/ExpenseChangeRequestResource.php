@@ -43,6 +43,90 @@ class ExpenseChangeRequestResource extends BaseResource
 
     protected static ?int $navigationSort = 4;
 
+    protected static function getFieldDisplay(ExpenseChangeRequest $record, string $field, ?callable $formatter = null): string
+    {
+        $oldValue = null;
+        $newValue = null;
+
+        switch ($field) {
+            case 'user':
+                $oldValue = $record->expense?->user?->name;
+                $newValue = $record->requestedUser?->name;
+                break;
+            case 'date':
+                $oldValue = $record->expense?->date?->format('d.m.Y');
+                $newValue = $record->requested_date ? \Carbon\Carbon::parse($record->requested_date)->format('d.m.Y') : null;
+                break;
+            case 'category':
+                $oldValue = $record->expense?->category?->name;
+                $newValue = $record->requestedCategory?->name;
+                break;
+            case 'supplier':
+                $oldValue = $record->expense?->supplier?->name;
+                $newValue = $record->requestedSupplier?->name;
+                break;
+            case 'sum':
+                $oldValue = $record->expense?->sum ? number_format($record->expense->sum, 2) . ' MDL' : null;
+                $newValue = $record->requested_sum ? number_format($record->requested_sum, 2) . ' MDL' : null;
+                break;
+            case 'notes':
+                $oldValue = $record->expense?->notes;
+                $newValue = $record->requested_notes;
+                break;
+        }
+
+        if ($formatter) {
+            $oldValue = $formatter($oldValue);
+            $newValue = $formatter($newValue);
+        }
+
+        if ($record->action_type === 'create') {
+            return $newValue ?? 'Не указан' . ($field === 'notes' ? 'ы' : '');
+        }
+
+        if ($record->action_type === 'delete') {
+            return $oldValue ?? 'Не указан' . ($field === 'notes' ? 'ы' : '');
+        }
+
+        if ($oldValue && $newValue && $oldValue !== $newValue) {
+            return $oldValue . ' → ' . $newValue;
+        }
+
+        return $oldValue ?? 'Не указан' . ($field === 'notes' ? 'ы' : '');
+    }
+
+    protected static function getFieldColor(ExpenseChangeRequest $record, string $field): string
+    {
+        if ($record->action_type === 'create' || $record->action_type === 'delete') {
+            return 'gray';
+        }
+
+        $hasChange = false;
+
+        switch ($field) {
+            case 'user':
+                $hasChange = $record->expense && $record->requested_user_id && $record->requested_user_id != $record->expense->user_id;
+                break;
+            case 'date':
+                $hasChange = $record->expense && $record->requested_date && $record->requested_date != $record->expense->date->format('Y-m-d');
+                break;
+            case 'category':
+                $hasChange = $record->expense && $record->requested_category_id && $record->requested_category_id != $record->expense->category_id;
+                break;
+            case 'supplier':
+                $hasChange = $record->expense && $record->requested_supplier_id && $record->requested_supplier_id != $record->expense->supplier_id;
+                break;
+            case 'sum':
+                $hasChange = $record->expense && $record->requested_sum !== null && $record->requested_sum != $record->expense->sum;
+                break;
+            case 'notes':
+                $hasChange = $record->expense && $record->requested_notes !== null && $record->requested_notes != $record->expense->notes;
+                break;
+        }
+
+        return $hasChange ? 'success' : 'gray';
+    }
+
     public static function form(Form $form): Form
     {
         return $form
@@ -154,7 +238,7 @@ class ExpenseChangeRequestResource extends BaseResource
                                     ->slideOver()
                             )
                             ->required(fn($get) => $get('action_type') !== 'create')
-                            ->visible(fn(string $operation, $get) => $operation === 'create' && $get('action_type') !== 'create')
+                            ->visible(fn($get) => $get('action_type') !== 'create')
                             ->dehydrated(fn($get) => $get('action_type') !== 'create'),
 
                     ]),
@@ -196,104 +280,62 @@ class ExpenseChangeRequestResource extends BaseResource
 
                 Panel::make([
 
-                    Split::make([
-                         Tables\Columns\IconColumn::make('action_type')
-                            ->label('')
-                            ->icon(fn(string $state): string => match ($state) {
-                                'create' => 'heroicon-o-plus-circle',
-                                'edit' => 'heroicon-o-pencil-square',
-                                'delete' => 'heroicon-o-trash',
-                                default => 'heroicon-o-question-mark-circle',
-                            })
-                            ->color(fn(string $state): string => match ($state) {
-                                'create' => 'success',
-                                'edit' => 'warning',
-                                'delete' => 'danger',
-                                default => 'gray',
-                            })
-                            ->tooltip(fn(string $state): string => match ($state) {
-                                'create' => 'Создать',
-                                'edit' => 'Изменить',
-                                'delete' => 'Удалить',
-                                default => $state,
-                            })
-                            ->size('md')
-                            ->grow(false),
+                    Tables\Columns\IconColumn::make('action_type')
+                        ->label('')
+                        ->icon(fn(string $state): string => match ($state) {
+                            'create' => 'heroicon-o-plus-circle',
+                            'edit' => 'heroicon-o-pencil-square',
+                            'delete' => 'heroicon-o-trash',
+                            default => 'heroicon-o-question-mark-circle',
+                        })
+                        ->color(fn(string $state): string => match ($state) {
+                            'create' => 'success',
+                            'edit' => 'warning',
+                            'delete' => 'danger',
+                            default => 'gray',
+                        })
+                        ->size('md')
+                        ->grow(false)
+                        ->extraAttributes(['class' => 'mb-2']),
 
-                        Tables\Columns\TextColumn::make('expense.supplier.name')
+                    Stack::make([
+                        Tables\Columns\TextColumn::make('user_display')
+                            ->label('Plательщик')
+                            ->getStateUsing(fn(ExpenseChangeRequest $record) => static::getFieldDisplay($record, 'user'))
+                            ->color(fn(ExpenseChangeRequest $record) => static::getFieldColor($record, 'user')),
+
+                        Tables\Columns\TextColumn::make('date_display')
+                            ->label('Дата')
+                            ->size(TextColumnSize::Small)
+                            ->getStateUsing(fn(ExpenseChangeRequest $record) => static::getFieldDisplay($record, 'date'))
+                            ->color(fn(ExpenseChangeRequest $record) => static::getFieldColor($record, 'date')),
+
+                        Tables\Columns\TextColumn::make('category_display')
+                            ->label('Категория')
+                            ->size(TextColumnSize::Small)
+                            ->getStateUsing(fn(ExpenseChangeRequest $record) => static::getFieldDisplay($record, 'category'))
+                            ->color(fn(ExpenseChangeRequest $record) => static::getFieldColor($record, 'category')),
+
+                        Tables\Columns\TextColumn::make('supplier_display')
                             ->label('Поставщик')
                             ->size(TextColumnSize::Medium)
                             ->weight(FontWeight::Bold)
-                            ->getStateUsing(function (ExpenseChangeRequest $record) {
-                                if ($record->expense && $record->expense->supplier) {
-                                    return $record->expense->supplier->name;
-                                }
-                                if ($record->requestedSupplier) {
-                                    return $record->requestedSupplier->name . ' (новый)';
-                                }
-                                return 'Не указан';
-                            }),
+                            ->getStateUsing(fn(ExpenseChangeRequest $record) => static::getFieldDisplay($record, 'supplier'))
+                            ->color(fn(ExpenseChangeRequest $record) => static::getFieldColor($record, 'supplier')),
 
-                    ])->extraAttributes(['class' => 'gap-2']),
-
-                    Stack::make([
                         Tables\Columns\TextColumn::make('sum_display')
                             ->label('Сумма')
-                            ->color('warning')
                             ->weight(FontWeight::SemiBold)
-                            ->getStateUsing(function (ExpenseChangeRequest $record) {
-                                if ($record->expense && $record->expense->sum) {
-                                    $original = number_format($record->expense->sum, 2) . ' MDL';
-                                    if ($record->requested_sum && $record->requested_sum != $record->expense->sum) {
-                                        return $original . ' → ' . number_format($record->requested_sum, 2) . ' MDL';
-                                    }
-                                    return $original;
-                                }
-                                if ($record->requested_sum) {
-                                    return number_format($record->requested_sum, 2) . ' MDL (новая)';
-                                }
-                                return 'Не указана';
-                            }),
+                            ->getStateUsing(fn(ExpenseChangeRequest $record) => static::getFieldDisplay($record, 'sum'))
+                            ->color(fn(ExpenseChangeRequest $record) => static::getFieldColor($record, 'sum')),
 
-                        Tables\Columns\TextColumn::make('changes_summary')
-                            ->label('Изменения')
-                            ->color('gray')
+                        Tables\Columns\TextColumn::make('notes_display')
+                            ->label('Заметки')
                             ->size(TextColumnSize::Small)
-                            ->getStateUsing(function (ExpenseChangeRequest $record) {
-                                $changes = [];
-
-                                if ($record->action_type === 'create') {
-                                    return 'Создание нового расхода';
-                                }
-
-                                if ($record->action_type === 'delete') {
-                                    return 'Удаление расхода';
-                                }
-
-                                if ($record->expense) {
-                                    if ($record->requested_user_id && $record->requested_user_id != $record->expense->user_id) {
-                                        $changes[] = 'Плательщик';
-                                    }
-                                    if ($record->requested_date && $record->requested_date != $record->expense->date) {
-                                        $changes[] = 'Дата';
-                                    }
-                                    if ($record->requested_category_id && $record->requested_category_id != $record->expense->category_id) {
-                                        $changes[] = 'Категория';
-                                    }
-                                    if ($record->requested_supplier_id && $record->requested_supplier_id != $record->expense->supplier_id) {
-                                        $changes[] = 'Поставщик';
-                                    }
-                                    if ($record->requested_sum !== null && $record->requested_sum != $record->expense->sum) {
-                                        $changes[] = 'Сумма';
-                                    }
-                                    if ($record->requested_notes !== null && $record->requested_notes != $record->expense->notes) {
-                                        $changes[] = 'Заметки';
-                                    }
-                                }
-
-                                return !empty($changes) ? implode(', ', $changes) : 'Без изменений';
-                            })
-                            ->wrap(),
+                            ->getStateUsing(fn(ExpenseChangeRequest $record) => static::getFieldDisplay($record, 'notes'))
+                            ->color(fn(ExpenseChangeRequest $record) => static::getFieldColor($record, 'notes'))
+                            ->wrap()
+                            ->limit(100),
                     ]),
                 ])->extraAttributes(['class' => 'my-2']),
 
