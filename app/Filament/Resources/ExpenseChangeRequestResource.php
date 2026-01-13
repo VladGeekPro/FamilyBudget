@@ -83,31 +83,7 @@ class ExpenseChangeRequestResource extends BaseResource
         ];
     }
 
-    protected static function hasFieldChanged(ExpenseChangeRequest $record, string $field): bool
-    {
-        if ($record->action_type !== 'edit') {
-            return true;
-        }
-
-        switch ($field) {
-            case 'user':
-                return $record->requested_user_id != $record->expense->user_id;
-            case 'date':
-                return $record->requested_date != $record->expense->date;
-            case 'category':
-                return $record->requested_category_id != $record->expense->category_id;
-            case 'supplier':
-                return $record->requested_supplier_id != $record->expense->supplier_id;
-            case 'sum':
-                return $record->requested_sum != $record->expense->sum;
-            case 'notes':
-                return $record->requested_notes != $record->expense->notes;
-            default:
-                return false;
-        }
-    }
-
-     protected static function getFieldColor(ExpenseChangeRequest $record, string $field): string
+    protected static function getFieldColor(ExpenseChangeRequest $record, string $field): string
     {
 
         if ($record->action_type === 'delete') {
@@ -264,6 +240,11 @@ class ExpenseChangeRequestResource extends BaseResource
                     ->required()
                     ->columnSpanFull(),
 
+                Forms\Components\ViewField::make('change_comparison')
+                    ->label('')
+                    ->view('filament.forms.components.change-comparison')
+                    ->visible(fn(string $operation) => $operation === 'view' || $operation === 'edit'),
+
                 Forms\Components\Section::make(__('resources.sections.change_data'))
                     ->description(__('resources.fields.change_data_description'))
                     ->schema([
@@ -273,7 +254,7 @@ class ExpenseChangeRequestResource extends BaseResource
                         ),
 
                     ])
-                    ->visible(fn($get) => $get('action_type') !== 'delete'),
+                    ->visible(fn($get, string $operation) => $operation === 'create' && $get('action_type') !== 'delete'),
             ]);
     }
 
@@ -296,60 +277,59 @@ class ExpenseChangeRequestResource extends BaseResource
 
                 Panel::make([
 
-                    Tables\Columns\IconColumn::make('action_type')
-                        ->label('')
-                        ->icon(fn(string $state): string => match ($state) {
-                            'create' => 'heroicon-o-plus-circle',
-                            'edit' => 'heroicon-o-pencil-square',
-                            'delete' => 'heroicon-o-trash',
-                            default => 'heroicon-o-question-mark-circle',
-                        })
-                        ->color(fn(string $state): string => match ($state) {
-                            'create' => 'success',
-                            'edit' => 'warning',
-                            'delete' => 'danger',
-                            default => 'gray',
-                        })
-                        ->size('md')
-                        ->grow(false)
-                        ->extraAttributes(['class' => 'mb-2']),
+                    Split::make([
+                        Tables\Columns\IconColumn::make('action_type')
+                            ->label('')
+                            ->icon(fn(string $state): string => match ($state) {
+                                'create' => 'heroicon-o-plus-circle',
+                                'edit' => 'heroicon-o-pencil-square',
+                                'delete' => 'heroicon-o-trash',
+                                default => 'heroicon-o-question-mark-circle',
+                            })
+                            ->color(fn(string $state): string => match ($state) {
+                                'create' => 'success',
+                                'edit' => 'warning',
+                                'delete' => 'danger',
+                                default => 'gray',
+                            })
+                            ->size('md')
+                            ->grow(false),
+
+                        Tables\Columns\TextColumn::make('action_type_label')
+                            ->state(fn($record) => __('resources.fields.action_type.options')[$record->action_type] )
+                            ->color(fn($record): string => match ($record->action_type) {
+                                'create' => 'success',
+                                'edit' => 'warning',
+                                'delete' => 'danger',
+                                default => 'gray',
+                            }),
+                    ])->extraAttributes(['class' => 'mb-2']),
 
                     Stack::make([
-                        Tables\Columns\ViewColumn::make('user_display')
-                            ->label('👤 Плательщик')
-                            ->view('filament.tables.columns.change-field')
-                            ->state(fn(ExpenseChangeRequest $record) => static::getFieldDisplay($record, 'user'))
-                            ->visible(fn(?ExpenseChangeRequest $record) => $record ? static::hasFieldChanged($record, 'user') : true),
 
                         Tables\Columns\ViewColumn::make('date_display')
-                            ->label('📅 Дата')
                             ->view('filament.tables.columns.change-field')
-                            ->state(fn(ExpenseChangeRequest $record) => static::getFieldDisplay($record, 'date'))
-                            ->visible(fn(?ExpenseChangeRequest $record) => $record ? static::hasFieldChanged($record, 'date') : true),
+                            ->state(fn(ExpenseChangeRequest $record) => static::getFieldDisplay($record, 'date')),
+
+                        Tables\Columns\ViewColumn::make('user_display')
+                            ->view('filament.tables.columns.change-field')
+                            ->state(fn(ExpenseChangeRequest $record) => static::getFieldDisplay($record, 'user')),
 
                         Tables\Columns\ViewColumn::make('category_display')
-                            ->label('🏷️ Категория')
                             ->view('filament.tables.columns.change-field')
-                            ->state(fn(ExpenseChangeRequest $record) => static::getFieldDisplay($record, 'category'))
-                            ->visible(fn(?ExpenseChangeRequest $record) => $record ? static::hasFieldChanged($record, 'category') : true),
+                            ->state(fn(ExpenseChangeRequest $record) => static::getFieldDisplay($record, 'category')),
 
                         Tables\Columns\ViewColumn::make('supplier_display')
-                            ->label('🏪 Поставщик')
                             ->view('filament.tables.columns.change-field')
-                            ->state(fn(ExpenseChangeRequest $record) => static::getFieldDisplay($record, 'supplier'))
-                            ->visible(fn(?ExpenseChangeRequest $record) => $record ? static::hasFieldChanged($record, 'supplier') : true),
+                            ->state(fn(ExpenseChangeRequest $record) => static::getFieldDisplay($record, 'supplier')),
 
                         Tables\Columns\ViewColumn::make('sum_display')
-                            ->label('💰 Сумма')
                             ->view('filament.tables.columns.change-field')
-                            ->state(fn(ExpenseChangeRequest $record) => static::getFieldDisplay($record, 'sum'))
-                            ->visible(fn(?ExpenseChangeRequest $record) => $record ? static::hasFieldChanged($record, 'sum') : true),
+                            ->state(fn(ExpenseChangeRequest $record) => static::getFieldDisplay($record, 'sum')),
 
                         Tables\Columns\ViewColumn::make('notes_display')
-                            ->label('📝 Заметки')
                             ->view('filament.tables.columns.change-field')
-                            ->state(fn(ExpenseChangeRequest $record) => static::getFieldDisplay($record, 'notes'))
-                            ->visible(fn(?ExpenseChangeRequest $record) => $record ? static::hasFieldChanged($record, 'notes') : true),
+                            ->state(fn(ExpenseChangeRequest $record) => static::getFieldDisplay($record, 'notes')),
                     ])->space(3),
                 ])->extraAttributes(['class' => 'my-2']),
 
