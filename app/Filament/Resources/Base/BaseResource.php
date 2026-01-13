@@ -153,10 +153,10 @@ abstract class BaseResource extends Resource
         }
 
         return [
-            TextInput::make($prefix . 'id')
+            TextInput::make( 'id' )
                 ->label(__('resources.fields.id'))
                 ->disabled()
-                ->visible(fn(?Model $record) => $record !== null)
+                ->visible(fn(?Model $record) => $record !== null && $record instanceof Expense)
                 ->columnSpanFull(),
 
             $dateField,

@@ -43,7 +43,7 @@ class ExpenseChangeRequestResource extends BaseResource
 
     protected static ?int $navigationSort = 4;
 
-    protected static function getFieldDisplay(ExpenseChangeRequest $record, string $field): string
+    protected static function getFieldDisplay(ExpenseChangeRequest $record, string $field): array
     {
         $oldValue = null;
         $newValue = null;
@@ -75,17 +75,12 @@ class ExpenseChangeRequestResource extends BaseResource
                 break;
         }
 
-        if ($record->action_type === 'delete') {
-            return $oldValue ?? 'Не указано';
-        } elseif ($record->action_type === 'create') {
-            return $newValue ?? 'Не указано';
-        } elseif ($oldValue !== $newValue) {
-            $old = $oldValue ?? 'Не указано';
-            $new = $newValue ?? 'Не указано';
-            return $old . ' ➜ ' . $new;
-        } else {
-            return $oldValue ?? 'Не указано';
-        }
+        return [
+            'action_type' => $record->action_type,
+            'old' => $oldValue ?? 'Не указано',
+            'new' => $newValue ?? 'Не указано',
+            'changed' => $oldValue !== $newValue,
+        ];
     }
 
     protected static function hasFieldChanged(ExpenseChangeRequest $record, string $field): bool
@@ -112,7 +107,7 @@ class ExpenseChangeRequestResource extends BaseResource
         }
     }
 
-    protected static function getFieldColor(ExpenseChangeRequest $record, string $field): string
+     protected static function getFieldColor(ExpenseChangeRequest $record, string $field): string
     {
 
         if ($record->action_type === 'delete') {
@@ -320,50 +315,42 @@ class ExpenseChangeRequestResource extends BaseResource
                         ->extraAttributes(['class' => 'mb-2']),
 
                     Stack::make([
-                        Tables\Columns\TextColumn::make('user_display')
+                        Tables\Columns\ViewColumn::make('user_display')
                             ->label('👤 Плательщик')
-                            ->getStateUsing(fn(ExpenseChangeRequest $record) => static::getFieldDisplay($record, 'user'))
-                            ->color(fn(ExpenseChangeRequest $record) => static::getFieldColor($record, 'user'))
-                            ->weight(fn(ExpenseChangeRequest $record) => static::hasFieldChanged($record, 'user') ? FontWeight::Bold : FontWeight::Medium)
+                            ->view('filament.tables.columns.change-field')
+                            ->state(fn(ExpenseChangeRequest $record) => static::getFieldDisplay($record, 'user'))
                             ->visible(fn(?ExpenseChangeRequest $record) => $record ? static::hasFieldChanged($record, 'user') : true),
 
-                        Tables\Columns\TextColumn::make('date_display')
+                        Tables\Columns\ViewColumn::make('date_display')
                             ->label('📅 Дата')
-                            ->getStateUsing(fn(ExpenseChangeRequest $record) => static::getFieldDisplay($record, 'date'))
-                            ->color(fn(ExpenseChangeRequest $record) => static::getFieldColor($record, 'date'))
-                            ->weight(fn(ExpenseChangeRequest $record) => static::hasFieldChanged($record, 'date') ? FontWeight::Bold : FontWeight::Medium)
+                            ->view('filament.tables.columns.change-field')
+                            ->state(fn(ExpenseChangeRequest $record) => static::getFieldDisplay($record, 'date'))
                             ->visible(fn(?ExpenseChangeRequest $record) => $record ? static::hasFieldChanged($record, 'date') : true),
 
-                        Tables\Columns\TextColumn::make('category_display')
+                        Tables\Columns\ViewColumn::make('category_display')
                             ->label('🏷️ Категория')
-                            ->getStateUsing(fn(ExpenseChangeRequest $record) => static::getFieldDisplay($record, 'category'))
-                            ->color(fn(ExpenseChangeRequest $record) => static::getFieldColor($record, 'category'))
-                            ->weight(fn(ExpenseChangeRequest $record) => static::hasFieldChanged($record, 'category') ? FontWeight::Bold : FontWeight::Medium)
+                            ->view('filament.tables.columns.change-field')
+                            ->state(fn(ExpenseChangeRequest $record) => static::getFieldDisplay($record, 'category'))
                             ->visible(fn(?ExpenseChangeRequest $record) => $record ? static::hasFieldChanged($record, 'category') : true),
 
-                        Tables\Columns\TextColumn::make('supplier_display')
+                        Tables\Columns\ViewColumn::make('supplier_display')
                             ->label('🏪 Поставщик')
-                            ->getStateUsing(fn(ExpenseChangeRequest $record) => static::getFieldDisplay($record, 'supplier'))
-                            ->color(fn(ExpenseChangeRequest $record) => static::getFieldColor($record, 'supplier'))
-                            ->weight(fn(ExpenseChangeRequest $record) => static::hasFieldChanged($record, 'supplier') ? FontWeight::Bold : FontWeight::Medium)
+                            ->view('filament.tables.columns.change-field')
+                            ->state(fn(ExpenseChangeRequest $record) => static::getFieldDisplay($record, 'supplier'))
                             ->visible(fn(?ExpenseChangeRequest $record) => $record ? static::hasFieldChanged($record, 'supplier') : true),
 
-                        Tables\Columns\TextColumn::make('sum_display')
+                        Tables\Columns\ViewColumn::make('sum_display')
                             ->label('💰 Сумма')
-                            ->getStateUsing(fn(ExpenseChangeRequest $record) => static::getFieldDisplay($record, 'sum'))
-                            ->color(fn(ExpenseChangeRequest $record) => static::getFieldColor($record, 'sum'))
-                            ->weight(fn(ExpenseChangeRequest $record) => static::hasFieldChanged($record, 'sum') ? FontWeight::Bold : FontWeight::Medium)
+                            ->view('filament.tables.columns.change-field')
+                            ->state(fn(ExpenseChangeRequest $record) => static::getFieldDisplay($record, 'sum'))
                             ->visible(fn(?ExpenseChangeRequest $record) => $record ? static::hasFieldChanged($record, 'sum') : true),
 
-                        Tables\Columns\TextColumn::make('notes_display')
+                        Tables\Columns\ViewColumn::make('notes_display')
                             ->label('📝 Заметки')
-                            ->getStateUsing(fn(ExpenseChangeRequest $record) => static::getFieldDisplay($record, 'notes'))
-                            ->color(fn(ExpenseChangeRequest $record) => static::getFieldColor($record, 'notes'))
-                            ->weight(fn(ExpenseChangeRequest $record) => static::hasFieldChanged($record, 'notes') ? FontWeight::Bold : FontWeight::Medium)
-                            ->visible(fn(?ExpenseChangeRequest $record) => $record ? static::hasFieldChanged($record, 'notes') : true)
-                            ->wrap()
-                            ->limit(100),
-                    ])->space(2),
+                            ->view('filament.tables.columns.change-field')
+                            ->state(fn(ExpenseChangeRequest $record) => static::getFieldDisplay($record, 'notes'))
+                            ->visible(fn(?ExpenseChangeRequest $record) => $record ? static::hasFieldChanged($record, 'notes') : true),
+                    ])->space(3),
                 ])->extraAttributes(['class' => 'my-2']),
 
                 Split::make([
