@@ -91,20 +91,29 @@ abstract class BaseResource extends Resource
 
     /**
      * Общая схема полей для расходов (используется в Expense и ExpenseChangeRequest)
-     * @param string $prefix Префикс для имен полей (например, 'requested_')
+     * @param string $prefix Префикс для имен полей (например, 'requested_' или 'current_')
      * @param bool $forExpense Применять ли ограничения для модели Expense (minDate и default)
      * @param bool $forChangeRequest Применять ли условия для ExpenseChangeRequest (required и dehydrated зависят от action_type)
      */
     public static function getExpenseFormFields(string $prefix = '', bool $forExpense = true, bool $forChangeRequest = false): array
     {
+        $isCurrentField = str_starts_with($prefix, 'current_');
+        
         $dateField = DatePicker::make($prefix . 'date')
             ->label(__('resources.fields.date'))
             ->live(onBlur: true)
             ->afterStateUpdated(fn($livewire) => $livewire->validateOnly('data.' . $prefix . 'date'));
 
-        if ($forChangeRequest) {
+        if ($isCurrentField) {
+            // Для current_* полей логика зависит от action_type
+            $dateField
+                ->disabled(fn($get) => $get('action_type') === 'delete' || $get('action_type') === 'edit')
+                ->placeholder(fn($get) => $get('action_type') === 'create' ? '-' : null)
+                ->dehydrated();
+        } elseif ($forChangeRequest) {
             $dateField
                 ->required(fn($get) => $get('action_type') !== 'delete')
+                ->disabled(fn($get) => $get('action_type') === 'delete')
                 ->dehydrated(fn($get) => $get('action_type') !== 'delete');
         } else {
             $dateField->required();
@@ -135,9 +144,15 @@ abstract class BaseResource extends Resource
             ->loadingMessage(__('resources.notifications.load.users'))
             ->noSearchResultsMessage(__('resources.notifications.skip.users'));
 
-        if ($forChangeRequest) {
+        if ($isCurrentField) {
+            $userField
+                ->disabled(fn($get) => $get('action_type') === 'delete' || $get('action_type') === 'edit')
+                ->placeholder(fn($get) => $get('action_type') === 'create' ? '-' : null)
+                ->dehydrated();
+        } elseif ($forChangeRequest) {
             $userField
                 ->required(fn($get) => $get('action_type') !== 'delete')
+                ->disabled(fn($get) => $get('action_type') === 'delete')
                 ->dehydrated(fn($get) => $get('action_type') !== 'delete');
         } else {
             $userField->required();
@@ -150,6 +165,170 @@ abstract class BaseResource extends Resource
 
             $userField
                 ->default(auth()->user()->id);
+        }
+
+        $categoryField = Select::make($prefix . 'category_id')
+            ->label(__('resources.fields.category'))
+            ->live(onBlur: true)
+            ->afterStateUpdated(function ($livewire, $set, $state, $get) use ($prefix) {
+                $supplierId = $get($prefix . 'supplier_id');
+
+                if (filled($supplierId)) {
+                    $supplier = Supplier::find($supplierId);
+
+                    if (blank($state) || ($supplier && $supplier->category_id !== $state)) {
+                        $set($prefix . 'supplier_id', null);
+
+                        Notification::make()
+                            ->title(__('resources.notifications.warn.expense.title'))
+                            ->body(__('resources.notifications.warn.expense.body'))
+                            ->warning()
+                            ->color('warning')
+                            ->duration(5000)
+                            ->send();
+                    }
+
+                    $livewire->validate([
+                        'data.' . $prefix . 'supplier_id' => 'required',
+                        'data.' . $prefix . 'category_id' => 'required'
+                    ]);
+                }
+
+                $livewire->validateOnly('data.' . $prefix . 'category_id');
+            })
+            ->allowHtml()
+            ->options(fn() => Category::all()->mapWithKeys(function ($category) {
+                return [$category->getKey() => static::formatOptionWithIcon($category->name, $category->image)];
+            })->toArray())
+            ->getSearchResultsUsing(function (string $search) {
+                $categories = Category::where('name', 'like', "%{$search}%")->limit(50)->get();
+                return $categories->mapWithKeys(function ($category) {
+                    return [$category->getKey() => static::formatOptionWithIcon($category->name, $category->image)];
+                })->toArray();
+            })
+            ->getOptionLabelUsing(function ($value): string {
+                $category = Category::find($value);
+                return static::formatOptionWithIcon($category->name, $category->image);
+            })
+            ->optionsLimit(10)
+            ->searchable()
+            ->preload()
+            ->loadingMessage(__('resources.notifications.load.categories'))
+            ->noSearchResultsMessage(__('resources.notifications.skip.categories'));
+
+        if ($isCurrentField) {
+            $categoryField
+                ->disabled(fn($get) => $get('action_type') === 'delete' || $get('action_type') === 'edit')
+                ->placeholder(fn($get) => $get('action_type') === 'create' ? '-' : null)
+                ->dehydrated();
+        } elseif ($forChangeRequest) {
+            $categoryField
+                ->required(fn($get) => $get('action_type') !== 'delete')
+                ->disabled(fn($get) => $get('action_type') === 'delete')
+                ->dehydrated(fn($get) => $get('action_type') !== 'delete');
+        } else {
+            $categoryField->required();
+        }
+
+        $supplierField = Select::make($prefix . 'supplier_id')
+            ->label(__('resources.fields.supplier'))
+            ->live(onBlur: true)
+            ->afterStateUpdated(function ($livewire, $set, $state, $get) use ($prefix) {
+                $livewire->validateOnly('data.' . $prefix . 'supplier_id');
+                if (filled($state) && empty($get($prefix . 'category_id'))) {
+                    $set($prefix . 'category_id', Supplier::find($state)->category_id);
+                    $livewire->validateOnly('data.' . $prefix . 'category_id');
+                }
+            })
+            ->allowHtml()
+            ->options(function ($get) use ($prefix) {
+                $query = Supplier::query();
+
+                if (filled($get($prefix . 'category_id'))) {
+                    $query->where('category_id', $get($prefix . 'category_id'));
+                }
+
+                return $query->get()->mapWithKeys(function ($supplier) {
+                    return [$supplier->getKey() => static::formatOptionWithIcon($supplier->name, $supplier->image)];
+                })->toArray();
+            })
+            ->getSearchResultsUsing(function (string $search, $get) use ($prefix) {
+                $query = Supplier::query()->where('name', 'like', "%{$search}%");
+
+                if (filled($get($prefix . 'category_id'))) {
+                    $query->where('category_id', $get($prefix . 'category_id'));
+                }
+
+                return $query->limit(50)->get()->mapWithKeys(function ($supplier) {
+                    return [$supplier->getKey() => static::formatOptionWithIcon($supplier->name, $supplier->image)];
+                })->toArray();
+            })
+            ->getOptionLabelUsing(function ($value): string {
+                $supplier = Supplier::find($value);
+                return static::formatOptionWithIcon($supplier->name, $supplier->image);
+            })
+            ->optionsLimit(10)
+            ->searchable()
+            ->preload()
+            ->selectablePlaceholder(false)
+            ->loadingMessage(__('resources.notifications.load.suppliers'))
+            ->noSearchResultsMessage(__('resources.notifications.skip.suppliers'));
+
+        if ($isCurrentField) {
+            $supplierField
+                ->disabled(fn($get) => $get('action_type') === 'delete' || $get('action_type') === 'edit')
+                ->placeholder(fn($get) => $get('action_type') === 'create' ? '-' : null)
+                ->dehydrated();
+        } elseif ($forChangeRequest) {
+            $supplierField
+                ->required(fn($get) => $get('action_type') !== 'delete')
+                ->disabled(fn($get) => $get('action_type') === 'delete')
+                ->dehydrated(fn($get) => $get('action_type') !== 'delete');
+        } else {
+            $supplierField->required();
+        }
+
+        $sumField = TextInput::make($prefix . 'sum')
+            ->label(__('resources.fields.sum'))
+            ->suffix('MDL')
+            ->numeric()
+            ->placeholder('0.00');
+
+        if ($isCurrentField) {
+            $sumField
+                ->disabled(fn($get) => $get('action_type') === 'delete' || $get('action_type') === 'edit')
+                ->placeholder(fn($get) => $get('action_type') === 'create' ? '-' : '0.00')
+                ->dehydrated();
+        } elseif ($forChangeRequest) {
+            $sumField
+                ->required(fn($get) => $get('action_type') !== 'delete')
+                ->disabled(fn($get) => $get('action_type') === 'delete')
+                ->dehydrated(fn($get) => $get('action_type') !== 'delete');
+        } else {
+            $sumField->required();
+        }
+
+        $notesField = MarkdownEditor::make($prefix . 'notes')
+            ->label(__('resources.fields.notes'))
+            ->disableToolbarButtons([
+                'attachFiles',
+                'blockquote',
+                'codeBlock',
+                'heading',
+                'table',
+                'link',
+            ])
+            ->columnSpanFull();
+
+        if ($isCurrentField) {
+            $notesField
+                ->disabled(fn($get) => $get('action_type') === 'delete' || $get('action_type') === 'edit')
+                ->placeholder(fn($get) => $get('action_type') === 'create' ? '-' : null)
+                ->dehydrated();
+        } elseif ($forChangeRequest) {
+            $notesField
+                ->disabled(fn($get) => $get('action_type') === 'delete')
+                ->dehydrated(fn($get) => $get('action_type') !== 'delete');
         }
 
         return [
@@ -166,124 +345,13 @@ abstract class BaseResource extends Resource
             Group::make()
                 ->columns(2)
                 ->schema([
-                    Select::make($prefix . 'category_id')
-                        ->label(__('resources.fields.category'))
-                        ->required($forChangeRequest ? fn($get) => $get('action_type') !== 'delete' : true)
-                        ->dehydrated($forChangeRequest ? fn($get) => $get('action_type') !== 'delete' : true)
-                        ->live(onBlur: true)
-                        ->afterStateUpdated(function ($livewire, $set, $state, $get) use ($prefix) {
-                            $supplierId = $get($prefix . 'supplier_id');
-
-                            if (filled($supplierId)) {
-                                $supplier = Supplier::find($supplierId);
-
-                                if (blank($state) || ($supplier && $supplier->category_id !== $state)) {
-                                    $set($prefix . 'supplier_id', null);
-
-                                    Notification::make()
-                                        ->title(__('resources.notifications.warn.expense.title'))
-                                        ->body(__('resources.notifications.warn.expense.body'))
-                                        ->warning()
-                                        ->color('warning')
-                                        ->duration(5000)
-                                        ->send();
-                                }
-
-                                $livewire->validate([
-                                    'data.' . $prefix . 'supplier_id' => 'required',
-                                    'data.' . $prefix . 'category_id' => 'required'
-                                ]);
-                            }
-
-                            $livewire->validateOnly('data.' . $prefix . 'category_id');
-                        })
-                        ->allowHtml()
-                        ->options(fn() => Category::all()->mapWithKeys(function ($category) {
-                            return [$category->getKey() => static::formatOptionWithIcon($category->name, $category->image)];
-                        })->toArray())
-                        ->getSearchResultsUsing(function (string $search) {
-                            $categories = Category::where('name', 'like', "%{$search}%")->limit(50)->get();
-                            return $categories->mapWithKeys(function ($category) {
-                                return [$category->getKey() => static::formatOptionWithIcon($category->name, $category->image)];
-                            })->toArray();
-                        })
-                        ->getOptionLabelUsing(function ($value): string {
-                            $category = Category::find($value);
-                            return static::formatOptionWithIcon($category->name, $category->image);
-                        })
-                        ->optionsLimit(10)
-                        ->searchable()
-                        ->preload()
-                        ->loadingMessage(__('resources.notifications.load.categories'))
-                        ->noSearchResultsMessage(__('resources.notifications.skip.categories')),
-
-                    Select::make($prefix . 'supplier_id')
-                        ->label(__('resources.fields.supplier'))
-                        ->required($forChangeRequest ? fn($get) => $get('action_type') !== 'delete' : true)
-                        ->dehydrated($forChangeRequest ? fn($get) => $get('action_type') !== 'delete' : true)
-                        ->live(onBlur: true)
-                        ->afterStateUpdated(function ($livewire, $set, $state, $get) use ($prefix) {
-                            $livewire->validateOnly('data.' . $prefix . 'supplier_id');
-                            if (filled($state) && empty($get($prefix . 'category_id'))) {
-                                $set($prefix . 'category_id', Supplier::find($state)->category_id);
-                                $livewire->validateOnly('data.' . $prefix . 'category_id');
-                            }
-                        })
-                        ->allowHtml()
-                        ->options(function ($get) use ($prefix) {
-                            $query = Supplier::query();
-
-                            if (filled($get($prefix . 'category_id'))) {
-                                $query->where('category_id', $get($prefix . 'category_id'));
-                            }
-
-                            return $query->get()->mapWithKeys(function ($supplier) {
-                                return [$supplier->getKey() => static::formatOptionWithIcon($supplier->name, $supplier->image)];
-                            })->toArray();
-                        })
-                        ->getSearchResultsUsing(function (string $search, $get) use ($prefix) {
-                            $query = Supplier::query()->where('name', 'like', "%{$search}%");
-
-                            if (filled($get($prefix . 'category_id'))) {
-                                $query->where('category_id', $get($prefix . 'category_id'));
-                            }
-
-                            return $query->limit(50)->get()->mapWithKeys(function ($supplier) {
-                                return [$supplier->getKey() => static::formatOptionWithIcon($supplier->name, $supplier->image)];
-                            })->toArray();
-                        })
-                        ->getOptionLabelUsing(function ($value): string {
-                            $supplier = Supplier::find($value);
-                            return static::formatOptionWithIcon($supplier->name, $supplier->image);
-                        })
-                        ->optionsLimit(10)
-                        ->searchable()
-                        ->preload()
-                        ->selectablePlaceholder(false)
-                        ->loadingMessage(__('resources.notifications.load.suppliers'))
-                        ->noSearchResultsMessage(__('resources.notifications.skip.suppliers')),
+                    $categoryField,
+                    $supplierField,
                 ]),
 
+            $sumField,
 
-            TextInput::make($prefix . 'sum')
-                ->label(__('resources.fields.sum'))
-                ->required($forChangeRequest ? fn($get) => $get('action_type') !== 'delete' : true)
-                ->dehydrated($forChangeRequest ? fn($get) => $get('action_type') !== 'delete' : true)
-                ->suffix('MDL')
-                ->numeric()
-                ->placeholder('0.00'),
-
-            MarkdownEditor::make($prefix . 'notes')
-                ->label(__('resources.fields.notes'))
-                ->disableToolbarButtons([
-                    'attachFiles',
-                    'blockquote',
-                    'codeBlock',
-                    'heading',
-                    'table',
-                    'link',
-                ])
-                ->columnSpanFull(),
+            $notesField,
         ];
     }
 

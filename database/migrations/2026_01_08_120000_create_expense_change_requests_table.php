@@ -25,6 +25,14 @@ return new class extends Migration
             $table->decimal('requested_sum', 12, 2)->nullable();
             $table->text('requested_notes')->nullable();
             
+            // Current values snapshot for comparison (stored at creation time)
+            $table->date('current_date')->nullable();
+            $table->foreignId('current_user_id')->nullable()->constrained('users');
+            $table->foreignId('current_category_id')->nullable()->constrained('categories');
+            $table->foreignId('current_supplier_id')->nullable()->constrained('suppliers');
+            $table->decimal('current_sum', 12, 2)->nullable();
+            $table->text('current_notes')->nullable();
+            
             $table->text('notes');
             $table->enum('status', ['pending', 'rejected', 'completed'])->default('pending');
             $table->timestamp('applied_at')->nullable();

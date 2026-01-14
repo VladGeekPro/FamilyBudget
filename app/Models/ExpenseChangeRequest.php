@@ -21,6 +21,12 @@ class ExpenseChangeRequest extends Model
         'requested_supplier_id',
         'requested_sum',
         'requested_notes',
+        'current_date',
+        'current_user_id',
+        'current_category_id',
+        'current_supplier_id',
+        'current_sum',
+        'current_notes',
         'notes',
         'status',
         'applied_at',
@@ -30,6 +36,8 @@ class ExpenseChangeRequest extends Model
         'applied_at' => 'datetime',
         'requested_date' => 'date',
         'requested_sum' => 'decimal:2',
+        'current_date' => 'date',
+        'current_sum' => 'decimal:2',
     ];
 
     // Связи
@@ -56,6 +64,21 @@ class ExpenseChangeRequest extends Model
     public function requestedSupplier(): BelongsTo
     {
         return $this->belongsTo(Supplier::class, 'requested_supplier_id');
+    }
+
+    public function currentUser(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'current_user_id');
+    }
+
+    public function currentCategory(): BelongsTo
+    {
+        return $this->belongsTo(Category::class, 'current_category_id');
+    }
+
+    public function currentSupplier(): BelongsTo
+    {
+        return $this->belongsTo(Supplier::class, 'current_supplier_id');
     }
 
     public function votes(): HasMany

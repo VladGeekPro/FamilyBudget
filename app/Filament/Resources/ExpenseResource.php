@@ -42,11 +42,13 @@ class ExpenseResource extends BaseResource
 
     protected static ?int $navigationSort = 1;
 
+    protected static ?string $navigationIcon = 'heroicon-o-banknotes';
+
+    protected static ?string $navigationLabel = 'Затраты';
+
     protected static ?string $modelLabel = 'затрату';
 
-    protected static ?string $pluralModelLabel = 'Затраты';
-
-    protected static ?string $navigationIcon = 'heroicon-o-banknotes';
+    protected static ?string $pluralModelLabel = 'затраты';
 
     protected static ?string $defaultSortColumn = null;
 

@@ -50,11 +50,13 @@ class DebtResource extends BaseResource
 
     protected static ?int $navigationSort = 2;
 
-    protected static ?string $modelLabel = 'задолженности';
-
-    protected static ?string $pluralModelLabel = 'Задолженности';
-
     protected static ?string $navigationIcon = 'heroicon-o-document-currency-dollar';
+
+    protected static ?string $navigationLabel = 'Задолженности';
+
+    protected static ?string $modelLabel = 'задолженность';
+
+    protected static ?string $pluralModelLabel = 'задолженности';
 
     protected static ?string $defaultSortColumn = 'date';
 

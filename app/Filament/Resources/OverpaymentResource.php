@@ -43,11 +43,13 @@ class OverpaymentResource extends BaseResource
 
     protected static ?int $navigationSort = 3;
 
+    protected static ?string $navigationIcon = 'heroicon-o-circle-stack';
+
+    protected static ?string $navigationLabel = 'Переплаты';
+
     protected static ?string $modelLabel = 'переплату';
 
-    protected static ?string $pluralModelLabel = 'Переплаты';
-
-    protected static ?string $navigationIcon = 'heroicon-o-circle-stack';
+    protected static ?string $pluralModelLabel = 'переплаты';
 
     protected static ?string $defaultSortColumn = null;
 

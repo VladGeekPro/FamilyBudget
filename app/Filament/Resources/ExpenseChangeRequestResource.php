@@ -37,9 +37,9 @@ class ExpenseChangeRequestResource extends BaseResource
 
     protected static ?string $navigationLabel = 'Запросы на изменения';
 
-    protected static ?string $modelLabel = 'Запрос на изменение';
+    protected static ?string $modelLabel = 'запрос на изменение';
 
-    protected static ?string $pluralModelLabel = 'Запросы на изменения';
+    protected static ?string $pluralModelLabel = 'запросы на изменения';
 
     protected static ?int $navigationSort = 4;
 
@@ -184,6 +184,15 @@ class ExpenseChangeRequestResource extends BaseResource
                                 if ($state) {
                                     $expense = \App\Models\Expense::find($state);
                                     if ($expense) {
+                                        // Заполняем current_* поля для сохранения снимка данных
+                                        $set('current_user_id', $expense->user_id);
+                                        $set('current_date', $expense->date?->format('Y-m-d'));
+                                        $set('current_category_id', $expense->category_id);
+                                        $set('current_supplier_id', $expense->supplier_id);
+                                        $set('current_sum', $expense->sum);
+                                        $set('current_notes', $expense->notes);
+                                        
+                                        // Заполняем requested_* поля (для редактирования или удаления)
                                         $set('requested_user_id', $expense->user_id);
                                         $set('requested_date', $expense->date?->format('Y-m-d'));
                                         $set('requested_category_id', $expense->category_id);
@@ -240,21 +249,25 @@ class ExpenseChangeRequestResource extends BaseResource
                     ->required()
                     ->columnSpanFull(),
 
-                Forms\Components\ViewField::make('change_comparison')
-                    ->label('')
-                    ->view('filament.forms.components.change-comparison')
-                    ->visible(fn(string $operation) => $operation === 'view' || $operation === 'edit'),
-
-                Forms\Components\Section::make(__('resources.sections.change_data'))
-                    ->description(__('resources.fields.change_data_description'))
+                Forms\Components\Section::make('Сравнение данных')
+                    ->description('Текущие значения и новые значения для сравнения')
                     ->schema([
+                        Grid::make(2)
+                            ->schema([
+                                Forms\Components\Section::make('Текущее значение')
+                                    ->schema(
+                                        static::getExpenseFormFields('current_', false, false)
+                                    )
+                                    ->columnSpan(1),
 
-                        Group::make(
-                            static::getExpenseFormFields('requested_', false, true)
-                        ),
-
+                                Forms\Components\Section::make('Новое значение')
+                                    ->schema(
+                                        static::getExpenseFormFields('requested_', false, true)
+                                    )
+                                    ->columnSpan(1),
+                            ])
                     ])
-                    ->visible(fn($get, string $operation) => $operation === 'create' && $get('action_type') !== 'delete'),
+                    ->visible(fn($get, string $operation) => $operation === 'create' || $operation === 'view' || $operation === 'edit'),
             ]);
     }
 

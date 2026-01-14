@@ -37,11 +37,13 @@ class CategoryResource extends BaseResource
 
     protected static ?int $navigationSort = 2;
 
+    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+
+    protected static ?string $navigationLabel = 'Категории';
+
     protected static ?string $modelLabel = 'категорию';
 
-    protected static ?string $pluralModelLabel = 'Категории';
-
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $pluralModelLabel = 'категории';
 
     public static function form(Form $form): Form
     {

@@ -35,11 +35,13 @@ class UserResource extends BaseResource
 
     protected static ?int $navigationSort = 3;
 
+    protected static ?string $navigationIcon = 'heroicon-o-user-group';
+
+    protected static ?string $navigationLabel = 'Пользователи';
+
     protected static ?string $modelLabel = 'пользователя';
 
-    protected static ?string $pluralModelLabel = 'Пользователи';
-
-    protected static ?string $navigationIcon = 'heroicon-o-user-group';
+    protected static ?string $pluralModelLabel = 'пользователи';
 
     public static function form(Form $form): Form
     {

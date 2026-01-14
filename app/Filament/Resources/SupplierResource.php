@@ -39,11 +39,13 @@ class SupplierResource extends BaseResource
 
     protected static ?int $navigationSort = 1;
 
+    protected static ?string $navigationIcon = 'heroicon-o-building-storefront';
+
+    protected static ?string $navigationLabel = 'Поставщики';
+
     protected static ?string $modelLabel = 'поставщика';
 
-    protected static ?string $pluralModelLabel = 'Поставщики';
-
-    protected static ?string $navigationIcon = 'heroicon-o-building-storefront';
+    protected static ?string $pluralModelLabel = 'поставщики';
 
     public static function form(Form $form): Form
     {
