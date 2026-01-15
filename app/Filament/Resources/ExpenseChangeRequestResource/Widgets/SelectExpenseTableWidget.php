@@ -97,15 +97,7 @@ class SelectExpenseTableWidget extends BaseWidget
                     ->icon('heroicon-o-check')
                     ->color('success')
                     ->action(function (Expense $record) {
-                        $this->dispatch('expense:selected', 
-                            expenseId: $record->id,
-                            userId: $record->user_id,
-                            date: $record->date?->format('Y-m-d'),
-                            categoryId: $record->category_id,
-                            supplierId: $record->supplier_id,
-                            sum: $record->sum,
-                            notes: $record->notes,
-                        );
+                        $this->dispatch('expense:selected', expenseId: $record->id);
                         $this->js('close()');
                     })
                     ->extraAttributes(['class' => 'ml-auto']),

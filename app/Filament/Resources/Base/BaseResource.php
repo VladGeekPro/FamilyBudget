@@ -108,7 +108,7 @@ abstract class BaseResource extends Resource
             // Для current_* полей логика зависит от action_type
             $dateField
                 ->disabled(fn($get) => $get('action_type') === 'delete' || $get('action_type') === 'edit')
-                ->placeholder(fn($get) => $get('action_type') === 'create' ? '-' : null)
+                ->placeholder('Не указано')
                 ->dehydrated();
         } elseif ($forChangeRequest) {
             $dateField
@@ -147,7 +147,8 @@ abstract class BaseResource extends Resource
         if ($isCurrentField) {
             $userField
                 ->disabled(fn($get) => $get('action_type') === 'delete' || $get('action_type') === 'edit')
-                ->placeholder(fn($get) => $get('action_type') === 'create' ? '-' : null)
+                ->placeholder('Не указано')
+                ->extraattributes(['style' => 'min-height: 2.5rem;'])
                 ->dehydrated();
         } elseif ($forChangeRequest) {
             $userField
@@ -219,7 +220,7 @@ abstract class BaseResource extends Resource
         if ($isCurrentField) {
             $categoryField
                 ->disabled(fn($get) => $get('action_type') === 'delete' || $get('action_type') === 'edit')
-                ->placeholder(fn($get) => $get('action_type') === 'create' ? '-' : null)
+                ->placeholder('Не указано')
                 ->dehydrated();
         } elseif ($forChangeRequest) {
             $categoryField
@@ -277,7 +278,7 @@ abstract class BaseResource extends Resource
         if ($isCurrentField) {
             $supplierField
                 ->disabled(fn($get) => $get('action_type') === 'delete' || $get('action_type') === 'edit')
-                ->placeholder(fn($get) => $get('action_type') === 'create' ? '-' : null)
+                ->placeholder('Не указано')
                 ->dehydrated();
         } elseif ($forChangeRequest) {
             $supplierField
@@ -297,7 +298,7 @@ abstract class BaseResource extends Resource
         if ($isCurrentField) {
             $sumField
                 ->disabled(fn($get) => $get('action_type') === 'delete' || $get('action_type') === 'edit')
-                ->placeholder(fn($get) => $get('action_type') === 'create' ? '-' : '0.00')
+                ->placeholder('Не указано')
                 ->dehydrated();
         } elseif ($forChangeRequest) {
             $sumField
@@ -323,7 +324,7 @@ abstract class BaseResource extends Resource
         if ($isCurrentField) {
             $notesField
                 ->disabled(fn($get) => $get('action_type') === 'delete' || $get('action_type') === 'edit')
-                ->placeholder(fn($get) => $get('action_type') === 'create' ? '-' : null)
+                ->placeholder('Не указано')
                 ->dehydrated();
         } elseif ($forChangeRequest) {
             $notesField

@@ -15,15 +15,17 @@ class CreateExpenseChangeRequest extends CreateBase
     protected static string $resource = ExpenseChangeRequestResource::class;
 
     #[\Livewire\Attributes\On('expense:selected')]
-    public function selectExpense($expenseId, $userId, $date, $categoryId, $supplierId, $sum, $notes)
+    public function selectExpense($expenseId)
     {
         $this->data['expense_id'] = $expenseId;
-        $this->data['requested_user_id'] = $userId;
-        $this->data['requested_date'] = $date;
-        $this->data['requested_category_id'] = $categoryId;
-        $this->data['requested_supplier_id'] = $supplierId;
-        $this->data['requested_sum'] = $sum;
-        $this->data['requested_notes'] = $notes;
+        
+        // Используем общий метод для заполнения полей
+        $actionType = $this->data['action_type'];
+        ExpenseChangeRequestResource::fillExpenseFields(
+            $expenseId, 
+            $actionType, 
+            fn($key, $value) => $this->data[$key] = $value
+        );
     }
 
     protected function mutateFormDataBeforeCreate(array $data): array

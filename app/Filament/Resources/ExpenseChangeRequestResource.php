@@ -119,6 +119,36 @@ class ExpenseChangeRequestResource extends BaseResource
         }
     }
 
+    protected static function fillExpenseFields($expenseId, $actionType, callable $set): void
+    {
+        if (!$expenseId) {
+            return;
+        }
+
+        $expense = Expense::find($expenseId);
+        
+        if (!$expense) {
+            return;
+        }
+
+        $fields = [
+            'user_id' => $expense->user_id,
+            'date' => $expense->date?->format('Y-m-d'),
+            'category_id' => $expense->category_id,
+            'supplier_id' => $expense->supplier_id,
+            'sum' => $expense->sum,
+            'notes' => $expense->notes,
+        ];
+
+        foreach ($fields as $field => $value) {
+            $set("current_{$field}", $value);
+            
+            if ($actionType === 'edit' || $actionType === 'create') {
+                $set("requested_{$field}", $value);
+            }
+        }
+    }
+
     public static function form(Form $form): Form
     {
         return $form
@@ -158,18 +188,32 @@ class ExpenseChangeRequestResource extends BaseResource
                             ->selectablePlaceholder(false)
                             ->default('edit')
                             ->live()
-                            ->afterStateUpdated(function ($state, Forms\Set $set) {
+                            ->afterStateUpdated(function ($state, Forms\Set $set, Forms\Get $get) {
 
-                                $set('requested_user_id', null);
-                                $set('expense_id', null);
-                                $set('requested_date', null);
-                                $set('requested_category_id', null);
-                                $set('requested_supplier_id', null);
-                                $set('requested_sum', null);
-                                $set('requested_notes', null);
+                                $expense = $get('expense_id') && $get('action_type') !== 'create' ? \App\Models\Expense::find($get('expense_id')) : null;
 
-                                if ($state === 'create') {
-                                    $set('requested_user_id', auth()->id());
+                                $fields = [
+                                    'user_id' => $expense?->user_id,
+                                    'date' => $expense?->date?->format('Y-m-d'),
+                                    'category_id' => $expense?->category_id,
+                                    'supplier_id' => $expense?->supplier_id,
+                                    'sum' => $expense?->sum,
+                                    'notes' => $expense?->notes,
+                                ];
+
+                                foreach ($fields as $field => $value) {
+                                    if ($get('action_type') === 'delete') {
+                                        $set("current_{$field}", $value);
+                                        $set("requested_{$field}", null);
+                                    } else {
+                                        $set("current_{$field}", $value);
+                                        $set("requested_{$field}", $value);
+                                    }
+
+                                    if ($get('action_type') === 'create') {
+                                        $set('expense_id', null);
+                                        $set('requested_user_id', auth()->id());
+                                    }
                                 }
                             }),
 
@@ -181,26 +225,7 @@ class ExpenseChangeRequestResource extends BaseResource
                                     return;
                                 }
                                 $livewire->validateOnly('expense_id');
-                                if ($state) {
-                                    $expense = \App\Models\Expense::find($state);
-                                    if ($expense) {
-                                        // Заполняем current_* поля для сохранения снимка данных
-                                        $set('current_user_id', $expense->user_id);
-                                        $set('current_date', $expense->date?->format('Y-m-d'));
-                                        $set('current_category_id', $expense->category_id);
-                                        $set('current_supplier_id', $expense->supplier_id);
-                                        $set('current_sum', $expense->sum);
-                                        $set('current_notes', $expense->notes);
-                                        
-                                        // Заполняем requested_* поля (для редактирования или удаления)
-                                        $set('requested_user_id', $expense->user_id);
-                                        $set('requested_date', $expense->date?->format('Y-m-d'));
-                                        $set('requested_category_id', $expense->category_id);
-                                        $set('requested_supplier_id', $expense->supplier_id);
-                                        $set('requested_sum', $expense->sum);
-                                        $set('requested_notes', $expense->notes);
-                                    }
-                                }
+                                static::fillExpenseFields($state, $get('action_type'), $set);
                             })
                             ->searchable()
                             ->preload()
@@ -309,7 +334,7 @@ class ExpenseChangeRequestResource extends BaseResource
                             ->grow(false),
 
                         Tables\Columns\TextColumn::make('action_type_label')
-                            ->state(fn($record) => __('resources.fields.action_type.options')[$record->action_type] )
+                            ->state(fn($record) => __('resources.fields.action_type.options')[$record->action_type])
                             ->color(fn($record): string => match ($record->action_type) {
                                 'create' => 'success',
                                 'edit' => 'warning',
