@@ -89,35 +89,43 @@ abstract class BaseResource extends Resource
             ->render();
     }
 
-    /**
-     * Общая схема полей для расходов (используется в Expense и ExpenseChangeRequest)
-     * @param string $prefix Префикс для имен полей (например, 'requested_' или 'current_')
-     * @param bool $forExpense Применять ли ограничения для модели Expense (minDate и default)
-     * @param bool $forChangeRequest Применять ли условия для ExpenseChangeRequest (required и dehydrated зависят от action_type)
-     */
-    public static function getExpenseFormFields(string $prefix = '', bool $forExpense = true, bool $forChangeRequest = false): array
+    protected static function applyFieldConditions($field, bool $forExpense, bool $isCurrentField)
+    {
+        if (!$forExpense) {
+            if ($isCurrentField) {
+                $field->disabled(true);
+            } else {
+                $field
+                    ->required(fn($get) => $get('action_type') !== 'delete' && $field->getName() !== 'requested_notes')
+                    ->disabled(fn($get) => $get('action_type') === 'delete');
+            }
+
+            $selectFields = ['user_id', 'category_id', 'supplier_id'];
+            $fieldName = $field->getName();
+
+            $baseFieldName = str_replace(['current_', 'requested_'], '', $fieldName);
+            if (in_array($baseFieldName, $selectFields)) {
+                $field
+                    ->placeholder('Выбрать вариант')
+                    ->extraAttributes(fn($get) => $get('action_type') === 'edit' ? ['class' => 'min-h-[52px] items-center'] : []);
+            }
+        } else {
+            $field->required();
+        }
+
+        return $field;
+    }
+
+    public static function getExpenseFormFields(string $prefix = '', bool $forExpense = true): array
     {
         $isCurrentField = str_starts_with($prefix, 'current_');
-        
+
         $dateField = DatePicker::make($prefix . 'date')
             ->label(__('resources.fields.date'))
             ->live(onBlur: true)
             ->afterStateUpdated(fn($livewire) => $livewire->validateOnly('data.' . $prefix . 'date'));
 
-        if ($isCurrentField) {
-            // Для current_* полей логика зависит от action_type
-            $dateField
-                ->disabled(fn($get) => $get('action_type') === 'delete' || $get('action_type') === 'edit')
-                ->placeholder('Не указано')
-                ->dehydrated();
-        } elseif ($forChangeRequest) {
-            $dateField
-                ->required(fn($get) => $get('action_type') !== 'delete')
-                ->disabled(fn($get) => $get('action_type') === 'delete')
-                ->dehydrated(fn($get) => $get('action_type') !== 'delete');
-        } else {
-            $dateField->required();
-        }
+        static::applyFieldConditions($dateField, $forExpense, $isCurrentField);
 
         $userField =  Select::make($prefix . 'user_id')
             ->label(__('resources.fields.payer'))
@@ -144,20 +152,7 @@ abstract class BaseResource extends Resource
             ->loadingMessage(__('resources.notifications.load.users'))
             ->noSearchResultsMessage(__('resources.notifications.skip.users'));
 
-        if ($isCurrentField) {
-            $userField
-                ->disabled(fn($get) => $get('action_type') === 'delete' || $get('action_type') === 'edit')
-                ->placeholder('Не указано')
-                ->extraattributes(['style' => 'min-height: 2.5rem;'])
-                ->dehydrated();
-        } elseif ($forChangeRequest) {
-            $userField
-                ->required(fn($get) => $get('action_type') !== 'delete')
-                ->disabled(fn($get) => $get('action_type') === 'delete')
-                ->dehydrated(fn($get) => $get('action_type') !== 'delete');
-        } else {
-            $userField->required();
-        }
+        static::applyFieldConditions($userField, $forExpense, $isCurrentField);
 
         if ($forExpense) {
             $dateField
@@ -217,19 +212,7 @@ abstract class BaseResource extends Resource
             ->loadingMessage(__('resources.notifications.load.categories'))
             ->noSearchResultsMessage(__('resources.notifications.skip.categories'));
 
-        if ($isCurrentField) {
-            $categoryField
-                ->disabled(fn($get) => $get('action_type') === 'delete' || $get('action_type') === 'edit')
-                ->placeholder('Не указано')
-                ->dehydrated();
-        } elseif ($forChangeRequest) {
-            $categoryField
-                ->required(fn($get) => $get('action_type') !== 'delete')
-                ->disabled(fn($get) => $get('action_type') === 'delete')
-                ->dehydrated(fn($get) => $get('action_type') !== 'delete');
-        } else {
-            $categoryField->required();
-        }
+        static::applyFieldConditions($categoryField, $forExpense, $isCurrentField);
 
         $supplierField = Select::make($prefix . 'supplier_id')
             ->label(__('resources.fields.supplier'))
@@ -275,19 +258,7 @@ abstract class BaseResource extends Resource
             ->loadingMessage(__('resources.notifications.load.suppliers'))
             ->noSearchResultsMessage(__('resources.notifications.skip.suppliers'));
 
-        if ($isCurrentField) {
-            $supplierField
-                ->disabled(fn($get) => $get('action_type') === 'delete' || $get('action_type') === 'edit')
-                ->placeholder('Не указано')
-                ->dehydrated();
-        } elseif ($forChangeRequest) {
-            $supplierField
-                ->required(fn($get) => $get('action_type') !== 'delete')
-                ->disabled(fn($get) => $get('action_type') === 'delete')
-                ->dehydrated(fn($get) => $get('action_type') !== 'delete');
-        } else {
-            $supplierField->required();
-        }
+        static::applyFieldConditions($supplierField, $forExpense, $isCurrentField);
 
         $sumField = TextInput::make($prefix . 'sum')
             ->label(__('resources.fields.sum'))
@@ -295,19 +266,7 @@ abstract class BaseResource extends Resource
             ->numeric()
             ->placeholder('0.00');
 
-        if ($isCurrentField) {
-            $sumField
-                ->disabled(fn($get) => $get('action_type') === 'delete' || $get('action_type') === 'edit')
-                ->placeholder('Не указано')
-                ->dehydrated();
-        } elseif ($forChangeRequest) {
-            $sumField
-                ->required(fn($get) => $get('action_type') !== 'delete')
-                ->disabled(fn($get) => $get('action_type') === 'delete')
-                ->dehydrated(fn($get) => $get('action_type') !== 'delete');
-        } else {
-            $sumField->required();
-        }
+        static::applyFieldConditions($sumField, $forExpense, $isCurrentField);
 
         $notesField = MarkdownEditor::make($prefix . 'notes')
             ->label(__('resources.fields.notes'))
@@ -321,19 +280,10 @@ abstract class BaseResource extends Resource
             ])
             ->columnSpanFull();
 
-        if ($isCurrentField) {
-            $notesField
-                ->disabled(fn($get) => $get('action_type') === 'delete' || $get('action_type') === 'edit')
-                ->placeholder('Не указано')
-                ->dehydrated();
-        } elseif ($forChangeRequest) {
-            $notesField
-                ->disabled(fn($get) => $get('action_type') === 'delete')
-                ->dehydrated(fn($get) => $get('action_type') !== 'delete');
-        }
+        static::applyFieldConditions($notesField, $forExpense, $isCurrentField);
 
         return [
-            TextInput::make( 'id' )
+            TextInput::make('id')
                 ->label(__('resources.fields.id'))
                 ->disabled()
                 ->visible(fn(?Model $record) => $record !== null && $record instanceof Expense)
@@ -344,7 +294,11 @@ abstract class BaseResource extends Resource
             $userField,
 
             Group::make()
-                ->columns(2)
+                ->columns([
+                    'default' => 2,
+                    'lg' => 1,
+                    'xl' => 2,
+                ])
                 ->schema([
                     $categoryField,
                     $supplierField,
@@ -387,7 +341,7 @@ abstract class BaseResource extends Resource
     {
         return [
 
-        \Filament\Tables\Filters\SelectFilter::make('id')
+            \Filament\Tables\Filters\SelectFilter::make('id')
                 ->label(__('resources.fields.id'))
                 ->multiple()
                 ->preload()
@@ -400,7 +354,7 @@ abstract class BaseResource extends Resource
                         ]);
                 })
                 ->placeholder(''),
-        \Filament\Tables\Filters\SelectFilter::make('user')
+            \Filament\Tables\Filters\SelectFilter::make('user')
                 ->label(__('resources.fields.user'))
                 ->relationship('user', 'name')
                 ->multiple()

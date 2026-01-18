@@ -45,41 +45,41 @@ class ExpenseChangeRequestResource extends BaseResource
 
     protected static function getFieldDisplay(ExpenseChangeRequest $record, string $field): array
     {
-        $oldValue = null;
-        $newValue = null;
+        $currentValue = null;
+        $requestedValue = null;
 
         switch ($field) {
             case 'user':
-                $oldValue = $record->expense?->user?->name;
-                $newValue = $record->requestedUser?->name;
+                $currentValue = $record->current_user?->name;
+                $requestedValue = $record->requested_user?->name;
                 break;
             case 'date':
-                $oldValue = $record->expense?->date?->format('d.m.Y');
-                $newValue = $record->requested_date ? \Carbon\Carbon::parse($record->requested_date)->format('d.m.Y') : null;
+                $currentValue = $record->current_date?->format('d.m.Y');
+                $requestedValue = $record->requested_date ? \Carbon\Carbon::parse($record->requested_date)->format('d.m.Y') : null;
                 break;
             case 'category':
-                $oldValue = $record->expense?->category?->name;
-                $newValue = $record->requestedCategory?->name;
+                $currentValue = $record->current_category?->name;
+                $requestedValue = $record->requested_category?->name;
                 break;
             case 'supplier':
-                $oldValue = $record->expense?->supplier?->name;
-                $newValue = $record->requestedSupplier?->name;
+                $currentValue = $record->current_supplier?->name;
+                $requestedValue = $record->requested_supplier?->name;
                 break;
             case 'sum':
-                $oldValue = $record->expense?->sum ? number_format($record->expense->sum, 2) . ' MDL' : null;
-                $newValue = $record->requested_sum ? number_format($record->requested_sum, 2) . ' MDL' : null;
+                $currentValue = $record->current_sum ? number_format($record->current_sum, 2) . ' MDL' : null;
+                $requestedValue = $record->requested_sum ? number_format($record->requested_sum, 2) . ' MDL' : null;
                 break;
             case 'notes':
-                $oldValue = $record->expense?->notes;
-                $newValue = $record->requested_notes;
+                $currentValue = $record->current_notes;
+                $requestedValue = $record->requested_notes;
                 break;
         }
 
         return [
             'action_type' => $record->action_type,
-            'old' => $oldValue ?? 'Не указано',
-            'new' => $newValue ?? 'Не указано',
-            'changed' => $oldValue !== $newValue,
+            'current' => $currentValue ?? 'Не заполнено',
+            'requested' => $requestedValue ?? 'Не заполнено',
+            'changed' => $currentValue !== $requestedValue,
         ];
     }
 
@@ -96,22 +96,22 @@ class ExpenseChangeRequestResource extends BaseResource
 
             switch ($field) {
                 case 'user':
-                    $hasChange = $record->requested_user_id != $record->expense->user_id;
+                    $hasChange = $record->requested_user_id != $record->current_user_id;
                     break;
                 case 'date':
-                    $hasChange = $record->requested_date != $record->expense->date;
+                    $hasChange = $record->requested_date != $record->current_date;
                     break;
                 case 'category':
-                    $hasChange = $record->requested_category_id != $record->expense->category_id;
+                    $hasChange = $record->requested_category_id != $record->current_category_id;
                     break;
                 case 'supplier':
-                    $hasChange = $record->requested_supplier_id != $record->expense->supplier_id;
+                    $hasChange = $record->requested_supplier_id != $record->current_supplier_id;
                     break;
                 case 'sum':
-                    $hasChange = $record->requested_sum != $record->expense->sum;
+                    $hasChange = $record->requested_sum != $record->current_sum;
                     break;
                 case 'notes':
-                    $hasChange = $record->requested_notes != $record->expense->notes;
+                    $hasChange = $record->requested_notes != $record->current_notes;
                     break;
             }
 
@@ -119,21 +119,13 @@ class ExpenseChangeRequestResource extends BaseResource
         }
     }
 
-    protected static function fillExpenseFields($expenseId, $actionType, callable $set): void
+    public static function fillExpenseFields($expenseId, $actionType, callable $set): void
     {
-        if (!$expenseId) {
-            return;
-        }
-
         $expense = Expense::find($expenseId);
-        
-        if (!$expense) {
-            return;
-        }
 
         $fields = [
             'user_id' => $expense->user_id,
-            'date' => $expense->date?->format('Y-m-d'),
+            'date' => $expense->date->format('Y-m-d'),
             'category_id' => $expense->category_id,
             'supplier_id' => $expense->supplier_id,
             'sum' => $expense->sum,
@@ -154,14 +146,16 @@ class ExpenseChangeRequestResource extends BaseResource
         return $form
             ->schema([
 
+                Forms\Components\Hidden::make('user_id')
+                    ->default(auth()->id()),
+
                 Forms\Components\Section::make('Информация о запросе')
                     ->schema([
                         Forms\Components\Select::make('user_id')
                             ->label(__('resources.fields.user'))
                             ->relationship('user', 'name')
                             ->default(auth()->id())
-                            ->disabled()
-                            ->dehydrated(),
+                            ->disabled(),
 
                         Forms\Components\Select::make('status')
                             ->label('Статус')
@@ -213,6 +207,7 @@ class ExpenseChangeRequestResource extends BaseResource
                                     if ($get('action_type') === 'create') {
                                         $set('expense_id', null);
                                         $set('requested_user_id', auth()->id());
+                                        $set('requested_date', now()->format('Y-m-d'));
                                     }
                                 }
                             }),
@@ -281,18 +276,20 @@ class ExpenseChangeRequestResource extends BaseResource
                             ->schema([
                                 Forms\Components\Section::make('Текущее значение')
                                     ->schema(
-                                        static::getExpenseFormFields('current_', false, false)
+                                        static::getExpenseFormFields('current_', false)
                                     )
-                                    ->columnSpan(1),
+                                    ->columnSpan(fn($get) => $get('action_type') !== 'delete' ? 1 : 2)
+                                    ->extraAttributes(['class' => 'h-full'])
+                                    ->visible(fn($get) => $get('action_type') !== 'create'),
 
                                 Forms\Components\Section::make('Новое значение')
                                     ->schema(
-                                        static::getExpenseFormFields('requested_', false, true)
+                                        static::getExpenseFormFields('requested_', false)
                                     )
-                                    ->columnSpan(1),
+                                    ->columnSpan(fn($get) => $get('action_type') !== 'create' ? 1 : 2)
+                                    ->visible(fn($get) => $get('action_type') !== 'delete'),
                             ])
-                    ])
-                    ->visible(fn($get, string $operation) => $operation === 'create' || $operation === 'view' || $operation === 'edit'),
+                    ]),
             ]);
     }
 
