@@ -45,25 +45,29 @@ class ExpenseChangeRequestResource extends BaseResource
 
     protected static function getFieldDisplay(ExpenseChangeRequest $record, string $field): array
     {
+        $fieldNames = [
+            'notes' => 'Комментаррии',
+        ];
+
         $currentValue = null;
         $requestedValue = null;
 
         switch ($field) {
             case 'user':
-                $currentValue = $record->current_user?->name;
-                $requestedValue = $record->requested_user?->name;
+                $currentValue = $record->currentUser?->name;
+                $requestedValue = $record->requestedUser?->name;
                 break;
             case 'date':
                 $currentValue = $record->current_date?->format('d.m.Y');
                 $requestedValue = $record->requested_date ? \Carbon\Carbon::parse($record->requested_date)->format('d.m.Y') : null;
                 break;
             case 'category':
-                $currentValue = $record->current_category?->name;
-                $requestedValue = $record->requested_category?->name;
+                $currentValue = $record->currentCategory?->name;
+                $requestedValue = $record->requestedCategory?->name;
                 break;
             case 'supplier':
-                $currentValue = $record->current_supplier?->name;
-                $requestedValue = $record->requested_supplier?->name;
+                $currentValue = $record->currentSupplier?->name;
+                $requestedValue = $record->requestedSupplier?->name;
                 break;
             case 'sum':
                 $currentValue = $record->current_sum ? number_format($record->current_sum, 2) . ' MDL' : null;
@@ -75,10 +79,12 @@ class ExpenseChangeRequestResource extends BaseResource
                 break;
         }
 
+        $fieldName = $fieldNames[$field] ?? $field;
+
         return [
             'action_type' => $record->action_type,
-            'current' => $currentValue ?? 'Не заполнено',
-            'requested' => $requestedValue ?? 'Не заполнено',
+            'current' => $currentValue ?? "Поле \"{$fieldName}\" не заполнено",
+            'requested' => $requestedValue ?? "Поле \"{$fieldName}\" не заполнено",
             'changed' => $currentValue !== $requestedValue,
         ];
     }
@@ -207,7 +213,6 @@ class ExpenseChangeRequestResource extends BaseResource
                                     if ($get('action_type') === 'create') {
                                         $set('expense_id', null);
                                         $set('requested_user_id', auth()->id());
-                                        $set('requested_date', now()->format('Y-m-d'));
                                     }
                                 }
                             }),

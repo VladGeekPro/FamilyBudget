@@ -93,7 +93,7 @@ abstract class BaseResource extends Resource
     {
         if (!$forExpense) {
             if ($isCurrentField) {
-                $field->disabled(true);
+                $field->disabled(true)->dehydrated(true);
             } else {
                 $field
                     ->required(fn($get) => $get('action_type') !== 'delete' && $field->getName() !== 'requested_notes')

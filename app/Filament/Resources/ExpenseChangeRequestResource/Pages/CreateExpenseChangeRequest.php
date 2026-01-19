@@ -57,18 +57,11 @@ class CreateExpenseChangeRequest extends CreateBase
 
     protected function afterCreate(): void
     {
-        $request = $this->record;
+        $users = User::all();
 
-        // Отправляем уведомления всем пользователям (кроме создателя)
-        $users = User::where('id', '!=', auth()->id())->get();
         foreach ($users as $user) {
-            $user->notify(new ExpenseChangeRequestNotification($request, auth()->user()));
+            $user->notify(new ExpenseChangeRequestNotification($this->record, auth()->user()));
         }
 
-        Notification::make()
-            ->title('Запрос создан')
-            ->body('Уведомления отправлены всем пользователям для голосования')
-            ->success()
-            ->send();
     }
 }
