@@ -17,20 +17,43 @@ class CreateExpenseChangeRequest extends CreateBase
     #[\Livewire\Attributes\On('expense:selected')]
     public function selectExpense($expenseId)
     {
-        $this->data['expense_id'] = $expenseId;
 
-        // Используем общий метод для заполнения полей
-        $actionType = $this->data['action_type'];
+        $foundRequest = \App\Models\ExpenseChangeRequest::where('status', 'pending')
+        ->where('expense_id', $expenseId)
+        ->first();
+
+        if ($foundRequest) {
+
+            $this->data['expense_id'] = null;
+
+            Notification::make()
+                ->warning()
+                ->title('Запрос уже существует')
+                ->body("Для расхода #{$expenseId} уже существует активный запрос на изменение (#{$foundRequest->id})")
+                ->persistent()
+                ->actions([
+                    \Filament\Notifications\Actions\Action::make('view')
+                        ->label('Посмотреть запрос')
+                        ->url(ExpenseChangeRequestResource::getUrl('view', ['record' => $foundRequest->id]), shouldOpenInNewTab: true)
+                        ->button(),
+                    \Filament\Notifications\Actions\Action::make('close')
+                        ->label('Закрыть')
+                        ->close(),
+                ])
+                ->send();
+
+            return;
+        }
+
         ExpenseChangeRequestResource::fillExpenseFields(
-            $expenseId,
-            $actionType,
+           $this->data['expense_id'],
+            $this->data['action_type'],
             fn($key, $value) => $this->data[$key] = $value
         );
     }
 
     protected function beforeCreate(): void
     {
-
         if ($this->data['action_type'] === 'edit') {
             $fieldsToCheck = ['user_id', 'date', 'category_id', 'supplier_id', 'sum', 'notes'];
             $hasChanges = false;
@@ -62,6 +85,5 @@ class CreateExpenseChangeRequest extends CreateBase
         foreach ($users as $user) {
             $user->notify(new ExpenseChangeRequestNotification($this->record, auth()->user()));
         }
-
     }
 }

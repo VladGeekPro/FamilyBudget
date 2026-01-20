@@ -123,7 +123,7 @@ return [
             ],
             'expense_change_request_to_database' => [
                 'title' => 'Новый запрос на редактирование расхода',
-                'body' => '<br>:date<br>Создан запрос на \":actionType\" с Ид #:expense_id пользователем :creator.',
+                'body' => '<br>:date<br>Создан запрос на ":actionType" с Ид #:expense_id пользователем :creator.',
             ],
         ],
     ],
@@ -145,7 +145,7 @@ return [
         'copy' => 'Копировать',
         'pay_off_debt' => 'Погасить долг',
         'view' => 'Посмотреть',
-        'mark_as_read' => 'Отметить прочитанным',
+        'mark_as_read' => 'Прочитано',
         'select' => 'Выбрать',
     ],
     'toggleButtons' => [

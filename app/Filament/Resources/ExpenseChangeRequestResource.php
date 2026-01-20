@@ -140,7 +140,7 @@ class ExpenseChangeRequestResource extends BaseResource
 
         foreach ($fields as $field => $value) {
             $set("current_{$field}", $value);
-            
+
             if ($actionType === 'edit' || $actionType === 'create') {
                 $set("requested_{$field}", $value);
             }
@@ -224,8 +224,8 @@ class ExpenseChangeRequestResource extends BaseResource
                                 if ($get('action_type') === 'create') {
                                     return;
                                 }
+                                $livewire->dispatch('expense:selected', expenseId: $state);
                                 $livewire->validateOnly('expense_id');
-                                static::fillExpenseFields($state, $get('action_type'), $set);
                             })
                             ->searchable()
                             ->preload()
