@@ -9,6 +9,7 @@ use App\Notifications\ExpenseChangeRequestNotification;
 use Filament\Actions;
 use App\Filament\Resources\Base\CreateBase;
 use Filament\Notifications\Notification;
+use Filament\Notifications\Actions\Action;
 
 class CreateExpenseChangeRequest extends CreateBase
 {
@@ -19,8 +20,8 @@ class CreateExpenseChangeRequest extends CreateBase
     {
 
         $foundRequest = \App\Models\ExpenseChangeRequest::where('status', 'pending')
-        ->where('expense_id', $expenseId)
-        ->first();
+            ->where('expense_id', $expenseId)
+            ->first();
 
         if ($foundRequest) {
 
@@ -28,25 +29,25 @@ class CreateExpenseChangeRequest extends CreateBase
 
             Notification::make()
                 ->warning()
-                ->title('Запрос уже существует')
-                ->body("Для расхода #{$expenseId} уже существует активный запрос на изменение (#{$foundRequest->id})")
+                ->title(__('resources.notifications.warn.expense_change_request.already_exists.title'))
+                ->body(__('resources.notifications.warn.expense_change_request.already_exists.body', ['expenseId' => $expenseId, 'foundRequestId' => $foundRequest->id]))
                 ->persistent()
                 ->actions([
-                    \Filament\Notifications\Actions\Action::make('view')
-                        ->label('Посмотреть запрос')
-                        ->url(ExpenseChangeRequestResource::getUrl('view', ['record' => $foundRequest->id]), shouldOpenInNewTab: true)
-                        ->button(),
-                    \Filament\Notifications\Actions\Action::make('close')
-                        ->label('Закрыть')
-                        ->close(),
+                    Action::make('view')
+                        ->label(__('resources.buttons.view'))
+                        ->button()
+                        ->icon('heroicon-o-eye')
+                        ->url(ExpenseChangeRequestResource::getUrl('view', ['record' => $foundRequest->id]), shouldOpenInNewTab: true),
                 ])
                 ->send();
 
             return;
+        } else {
+            $this->data['expense_id'] = $expenseId;
         }
 
         ExpenseChangeRequestResource::fillExpenseFields(
-           $this->data['expense_id'],
+            $this->data['expense_id'],
             $this->data['action_type'],
             fn($key, $value) => $this->data[$key] = $value
         );
@@ -67,8 +68,8 @@ class CreateExpenseChangeRequest extends CreateBase
 
             if (!$hasChanges) {
                 Notification::make()
-                    ->title(__('resources.notifications.warn.expense_change_request.title'))
-                    ->body(__('resources.notifications.warn.expense_change_request.body'))
+                    ->title(__('resources.notifications.warn.expense_change_request.no_changes.title'))
+                    ->body(__('resources.notifications.warn.expense_change_request.no_changes.body'))
                     ->warning()
                     ->duration(10000)
                     ->send();

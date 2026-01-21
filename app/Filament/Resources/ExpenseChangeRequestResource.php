@@ -127,6 +127,7 @@ class ExpenseChangeRequestResource extends BaseResource
 
     public static function fillExpenseFields($expenseId, $actionType, callable $set): void
     {
+
         $expense = Expense::find($expenseId);
 
         $fields = [

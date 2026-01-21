@@ -28,7 +28,7 @@ class ExpenseChangeRequestNotification extends Notification
 
         $actionType = $this->changeRequest->action_type;
 
-        $body = __('resources.notifications.warn.expense_change_request_to_database.body', [
+        $body = __('resources.notifications.warn.expense_change_request.created.body', [
             'date' => $this->changeRequest->created_at->format('d.m.Y H:i'),
             'actionType' => __('resources.fields.action_type.notification_options.' . $actionType),
             'creator' => $this->creator->name,
@@ -37,7 +37,7 @@ class ExpenseChangeRequestNotification extends Notification
 
 
         return FilamentNotification::make()
-            ->title(__('resources.notifications.warn.expense_change_request_to_database.title'))
+            ->title(__('resources.notifications.warn.expense_change_request.created.title'))
             ->body(new \Illuminate\Support\HtmlString($body))
             ->icon('heroicon-o-document-plus')
             ->iconColor('warning')
