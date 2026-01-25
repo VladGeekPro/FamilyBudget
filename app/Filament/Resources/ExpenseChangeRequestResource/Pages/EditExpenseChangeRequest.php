@@ -2,11 +2,13 @@
 
 namespace App\Filament\Resources\ExpenseChangeRequestResource\Pages;
 
+use App\Filament\Resources\Base\EditBase;
 use App\Filament\Resources\ExpenseChangeRequestResource;
+use App\Models\User;
+use App\Notifications\ExpenseChangeRequestNotification;
 use Filament\Actions;
-use Filament\Resources\Pages\EditRecord;
 
-class EditExpenseChangeRequest extends EditRecord
+class EditExpenseChangeRequest extends EditBase
 {
     protected static string $resource = ExpenseChangeRequestResource::class;
 
@@ -15,12 +17,24 @@ class EditExpenseChangeRequest extends EditRecord
         return [
             Actions\ViewAction::make(),
             Actions\DeleteAction::make()
-                ->visible(fn () => $this->record->status === 'pending'),
+                ->visible(fn () => $this->record->status === 'pending')
+                ->successNotificationTitle(fn () => $this->getDeletedNotificationTitle())
+                ->after(function () {
+                    $users = User::all();
+                    foreach ($users as $user) {
+                        $user->notify(new ExpenseChangeRequestNotification($this->record, auth()->user(), 'deleted'));
+                    }
+                }),
         ];
     }
 
-    protected function getRedirectUrl(): string
+    protected function afterSave(): void
     {
-        return $this->getResource()::getUrl('view', ['record' => $this->record]);
+        $users = User::all();
+
+        foreach ($users as $user) {
+            $user->notify(new ExpenseChangeRequestNotification($this->record, auth()->user(), 'edited'));
+        }
     }
+  
 }

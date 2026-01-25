@@ -156,30 +156,15 @@ class ExpenseChangeRequestResource extends BaseResource
                 Forms\Components\Hidden::make('user_id')
                     ->default(auth()->id()),
 
-                Forms\Components\Section::make('Информация о запросе')
+                Forms\Components\Section::make(__('resources.sections.user_votes.title'))
+                    ->description(__('resources.sections.user_votes.description'))
                     ->schema([
-                        Forms\Components\Select::make('user_id')
-                            ->label(__('resources.fields.user'))
-                            ->relationship('user', 'name')
-                            ->default(auth()->id())
-                            ->disabled(),
-
-                        Forms\Components\Select::make('status')
-                            ->label('Статус')
-                            ->options([
-                                'pending' => 'Ожидает голосования',
-                                'completed' => 'Завершён',
-                                'rejected' => 'Отклонён',
-                            ])
-                            ->disabled()
-                            ->default('pending'),
-
-                        Forms\Components\DateTimePicker::make('applied_at')
-                            ->label(__('resources.fields.applied_at'))
-                            ->disabled(),
+                        Forms\Components\View::make('filament.forms.components.votes-list')
+                            ->columnSpanFull(),
                     ])
-                    ->columns(3)
-                    ->visible(fn(string $operation) => $operation === 'edit'),
+                    ->visible(fn(string $operation, ?ExpenseChangeRequest $record) => 
+                        ($operation === 'edit' || $operation === 'view')
+                    ),
 
                 Grid::make(2)
                     ->schema([
@@ -238,7 +223,8 @@ class ExpenseChangeRequestResource extends BaseResource
                                     $expense->id => "#{$expense->id} - {$expense->supplier->name} - {$expense->sum} MDL ({$expense->date->format('d.m.Y')})",
                                 ]))
                             ->getSearchResultsUsing(function (string $search) {
-                                return Expense::previousMonthsExpenses()
+                            
+                            return Expense::previousMonthsExpenses()
                                     ->orderBy('id', 'desc')
                                     ->where(function ($query) use ($search) {
                                         $query->whereHas('supplier', function ($q) use ($search) {

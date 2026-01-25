@@ -346,8 +346,7 @@ abstract class BaseResource extends Resource
                 ->multiple()
                 ->preload()
                 ->options(function () {
-                    return Expense::previousMonthsExpenses()
-                        ->orderBy('date', 'desc')
+                    return Expense::orderBy('date', 'desc')
                         ->get()
                         ->mapWithKeys(fn($expense) => [
                             $expense->id => "#{$expense->id} - {$expense->supplier->name} - {$expense->sum} MDL ({$expense->date->format('d.m.Y')})"

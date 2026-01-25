@@ -15,7 +15,8 @@ class ExpenseChangeRequestNotification extends Notification
 
     public function __construct(
         public ExpenseChangeRequest $changeRequest,
-        public User $creator
+        public User $creator,
+        public string $event
     ) {}
 
     public function via($notifiable): array
@@ -28,19 +29,26 @@ class ExpenseChangeRequestNotification extends Notification
 
         $actionType = $this->changeRequest->action_type;
 
-        $body = __('resources.notifications.warn.expense_change_request.created.body', [
-            'date' => $this->changeRequest->created_at->format('d.m.Y H:i'),
+        $translationBase = "resources.notifications.warn.expense_change_request.{$this->event}";
+
+        $body = __($translationBase . '.body', [
+            'date' => $this->changeRequest->updated_at?->format('d.m.Y H:i') ?? $this->changeRequest->created_at->format('d.m.Y H:i'),
             'actionType' => __('resources.fields.action_type.notification_options.' . $actionType),
             'creator' => $this->creator->name,
             'expense_id' => $this->changeRequest->expense_id,
         ]);
 
+        $iconMap = [
+            'created' => ['icon' => 'heroicon-o-document-plus', 'color' => 'success'],
+            'edited'  => ['icon' => 'heroicon-o-pencil-square', 'color' => 'warning'],
+            'deleted' => ['icon' => 'heroicon-o-trash', 'color' => 'danger'],
+        ];
 
         return FilamentNotification::make()
-            ->title(__('resources.notifications.warn.expense_change_request.created.title'))
+            ->title(__($translationBase . '.title'))
             ->body(new \Illuminate\Support\HtmlString($body))
-            ->icon('heroicon-o-document-plus')
-            ->iconColor('warning')
+            ->icon($iconMap[$this->event]['icon'])
+            ->iconColor($iconMap[$this->event]['color'])
             ->actions([
                 Action::make('view')
                     ->label(__('resources.buttons.view'))

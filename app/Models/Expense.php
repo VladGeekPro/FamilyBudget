@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Models\ExpenseChangeRequest;
 
 class Expense extends Model
 {
@@ -27,6 +28,11 @@ class Expense extends Model
         return $this->belongsTo(User::class);
     }
 
+    public function changeRequest()
+    {
+        return $this->hasMany(ExpenseChangeRequest::class);
+    }
+
     public function scopeCurrentMonthExpenses($query)
     {
         return $query->whereMonth('date', now()->month)
@@ -41,6 +47,9 @@ class Expense extends Model
     public function scopePreviousMonthsExpenses($query)
     {
         return $query->whereDate('date', '<', now()->startOfMonth())
-            ->with(['supplier', 'category', 'user']);
+            ->with(['supplier', 'category', 'user'])
+            ->whereDoesntHave('changeRequest', function ($q) {
+                $q->where('status', 'pending');
+            });
     }
 }

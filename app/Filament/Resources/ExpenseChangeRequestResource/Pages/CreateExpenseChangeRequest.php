@@ -84,7 +84,7 @@ class CreateExpenseChangeRequest extends CreateBase
         $users = User::all();
 
         foreach ($users as $user) {
-            $user->notify(new ExpenseChangeRequestNotification($this->record, auth()->user()));
+            $user->notify(new ExpenseChangeRequestNotification($this->record, auth()->user(), 'created'));
         }
     }
 }
