@@ -162,8 +162,9 @@ class ExpenseChangeRequestResource extends BaseResource
                         Forms\Components\View::make('filament.forms.components.votes-list')
                             ->columnSpanFull(),
                     ])
-                    ->visible(fn(string $operation, ?ExpenseChangeRequest $record) => 
-                        ($operation === 'edit' || $operation === 'view')
+                    ->visible(
+                        
+                        fn(string $operation, ?ExpenseChangeRequest $record) => ($operation === 'edit' || $operation === 'view')
                     ),
 
                 Grid::make(2)
@@ -223,8 +224,8 @@ class ExpenseChangeRequestResource extends BaseResource
                                     $expense->id => "#{$expense->id} - {$expense->supplier->name} - {$expense->sum} MDL ({$expense->date->format('d.m.Y')})",
                                 ]))
                             ->getSearchResultsUsing(function (string $search) {
-                            
-                            return Expense::previousMonthsExpenses()
+
+                                return Expense::previousMonthsExpenses()
                                     ->orderBy('id', 'desc')
                                     ->where(function ($query) use ($search) {
                                         $query->whereHas('supplier', function ($q) use ($search) {
@@ -470,9 +471,12 @@ class ExpenseChangeRequestResource extends BaseResource
                         $votes = $record->getAllVotes();
                         $pendingUsers = $record->getPendingUsers();
 
-                        return view('filament.resources.expense-change-request.view-votes', [
-                            'votes' => $votes,
-                            'pendingUsers' => $pendingUsers,
+                        // return view('filament.resources.expense-change-request.view-votes', [
+                        //     'votes' => $votes,
+                        //     'pendingUsers' => $pendingUsers,
+                        // ]);
+                        return view('filament.forms.components.votes-list   ', [
+                            'getRecord' => $record,
                         ]);
                     })
                     ->modalWidth(MaxWidth::TwoExtraLarge),

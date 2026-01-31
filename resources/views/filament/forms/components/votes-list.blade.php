@@ -1,5 +1,5 @@
 @php
-$record = $getRecord();
+$record = isset($getRecord) ? $getRecord() : $record;
 
 $approvedVotes = $record->getApprovedVotes();
 $rejectedVotes = $record->getRejectedVotes();
@@ -28,9 +28,9 @@ $pendingUsersCount = $pendingUsers->count();
             <div class="flex items-center justify-between p-2 bg-green-50 rounded border border-green-200 text-sm">
                 <div class="flex items-center space-x-2">
                     @if($vote->user->image)
-                    <img src="{{ Storage::url($vote->user->image) }}" alt="{{ $vote->user->name }}" class="w-6 h-6 rounded-full object-cover">
+                    <img src="{{ Storage::url($vote->user->image) }}" alt="{{ $vote->user->name }}" class="w-10 h-10 rounded-full object-cover">
                     @else
-                    <div class="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
+                    <div class="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
                         {{ substr($vote->user->name, 0, 1) }}
                     </div>
                     @endif
@@ -57,9 +57,9 @@ $pendingUsersCount = $pendingUsers->count();
             <div class="flex items-center justify-between p-2 bg-red-50 rounded border border-red-200 text-sm">
                 <div class="flex items-center space-x-2">
                     @if($vote->user->image)
-                    <img src="{{ Storage::url($vote->user->image) }}" alt="{{ $vote->user->name }}" class="w-6 h-6 rounded-full object-cover">
+                    <img src="{{ Storage::url($vote->user->image) }}" alt="{{ $vote->user->name }}" class="w-10 h-10 rounded-full object-cover">
                     @else
-                    <div class="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
+                    <div class="w-10 h-10 bg-red-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
                         {{ substr($vote->user->name, 0, 1) }}
                     </div>
                     @endif
@@ -86,9 +86,9 @@ $pendingUsersCount = $pendingUsers->count();
             <div class="flex items-center justify-between p-2 bg-amber-50 rounded border border-amber-200 text-sm">
                 <div class="flex items-center space-x-2">
                     @if($user->image)
-                    <img src="{{ Storage::url($user->image) }}" alt="{{ $user->name }}" class="w-6 h-6 rounded-full object-cover">
+                    <img src="{{ Storage::url($user->image) }}" alt="{{ $user->name }}" class="w-10 h-10 rounded-full object-cover">
                     @else
-                    <div class="w-6 h-6 bg-amber-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
+                    <div class="w-10 h-10 bg-amber-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
                         {{ substr($user->name, 0, 1) }}
                     </div>
                     @endif

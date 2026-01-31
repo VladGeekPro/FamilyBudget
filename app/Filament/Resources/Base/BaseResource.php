@@ -295,8 +295,7 @@ abstract class BaseResource extends Resource
 
             Group::make()
                 ->columns([
-                    'default' => 2,
-                    'lg' => 1,
+                    'default' => 1,
                     'xl' => 2,
                 ])
                 ->schema([
