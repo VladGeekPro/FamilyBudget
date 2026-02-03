@@ -1,5 +1,5 @@
 @php
-$record = isset($getRecord) ? $getRecord() : $record;
+$record = $getRecord();
 
 $approvedVotes = $record->getApprovedVotes();
 $rejectedVotes = $record->getRejectedVotes();

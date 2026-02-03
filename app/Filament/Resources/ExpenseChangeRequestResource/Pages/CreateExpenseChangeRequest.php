@@ -81,7 +81,10 @@ class CreateExpenseChangeRequest extends CreateBase
 
     protected function afterCreate(): void
     {
-        $users = User::all();
+    
+    
+    
+    $users = User::all();
 
         foreach ($users as $user) {
             $user->notify(new ExpenseChangeRequestNotification($this->record, auth()->user(), 'created'));

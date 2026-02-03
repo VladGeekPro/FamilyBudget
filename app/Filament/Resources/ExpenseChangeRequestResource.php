@@ -159,11 +159,11 @@ class ExpenseChangeRequestResource extends BaseResource
                 Forms\Components\Section::make(__('resources.sections.user_votes.title'))
                     ->description(__('resources.sections.user_votes.description'))
                     ->schema([
-                        Forms\Components\View::make('filament.forms.components.votes-list')
+                        Forms\Components\View::make('filament.forms.components.view-votes')
                             ->columnSpanFull(),
                     ])
                     ->visible(
-                        
+
                         fn(string $operation, ?ExpenseChangeRequest $record) => ($operation === 'edit' || $operation === 'view')
                     ),
 
@@ -468,15 +468,10 @@ class ExpenseChangeRequestResource extends BaseResource
                     ->icon('heroicon-o-users')
                     ->color('gray')
                     ->modalContent(function (ExpenseChangeRequest $record) {
-                        $votes = $record->getAllVotes();
-                        $pendingUsers = $record->getPendingUsers();
-
-                        // return view('filament.resources.expense-change-request.view-votes', [
-                        //     'votes' => $votes,
-                        //     'pendingUsers' => $pendingUsers,
-                        // ]);
-                        return view('filament.forms.components.votes-list   ', [
-                            'getRecord' => $record,
+                        return view('filament.forms.components.view-votes', [
+                            'getRecord' => function () use ($record) {
+                                return $record;
+                            },
                         ]);
                     })
                     ->modalWidth(MaxWidth::TwoExtraLarge),
