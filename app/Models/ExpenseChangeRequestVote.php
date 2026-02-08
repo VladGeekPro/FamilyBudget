@@ -60,7 +60,6 @@ class ExpenseChangeRequestVote extends Model
         return $this->vote === 'rejected';
     }
 
-    // Статический метод для создания голоса
     public static function vote(ExpenseChangeRequest $request, User $user, bool $approved, ?string $notes = null): self
     {
         return self::updateOrCreate(
@@ -75,16 +74,13 @@ class ExpenseChangeRequestVote extends Model
         );
     }
 
-    // После создания/обновления голоса проверяем можно ли применить изменения
     protected static function booted()
     {
         static::saved(function ($vote) {
-            // Уведомляем автора запроса о новом голосе
             $vote->expenseChangeRequest->user->notify(
                 new \App\Notifications\ExpenseChangeRequestVoted($vote->expenseChangeRequest, $vote)
             );
 
-            // Проверяем готовность и применяем изменения
             $vote->expenseChangeRequest->checkAndApplyIfReady();
         });
     }

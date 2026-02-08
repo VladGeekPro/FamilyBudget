@@ -33,6 +33,7 @@ return [
         'sum' => 'Сумма',
         'debt_sum' => 'Сумма долга',
         'partial_sum' => 'Сумма частичной оплаты',
+        'status' => 'Статус',
         'payment_status' => 'Статус оплаты',
         'date_paid' => 'Дата оплаты',
         'supplier' => 'Поставщик',
@@ -49,7 +50,6 @@ return [
         'action_type' => 'Тип операции',
         'change_data' => 'Данные изменения',
         'applied_at' => 'Дата применения',
-        'vote' => 'Голос',
         'vote_comment' => 'Комментарий к голосу',
         'reason' => 'Причина',
         'id' => 'Идентификатор',
@@ -168,6 +168,7 @@ return [
         'view' => 'Посмотреть',
         'mark_as_read' => 'Прочитано',
         'select' => 'Выбрать',
+        'votes' => 'Голоса',
     ],
     'toggleButtons' => [
         'options' => [
@@ -179,6 +180,16 @@ return [
             'unpaid' => 'background-color: #fee2e2; border-radius: 6px;',
             'partial' => 'background-color: #fef9c3; border-radius: 6px;',
             'paid' => 'background-color: #dcfce7; border-radius: 6px;',
+        ],
+        'vote_status' => [
+            'pending' => 'Ожидает',
+            'completed' => 'Завершён',
+            'rejected' => 'Отклонён'
+        ],
+        'change_request_status' => [
+            'pending' => 'Ожидает голосования',
+            'completed' => 'Завершён',
+            'rejected' => 'Отклонён',
         ],
     ],
     'filters' => [

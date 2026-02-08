@@ -43,6 +43,10 @@ class ExpenseChangeRequestResource extends BaseResource
 
     protected static ?int $navigationSort = 4;
 
+    protected static ?string $defaultSortColumn = 'created_at';
+
+    protected static string  $defaultSortDirection = 'desc';
+
     protected static function getFieldDisplay(ExpenseChangeRequest $record, string $field): array
     {
         $fieldNames = [
@@ -288,12 +292,14 @@ class ExpenseChangeRequestResource extends BaseResource
 
     public static function table(Table $table): Table
     {
+
+        $table = parent::table($table);
+
         return $table
             ->columns([
                 TableGrid::make(['default' => 2])
                     ->schema([
                         Tables\Columns\TextColumn::make('created_at')
-                            ->label('Создан')
                             ->dateTime('d M. Y H:i')
                             ->color('info'),
                         Tables\Columns\ImageColumn::make('user.image')
@@ -363,24 +369,18 @@ class ExpenseChangeRequestResource extends BaseResource
 
                 Split::make([
                     Tables\Columns\BadgeColumn::make('status')
-                        ->label('Статус')
+                        ->label(__('resources.fields.status'))
                         ->colors([
                             'warning' => 'pending',
                             'success' => 'completed',
                             'danger' => 'rejected',
                         ])
-                        ->formatStateUsing(fn(string $state): string => match ($state) {
-                            'pending' => 'Ожидает',
-                            'completed' => 'Завершён',
-                            'rejected' => 'Отклонён',
-                            default => $state,
-                        }),
+                        ->formatStateUsing(fn($state) => __('resources.toggleButtons.vote_status.' . $state)),
 
                     Tables\Columns\TextColumn::make('votes_summary')
-                        ->label('Голоса')
                         ->getStateUsing(function (ExpenseChangeRequest $record) {
-                            $approved = $record->votes()->where('vote', 'approved')->count();
-                            $rejected = $record->votes()->where('vote', 'rejected')->count();
+                            $approved = $record->getApprovedVotes()->count();
+                            $rejected = $record->getRejectedVotes()->count();
                             $total = User::count();
                             $pending = $total - $approved - $rejected;
 
@@ -397,25 +397,50 @@ class ExpenseChangeRequestResource extends BaseResource
             ])
             ->recordClasses('expense-change-request-record')
             ->filters([
-                Tables\Filters\SelectFilter::make('status')
-                    ->label('Статус')
-                    ->options([
-                        'pending' => 'Ожидает голосования',
-                        'completed' => 'Завершён',
-                        'rejected' => 'Отклонён',
-                    ]),
 
+                \Filament\Tables\Filters\SelectFilter::make('user')
+                    ->label(__('resources.fields.user'))
+                    ->relationship('user', 'name')
+                    ->multiple()
+                    ->preload()
+                    ->placeholder(''),
+                Tables\Filters\SelectFilter::make('status')
+                    ->label(__('resources.fields.status'))
+                    ->options(__('resources.toggleButtons.change_request_status'))
+                    ->multiple()
+                    ->placeholder(''),
                 Tables\Filters\SelectFilter::make('action_type')
                     ->label('Тип операции')
-                    ->options([
-                        'create' => 'Создание',
-                        'edit' => 'Редактирование',
-                        'delete' => 'Удаление',
-                    ]),
-
-                Tables\Filters\SelectFilter::make('user_id')
-                    ->label('Автор')
-                    ->relationship('user', 'name'),
+                    ->options(__('resources.fields.action_type.notification_options'))
+                     ->multiple()
+                    ->placeholder(''),
+                \Filament\Tables\Filters\Filter::make('created_at')
+                    ->form([
+                        \Filament\Forms\Components\DatePicker::make("date_from")->label(__('resources.filters.date_from')),
+                        \Filament\Forms\Components\DatePicker::make("date_until")->label(__('resources.filters.date_until')),
+                    ])->columns(2)
+                    ->query(function (\Illuminate\Database\Eloquent\Builder $query, array $data): \Illuminate\Database\Eloquent\Builder {
+                        return $query
+                            ->when(
+                                $data['date_from'],
+                                fn(\Illuminate\Database\Eloquent\Builder $query, $date): \Illuminate\Database\Eloquent\Builder => $query->whereDate('created_at', '>=', $date),
+                            )
+                            ->when(
+                                $data['date_until'],
+                                fn(\Illuminate\Database\Eloquent\Builder $query, $date): \Illuminate\Database\Eloquent\Builder => $query->whereDate('created_at', '<=', $date),
+                            );
+                    })
+                    ->indicateUsing(function (array $data): ?string {
+                        if (! $data['date_from'] && ! $data['date_until']) {
+                            return null;
+                        } elseif ($data['date_from'] && ! $data['date_until']) {
+                            return 'С ' . \Carbon\Carbon::parse($data['date_from'])->translatedFormat('d F Y');
+                        } elseif (! $data['date_from'] && $data['date_until']) {
+                            return 'До ' . \Carbon\Carbon::parse($data['date_until'])->translatedFormat('d F Y');
+                        } else {
+                            return 'Период: ' . \Carbon\Carbon::parse($data['date_from'])->translatedFormat('d F Y') . ' – ' . \Carbon\Carbon::parse($data['date_until'])->translatedFormat('d F Y');
+                        }
+                    }),
             ])
             ->actions([
                 Tables\Actions\ViewAction::make()
@@ -464,9 +489,16 @@ class ExpenseChangeRequestResource extends BaseResource
                     ->modalDescription('Внимательно ознакомьтесь с предлагаемыми изменениями перед голосованием'),
 
                 Action::make('view_votes')
-                    ->label('Голоса')
+                    ->label(__('resources.buttons.votes'))
                     ->icon('heroicon-o-users')
                     ->color('gray')
+
+                    ->registerModalActions([
+                        Action::make('report')
+                            ->requiresConfirmation()
+                            ->action(fn($record) => dd($record))
+                    ])
+
                     ->modalContent(function (ExpenseChangeRequest $record) {
                         return view('filament.forms.components.view-votes', [
                             'getRecord' => function () use ($record) {
@@ -478,15 +510,7 @@ class ExpenseChangeRequestResource extends BaseResource
 
                 Tables\Actions\EditAction::make()
                     ->visible(fn(ExpenseChangeRequest $record) => $record->status === 'pending'),
-            ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make()
-                        ->visible(fn() => auth()->user()->can('delete_any_expense_change_request')),
-                ]),
-            ])
-            ->defaultSort('created_at', 'desc')
-            ->poll('30s');
+            ]);
     }
 
     public static function getRelations(): array
