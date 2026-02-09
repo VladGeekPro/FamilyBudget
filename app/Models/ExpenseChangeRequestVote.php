@@ -60,28 +60,33 @@ class ExpenseChangeRequestVote extends Model
         return $this->vote === 'rejected';
     }
 
-    public static function vote(ExpenseChangeRequest $request, User $user, bool $approved, ?string $notes = null): self
+    public static function vote(int $requestId, int $userId, string $approved, ?string $notes = null): self
     {
+
         return self::updateOrCreate(
             [
-                'expense_change_request_id' => $request->id,
-                'user_id' => $user->id,
+                'expense_change_request_id' => $requestId,
+                'user_id' => $userId
             ],
             [
-                'vote' => $approved ? 'approved' : 'rejected',
+                'vote' => $approved,
                 'notes' => $notes,
             ]
         );
     }
 
-    protected static function booted()
-    {
-        static::saved(function ($vote) {
-            $vote->expenseChangeRequest->user->notify(
-                new \App\Notifications\ExpenseChangeRequestVoted($vote->expenseChangeRequest, $vote)
-            );
-
-            $vote->expenseChangeRequest->checkAndApplyIfReady();
-        });
+    protected static function boot(){
+        
     }
+
+    // protected static function booted()
+    // {
+    //     static::saved(function ($vote) {
+    //         $vote->expenseChangeRequest->user->notify(
+    //             new \App\Notifications\ExpenseChangeRequestVoted($vote->expenseChangeRequest, $vote)
+    //         );
+
+    //         $vote->expenseChangeRequest->checkAndApplyIfReady();
+    //     });
+    // }
 }

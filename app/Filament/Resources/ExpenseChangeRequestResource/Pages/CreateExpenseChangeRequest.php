@@ -82,7 +82,12 @@ class CreateExpenseChangeRequest extends CreateBase
     protected function afterCreate(): void
     {
     
-    
+    // ExpenseChangeRequestVote::vote(
+    //                         $record->id,
+    //                         auth()->user()->id,
+    //                         $data['vote_decision'],
+    //                         $data['vote_comment']
+    //                     );
     
     $users = User::all();
 

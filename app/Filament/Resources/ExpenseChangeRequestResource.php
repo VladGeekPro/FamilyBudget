@@ -379,8 +379,8 @@ class ExpenseChangeRequestResource extends BaseResource
 
                     Tables\Columns\TextColumn::make('votes_summary')
                         ->getStateUsing(function (ExpenseChangeRequest $record) {
-                            $approved = $record->getApprovedVotes()->count();
-                            $rejected = $record->getRejectedVotes()->count();
+                            $approved = $record->getApprovedVotesCount();
+                            $rejected = $record->getRejectedVotesCount();
                             $total = User::count();
                             $pending = $total - $approved - $rejected;
 
@@ -469,18 +469,17 @@ class ExpenseChangeRequestResource extends BaseResource
                             ->maxLength(500),
                     ])
                     ->action(function (ExpenseChangeRequest $record, array $data) {
-                        $approved = $data['vote_decision'] === 'approve';
 
                         ExpenseChangeRequestVote::vote(
-                            $record,
-                            auth()->user(),
-                            $approved,
-                            $data['vote_comment'] ?? null
+                            $record->id,
+                            auth()->user()->id,
+                            $data['vote_decision'],
+                            $data['vote_comment']
                         );
 
                         Notification::make()
                             ->title('Голос учтён')
-                            ->body($approved ? 'Вы одобрили изменения' : 'Вы отклонили изменения')
+                            ->body($data['vote_decision'] === 'approve' ? 'Вы одобрили изменения' : 'Вы отклонили изменения')
                             ->success()
                             ->send();
                     })

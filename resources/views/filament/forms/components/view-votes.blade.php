@@ -5,8 +5,8 @@ $approvedVotes = $record->getApprovedVotes();
 $rejectedVotes = $record->getRejectedVotes();
 $pendingUsers = $record->getPendingUsers();
 
-$approvedVotesCount = $approvedVotes->count();
-$rejectedVotesCount = $rejectedVotes->count();
+$approvedVotesCount = $record->getApprovedVotesCount();
+$rejectedVotesCount = $record->getRejectedVotesCount();
 $pendingUsersCount = $pendingUsers->count();
 
 @endphp

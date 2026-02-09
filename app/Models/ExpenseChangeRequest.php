@@ -129,9 +129,19 @@ class ExpenseChangeRequest extends Model
         return $this->votes()->where('vote', 'approved')->with('user')->get();
     }
 
+    public function getApprovedVotesCount()
+    {
+        return $this->votes()->where('vote', 'approved')->count();
+    }
+
     public function getRejectedVotes()
     {
         return $this->votes()->where('vote', 'rejected')->with('user')->get();
+    }
+
+    public function getRejectedVotesCount()
+    {
+        return $this->votes()->where('vote', 'rejected')->count();
     }
 
     public function getPendingUsers()
@@ -150,7 +160,6 @@ class ExpenseChangeRequest extends Model
         return $this->votes()->where('user_id', $user->id)->first();
     }
 
-    // Проверка готовности для применения
     public function canBeApplied(): bool
     {
         if (!$this->isPending()) {
@@ -158,15 +167,13 @@ class ExpenseChangeRequest extends Model
         }
 
         $totalUsers = User::count();
-        $approvedVotes = $this->votes()->where('vote', 'approved')->count();
-        $rejectedVotes = $this->votes()->where('vote', 'rejected')->count();
+        $approvedVotes = $this->getApprovedVotesCount();
+        $rejectedVotes = $this->getRejectedVotesCount();
 
-        // Если есть хоть один отклонивший голос
         if ($rejectedVotes > 0) {
             return false;
         }
 
-        // Если все пользователи одобрили
         return $approvedVotes === $totalUsers;
     }
 
@@ -175,7 +182,7 @@ class ExpenseChangeRequest extends Model
     {
         if ($this->canBeApplied()) {
             $result = $this->applyChanges();
-            
+
             if ($result) {
                 // Уведомляем всех о завершении
                 $users = User::all();
@@ -183,22 +190,22 @@ class ExpenseChangeRequest extends Model
                     $user->notify(new \App\Notifications\ExpenseChangeRequestCompleted($this, true));
                 }
             }
-            
+
             return $result;
         }
-        
+
         // Проверяем, есть ли отклоняющие голоса
         $rejectedVotes = $this->votes()->where('vote', 'rejected')->count();
         if ($rejectedVotes > 0 && $this->isPending()) {
             $this->update(['status' => 'rejected']);
-            
+
             // Уведомляем всех об отклонении
             $users = User::all();
             foreach ($users as $user) {
                 $user->notify(new \App\Notifications\ExpenseChangeRequestCompleted($this, false));
             }
         }
-        
+
         return false;
     }
 
@@ -250,14 +257,14 @@ class ExpenseChangeRequest extends Model
     {
         if ($this->expense) {
             $updateData = [];
-            
+
             if ($this->requested_user_id) $updateData['user_id'] = $this->requested_user_id;
             if ($this->requested_date) $updateData['date'] = $this->requested_date;
             if ($this->requested_category_id) $updateData['category_id'] = $this->requested_category_id;
             if ($this->requested_supplier_id) $updateData['supplier_id'] = $this->requested_supplier_id;
             if ($this->requested_sum !== null) $updateData['sum'] = $this->requested_sum;
             if ($this->requested_notes !== null) $updateData['notes'] = $this->requested_notes;
-            
+
             $this->expense->update($updateData);
         }
     }
@@ -295,11 +302,11 @@ class ExpenseChangeRequest extends Model
     public function hasRequestedChanges(): bool
     {
         return $this->requested_user_id !== null ||
-               $this->requested_date !== null ||
-               $this->requested_category_id !== null ||
-               $this->requested_supplier_id !== null ||
-               $this->requested_sum !== null ||
-               $this->requested_notes !== null;
+            $this->requested_date !== null ||
+            $this->requested_category_id !== null ||
+            $this->requested_supplier_id !== null ||
+            $this->requested_sum !== null ||
+            $this->requested_notes !== null;
     }
 
     public function getChangeSummary(): array
@@ -309,36 +316,36 @@ class ExpenseChangeRequest extends Model
         }
 
         $changes = [];
-        
+
         if ($this->requested_user_id && $this->requested_user_id != $this->expense->user_id) {
             $changes['user'] = [
                 'old' => $this->expense->user->name ?? 'Unknown',
                 'new' => $this->requestedUser->name ?? 'Unknown'
             ];
         }
-        
+
         if ($this->requested_date && $this->requested_date != $this->expense->date) {
             $changes['date'] = ['old' => $this->expense->date, 'new' => $this->requested_date];
         }
-        
+
         if ($this->requested_category_id && $this->requested_category_id != $this->expense->category_id) {
             $changes['category'] = [
                 'old' => $this->expense->category->name ?? 'Unknown',
                 'new' => $this->requestedCategory->name ?? 'Unknown'
             ];
         }
-        
+
         if ($this->requested_supplier_id && $this->requested_supplier_id != $this->expense->supplier_id) {
             $changes['supplier'] = [
                 'old' => $this->expense->supplier->name ?? 'Unknown',
                 'new' => $this->requestedSupplier->name ?? 'Unknown'
             ];
         }
-        
+
         if ($this->requested_sum !== null && $this->requested_sum != $this->expense->sum) {
             $changes['sum'] = ['old' => $this->expense->sum, 'new' => $this->requested_sum];
         }
-        
+
         if ($this->requested_notes !== null && $this->requested_notes != $this->expense->notes) {
             $changes['notes'] = ['old' => $this->expense->notes, 'new' => $this->requested_notes];
         }
