@@ -2,81 +2,66 @@
 
 namespace App\Notifications;
 
+use App\Filament\Resources\ExpenseChangeRequestResource;
 use App\Models\ExpenseChangeRequest;
-use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Notifications\Messages\MailMessage;
-use Illuminate\Notifications\Notification;
-use Filament\Notifications\Notification as FilamentNotification;
+use App\Models\User;
 use Filament\Notifications\Actions\Action;
+use Filament\Notifications\Notification as FilamentNotification;
+use Illuminate\Notifications\Notification;
 
-class ExpenseChangeRequestCreated extends Notification implements ShouldQueue
+
+class ExpenseChangeRequestCreated extends Notification
 {
-    use Queueable;
 
     public function __construct(
-        public ExpenseChangeRequest $expenseChangeRequest
+        public ExpenseChangeRequest $changeRequest,
+        public string $event
     ) {}
 
-    public function via(object $notifiable): array
+    public function via($notifiable): array
     {
-        return ['database', 'mail'];
+        return ['database'];
     }
 
-    public function toMail(object $notifiable): MailMessage
+    public function toDatabase($notifiable): array
     {
-        $actionText = match ($this->expenseChangeRequest->action_type) {
-            'create' => 'создать новый расход',
-            'edit' => 'изменить расход',
-            'delete' => 'удалить расход',
-        };
 
-        return (new MailMessage)
-            ->subject('Новый запрос на изменение расхода')
-            ->line("Пользователь {$this->expenseChangeRequest->user->name} запросил разрешение {$actionText}.")
-            ->when($this->expenseChangeRequest->expense, function ($mail) {
-                return $mail->line("Расход: {$this->expenseChangeRequest->expense->supplier->name} - {$this->expenseChangeRequest->expense->sum} MDL");
-            })
-            ->line("Причина: {$this->expenseChangeRequest->notes}")
-            ->action('Перейти к голосованию', url('/admin/expense-change-requests/' . $this->expenseChangeRequest->id))
-            ->line('Ваш голос важен для принятия решения.');
-    }
+        $actionType = $this->changeRequest->action_type;
 
-    public function toArray(object $notifiable): array
-    {
-        return [
-            'type' => 'expense_change_request_created',
-            'expense_change_request_id' => $this->expenseChangeRequest->id,
-            'user_name' => $this->expenseChangeRequest->user->name,
-            'action_type' => $this->expenseChangeRequest->action_type,
-            'notes' => $this->expenseChangeRequest->notes,
-            'expense_id' => $this->expenseChangeRequest->expense_id,
+        $translationBase = "resources.notifications.warn.expense_change_request.{$this->event}";
+
+        $body = __($translationBase . '.body', [
+            'date' => $this->changeRequest->updated_at?->format('d.m.Y H:i') ?? $this->changeRequest->created_at->format('d.m.Y H:i'),
+            'actionType' => __('resources.fields.action_type.notification_options.' . $actionType),
+            'creator' => $this->changeRequest->user_id->name,
+            'expense_id' => $this->changeRequest->expense_id,
+        ]);
+
+        $iconMap = [
+            'created' => ['icon' => 'heroicon-o-document-plus', 'color' => 'success'],
+            'edited'  => ['icon' => 'heroicon-o-pencil-square', 'color' => 'warning'],
+            'deleted' => ['icon' => 'heroicon-o-trash', 'color' => 'danger'],
         ];
-    }
-
-    public function toFilament(object $notifiable): FilamentNotification
-    {
-        $actionText = match ($this->expenseChangeRequest->action_type) {
-            'create' => 'создать новый расход',
-            'edit' => 'изменить расход',
-            'delete' => 'удалить расход',
-        };
 
         return FilamentNotification::make()
-            ->title('Новый запрос на изменение')
-            ->body("{$this->expenseChangeRequest->user->name} запросил разрешение {$actionText}")
-            ->icon('heroicon-o-document-text')
-            ->color('info')
+            ->title(__($translationBase . '.title'))
+            ->body(new \Illuminate\Support\HtmlString($body))
+            ->icon($iconMap[$this->event]['icon'])
+            ->iconColor($iconMap[$this->event]['color'])
             ->actions([
-                Action::make('vote')
-                    ->label('Голосовать')
-                    ->url('/admin/expense-change-requests/' . $this->expenseChangeRequest->id)
-                    ->button(),
                 Action::make('view')
-                    ->label('Подробнее')
-                    ->url('/admin/expense-change-requests/' . $this->expenseChangeRequest->id)
-                    ->link(),
+                    ->label(__('resources.buttons.view'))
+                    ->icon('heroicon-o-eye')
+                    ->button()
+                    ->url(fn() => ExpenseChangeRequestResource::getUrl('view', ['record' => $this->changeRequest->id])),
+
+                Action::make('markAsRead')
+                    ->label(__('resources.buttons.mark_as_read'))
+                    ->icon('heroicon-o-check')
+                    ->button()
+                    ->color('success')
+                    ->markAsRead(),
             ])
-            ->persistent();
+            ->getDatabaseMessage();
     }
 }

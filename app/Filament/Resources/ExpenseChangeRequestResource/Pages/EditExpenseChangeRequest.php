@@ -5,7 +5,7 @@ namespace App\Filament\Resources\ExpenseChangeRequestResource\Pages;
 use App\Filament\Resources\Base\EditBase;
 use App\Filament\Resources\ExpenseChangeRequestResource;
 use App\Models\User;
-use App\Notifications\ExpenseChangeRequestNotification;
+use App\Notifications\ExpenseChangeRequestCreated;
 use Filament\Actions;
 
 class EditExpenseChangeRequest extends EditBase
@@ -17,12 +17,12 @@ class EditExpenseChangeRequest extends EditBase
         return [
             Actions\ViewAction::make(),
             Actions\DeleteAction::make()
-                ->visible(fn () => $this->record->status === 'pending')
-                ->successNotificationTitle(fn () => $this->getDeletedNotificationTitle())
+                ->visible(fn() => $this->record->status === 'pending')
+                ->successNotificationTitle(fn() => $this->getDeletedNotificationTitle())
                 ->after(function () {
                     $users = User::all();
                     foreach ($users as $user) {
-                        $user->notify(new ExpenseChangeRequestNotification($this->record, auth()->user(), 'deleted'));
+                        $user->notify(new ExpenseChangeRequestCreated($this->record, 'deleted'));
                     }
                 }),
         ];
@@ -33,8 +33,7 @@ class EditExpenseChangeRequest extends EditBase
         $users = User::all();
 
         foreach ($users as $user) {
-            $user->notify(new ExpenseChangeRequestNotification($this->record, auth()->user(), 'edited'));
+            $user->notify(new ExpenseChangeRequestCreated($this->record, 'edited'));
         }
     }
-  
 }

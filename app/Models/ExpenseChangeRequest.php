@@ -178,33 +178,47 @@ class ExpenseChangeRequest extends Model
     }
 
     // Автоматическая проверка и применение после голосования
-    public function checkAndApplyIfReady(): bool
+    public function checkAndApplyIfReady( string $decision ): bool
     {
-        if ($this->canBeApplied()) {
-            $result = $this->applyChanges();
+        // if ($this->canBeApplied()) {
+        //     $result = $this->applyChanges();
 
-            if ($result) {
-                // Уведомляем всех о завершении
-                $users = User::all();
-                foreach ($users as $user) {
-                    $user->notify(new \App\Notifications\ExpenseChangeRequestCompleted($this, true));
-                }
+        //     if ($result) {
+        //         // Уведомляем всех о завершении
+        //         $users = User::all();
+        //         foreach ($users as $user) {
+        //             $user->notify(new \App\Notifications\ExpenseChangeRequestCompleted($this, true));
+        //         }
+        //     }
+
+        //     return $result;
+        // }
+
+
+        if ($this->isPending() && User::count() === $this->getApprovedVotesCount()) {
+
+        } 
+
+
+
+        if ($decision === 'rejected') {
+            $this->update(['status' => $decision]);
+            foreach ( User::all() as $user ) {
+                $user->notify( new \App\Notifications\ExpenseChangeRequestCompleted($this, false) );
             }
-
-            return $result;
         }
 
-        // Проверяем, есть ли отклоняющие голоса
-        $rejectedVotes = $this->votes()->where('vote', 'rejected')->count();
-        if ($rejectedVotes > 0 && $this->isPending()) {
-            $this->update(['status' => 'rejected']);
+        // // Проверяем, есть ли отклоняющие голоса
+        // $rejectedVotes = $this->votes()->where('vote', 'rejected')->count();
+        // if ($rejectedVotes > 0 && $this->isPending()) {
+        //     $this->update(['status' => 'rejected']);
 
-            // Уведомляем всех об отклонении
-            $users = User::all();
-            foreach ($users as $user) {
-                $user->notify(new \App\Notifications\ExpenseChangeRequestCompleted($this, false));
-            }
-        }
+        //     // Уведомляем всех об отклонении
+        //     $users = User::all();
+        //     foreach ($users as $user) {
+        //         $user->notify(new \App\Notifications\ExpenseChangeRequestCompleted($this, false));
+        //     }
+        // }
 
         return false;
     }

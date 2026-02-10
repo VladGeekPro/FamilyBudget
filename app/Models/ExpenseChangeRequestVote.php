@@ -75,8 +75,12 @@ class ExpenseChangeRequestVote extends Model
         );
     }
 
-    protected static function boot(){
-        
+    protected static function boot()
+    {
+
+        static::saved(function ($vote) {
+            $vote->expenseChangeRequest->checkAndApplyIfReady( $vote->vote );
+        });
     }
 
     // protected static function booted()
