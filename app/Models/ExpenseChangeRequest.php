@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Log;
 
 class ExpenseChangeRequest extends Model
 {
@@ -81,10 +82,10 @@ class ExpenseChangeRequest extends Model
         return $this->belongsTo(Supplier::class, 'current_supplier_id');
     }
 
-    public function votes(): HasMany
-    {
-        return $this->hasMany(ExpenseChangeRequestVote::class);
-    }
+    // public function votes(): HasMany
+    // {
+    //     return $this->hasMany(ExpenseChangeRequestVote::class);
+    // }
 
     // Scopes
     public function scopePending($query)
@@ -160,87 +161,35 @@ class ExpenseChangeRequest extends Model
         return $this->votes()->where('user_id', $user->id)->first();
     }
 
-    public function canBeApplied(): bool
+    public function checkAndApplyIfReady(string $decision): bool
     {
-        if (!$this->isPending()) {
-            return false;
-        }
-
-        $totalUsers = User::count();
-        $approvedVotes = $this->getApprovedVotesCount();
-        $rejectedVotes = $this->getRejectedVotesCount();
-
-        if ($rejectedVotes > 0) {
-            return false;
-        }
-
-        return $approvedVotes === $totalUsers;
-    }
-
-    // Автоматическая проверка и применение после голосования
-    public function checkAndApplyIfReady( string $decision ): bool
-    {
-        // if ($this->canBeApplied()) {
-        //     $result = $this->applyChanges();
-
-        //     if ($result) {
-        //         // Уведомляем всех о завершении
-        //         $users = User::all();
-        //         foreach ($users as $user) {
-        //             $user->notify(new \App\Notifications\ExpenseChangeRequestCompleted($this, true));
-        //         }
-        //     }
-
-        //     return $result;
-        // }
-
 
         if ($this->isPending() && User::count() === $this->getApprovedVotesCount()) {
-
-        } 
-
-
-
-        if ($decision === 'rejected') {
+            if ($this->applyChanges()) {
+                foreach (User::all() as $user) {
+                    $user->notify(new \App\Notifications\ExpenseChangeRequestCompleted($this, true));
+                }
+            }
+        } else if ($decision === 'rejected') {
             $this->update(['status' => $decision]);
-            foreach ( User::all() as $user ) {
-                $user->notify( new \App\Notifications\ExpenseChangeRequestCompleted($this, false) );
+            foreach (User::all() as $user) {
+                $user->notify(new \App\Notifications\ExpenseChangeRequestCompleted($this, false));
             }
         }
-
-        // // Проверяем, есть ли отклоняющие голоса
-        // $rejectedVotes = $this->votes()->where('vote', 'rejected')->count();
-        // if ($rejectedVotes > 0 && $this->isPending()) {
-        //     $this->update(['status' => 'rejected']);
-
-        //     // Уведомляем всех об отклонении
-        //     $users = User::all();
-        //     foreach ($users as $user) {
-        //         $user->notify(new \App\Notifications\ExpenseChangeRequestCompleted($this, false));
-        //     }
-        // }
 
         return false;
     }
 
-    // Применение изменений
     public function applyChanges(): bool
     {
-        if (!$this->canBeApplied()) {
-            return false;
-        }
-
         try {
-            switch ($this->action_type) {
-                case 'create':
-                    $this->createExpense();
-                    break;
-                case 'edit':
-                    $this->editExpense();
-                    break;
-                case 'delete':
-                    $this->deleteExpense();
-                    break;
+
+            $methodName = $this->action_type . 'Expense';
+            if (method_exists($this, $methodName)) {
+                $this->$methodName();
+            } else {
+                Log::error('Ошибка при применении изменений для редактирования затраты: #' . $this->expense . '; созданной: ' . $this->created_at . '; пользователем: ' . $this->user->name . '; ' . 'Ошибка: не удалось отредактировать затрату, потому что небыл обнаружен следующий метод ' . $methodName);
+                return false;
             }
 
             $this->update([
@@ -250,7 +199,7 @@ class ExpenseChangeRequest extends Model
 
             return true;
         } catch (\Exception $e) {
-            \Log::error('Failed to apply expense change request: ' . $e->getMessage());
+            Log::error('Ошибка при применении изменений для редактирования затраты: #' . $this->expense . '; созданной: ' . $this->created_at . '; пользователем: ' . $this->user->name . '; ' . 'Ошибка: ' . $e->getMessage());
             return false;
         }
     }
@@ -258,7 +207,7 @@ class ExpenseChangeRequest extends Model
     protected function createExpense()
     {
         Expense::create([
-            'user_id' => $this->requested_user_id ?? $this->user_id,
+            'user_id' => $this->requested_user_id,
             'date' => $this->requested_date,
             'category_id' => $this->requested_category_id,
             'supplier_id' => $this->requested_supplier_id,
