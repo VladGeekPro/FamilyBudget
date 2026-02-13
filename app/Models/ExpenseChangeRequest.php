@@ -82,10 +82,10 @@ class ExpenseChangeRequest extends Model
         return $this->belongsTo(Supplier::class, 'current_supplier_id');
     }
 
-    // public function votes(): HasMany
-    // {
-    //     return $this->hasMany(ExpenseChangeRequestVote::class);
-    // }
+    public function votes(): HasMany
+    {
+        return $this->hasMany(ExpenseChangeRequestVote::class);
+    }
 
     // Scopes
     public function scopePending($query)
@@ -229,6 +229,8 @@ class ExpenseChangeRequest extends Model
             if ($this->requested_notes !== null) $updateData['notes'] = $this->requested_notes;
 
             $this->expense->update($updateData);
+        } else {
+            Log::error('Ошибка при применении изменений для редактирования затраты: #' . $this->expense . '; созданной: ' . $this->created_at . '; пользователем: ' . $this->user->name . '; ' . 'Ошибка: не удалось отредактировать затрату, потому что не найдена затрата: #' . $this->expense);
         }
     }
 
@@ -236,6 +238,8 @@ class ExpenseChangeRequest extends Model
     {
         if ($this->expense) {
             $this->expense->delete();
+        } else {
+            Log::error('Ошибка при применении изменений для редактирования затраты: #' . $this->expense . '; созданной: ' . $this->created_at . '; пользователем: ' . $this->user->name . '; ' . 'Ошибка: не удалось удалить затрату, потому что не найдена затрата: #' . $this->expense);
         }
     }
 

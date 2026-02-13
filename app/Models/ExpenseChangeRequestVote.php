@@ -79,18 +79,14 @@ class ExpenseChangeRequestVote extends Model
     {
 
         static::saved(function ($vote) {
-            $vote->expenseChangeRequest->checkAndApplyIfReady( $vote->vote );
+
+            foreach (User::all() as $user) {
+                $user->notify(
+                    new \App\Notifications\ExpenseChangeRequestVoted($vote->expenseChangeRequest, $vote)
+                );
+            }
+
+            $vote->expenseChangeRequest->checkAndApplyIfReady($vote->vote);
         });
     }
-
-    // protected static function booted()
-    // {
-    //     static::saved(function ($vote) {
-    //         $vote->expenseChangeRequest->user->notify(
-    //             new \App\Notifications\ExpenseChangeRequestVoted($vote->expenseChangeRequest, $vote)
-    //         );
-
-    //         $vote->expenseChangeRequest->checkAndApplyIfReady();
-    //     });
-    // }
 }
