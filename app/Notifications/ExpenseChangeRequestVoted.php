@@ -2,21 +2,20 @@
 
 namespace App\Notifications;
 
-use App\Models\ExpenseChangeRequest;
+use App\Filament\Resources\ExpenseChangeRequestResource;
 use App\Models\ExpenseChangeRequestVote;
+use Filament\Notifications\Actions\Action;
+use Filament\Notifications\Notification as FilamentNotification;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
-use Filament\Notifications\Notification as FilamentNotification;
-use Filament\Notifications\Actions\Action;
+use Illuminate\Support\HtmlString;
 
 class ExpenseChangeRequestVoted extends Notification implements ShouldQueue
 {
     use Queueable;
 
     public function __construct(
-        public ExpenseChangeRequest $expenseChangeRequest,
         public ExpenseChangeRequestVote $vote
     ) {}
 
@@ -25,34 +24,38 @@ class ExpenseChangeRequestVoted extends Notification implements ShouldQueue
         return ['database'];
     }
 
-    public function toArray(object $notifiable): array
+    public function toDatabase(object $notifiable): array
     {
-        return [
-            'type' => 'expense_change_request_voted',
-            'expense_change_request_id' => $this->expenseChangeRequest->id,
-            'voter_name' => $this->vote->user->name,
-            'vote' => $this->vote->vote,
-            'notes' => $this->vote->notes,
-        ];
-    }
+        $changeRequest = $this->vote->expenseChangeRequest;
+        $isApproved = in_array($this->vote->vote, ['approved', 'approve'], true);
 
-    public function toFilament(object $notifiable): FilamentNotification
-    {
-        $voteText = $this->vote->vote === 'approved' ? 'одобрил' : 'отклонил';
-        $color = $this->vote->vote === 'approved' ? 'success' : 'danger';
-        $icon = $this->vote->vote === 'approved' ? 'heroicon-o-hand-thumb-up' : 'heroicon-o-hand-thumb-down';
+        $voteText = $isApproved ? 'одобрил' : 'отклонил';
+        $icon = $isApproved ? 'heroicon-o-hand-thumb-up' : 'heroicon-o-hand-thumb-down';
+        $iconColor = $isApproved ? 'success' : 'danger';
+
+        $body = "{$this->vote->user->name} {$voteText} запрос #{$changeRequest->id}";
+        if (!empty($this->vote->notes)) {
+            $body .= "<br><br>💬 {$this->vote->notes}";
+        }
 
         return FilamentNotification::make()
-            ->title('Новый голос получен')
-            ->body("{$this->vote->user->name} {$voteText} запрос #{$this->expenseChangeRequest->id}")
+            ->title('Новый голос по запросу')
+            ->body(new HtmlString($body))
             ->icon($icon)
-            ->color($color)
+            ->iconColor($iconColor)
             ->actions([
-                Action::make('view_votes')
-                    ->label('Все голоса')
-                    ->url('/admin/expense-change-requests/' . $this->expenseChangeRequest->id)
-                    ->button(),
+                Action::make('view')
+                    ->label(__('resources.buttons.view'))
+                    ->icon('heroicon-o-eye')
+                    ->button()
+                    ->url(fn() => ExpenseChangeRequestResource::getUrl('view', ['record' => $changeRequest->id])),
+                Action::make('markAsRead')
+                    ->label(__('resources.buttons.mark_as_read'))
+                    ->icon('heroicon-o-check')
+                    ->button()
+                    ->color('success')
+                    ->markAsRead(),
             ])
-            ->persistent();
+            ->getDatabaseMessage();
     }
 }

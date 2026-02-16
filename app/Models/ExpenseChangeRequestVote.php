@@ -75,14 +75,13 @@ class ExpenseChangeRequestVote extends Model
         );
     }
 
-    protected static function boot()
+    protected static function booted(): void
     {
-
         static::saved(function ($vote) {
 
             foreach (User::all() as $user) {
                 $user->notify(
-                    new \App\Notifications\ExpenseChangeRequestVoted($vote->expenseChangeRequest, $vote)
+                    new \App\Notifications\ExpenseChangeRequestVoted($vote)
                 );
             }
 
