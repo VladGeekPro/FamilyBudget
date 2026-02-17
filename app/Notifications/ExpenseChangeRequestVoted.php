@@ -13,8 +13,6 @@ use Illuminate\Support\HtmlString;
 
 class ExpenseChangeRequestVoted extends Notification implements ShouldQueue
 {
-    use Queueable;
-
     public function __construct(
         public ExpenseChangeRequestVote $vote
     ) {}
@@ -26,14 +24,15 @@ class ExpenseChangeRequestVoted extends Notification implements ShouldQueue
 
     public function toDatabase(object $notifiable): array
     {
-        $changeRequest = $this->vote->expenseChangeRequest;
-        $isApproved = in_array($this->vote->vote, ['approved', 'approve'], true);
+        $isApproved = $this->vote->vote === 'approved';
 
         $voteText = $isApproved ? 'одобрил' : 'отклонил';
         $icon = $isApproved ? 'heroicon-o-hand-thumb-up' : 'heroicon-o-hand-thumb-down';
         $iconColor = $isApproved ? 'success' : 'danger';
 
-        $body = "{$this->vote->user->name} {$voteText} запрос #{$changeRequest->id}";
+        $expenseChangeRequestId = $this->vote->expenseChangeRequest->id;
+
+        $body = "{$this->vote->user->name} {$voteText} запрос #{$expenseChangeRequestId}";
         if (!empty($this->vote->notes)) {
             $body .= "<br><br>💬 {$this->vote->notes}";
         }
@@ -48,7 +47,7 @@ class ExpenseChangeRequestVoted extends Notification implements ShouldQueue
                     ->label(__('resources.buttons.view'))
                     ->icon('heroicon-o-eye')
                     ->button()
-                    ->url(fn() => ExpenseChangeRequestResource::getUrl('view', ['record' => $changeRequest->id])),
+                    ->url(fn() => ExpenseChangeRequestResource::getUrl('view', ['record' => $expenseChangeRequestId])),
                 Action::make('markAsRead')
                     ->label(__('resources.buttons.mark_as_read'))
                     ->icon('heroicon-o-check')

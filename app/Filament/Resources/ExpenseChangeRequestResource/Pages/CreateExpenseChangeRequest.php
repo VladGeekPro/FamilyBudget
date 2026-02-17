@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Notifications\ExpenseChangeRequestCreated;
 use Filament\Actions;
 use App\Filament\Resources\Base\CreateBase;
+use App\Models\ExpenseChangeRequestVote;
 use Filament\Notifications\Notification;
 use Filament\Notifications\Actions\Action;
 
@@ -81,15 +82,13 @@ class CreateExpenseChangeRequest extends CreateBase
 
     protected function afterCreate(): void
     {
-    
-    // ExpenseChangeRequestVote::vote(
-    //                         $record->id,
-    //                         auth()->user()->id,
-    //                         $data['vote_decision'],
-    //                         $data['vote_comment']
-    //                     );
-    
-    $users = User::all();
+        ExpenseChangeRequestVote::vote(
+            $this->record->id,
+            $this->record->user_id,
+            'approved'
+        );
+
+        $users = User::all();
 
         foreach ($users as $user) {
             $user->notify(new ExpenseChangeRequestCreated($this->record, 'created'));

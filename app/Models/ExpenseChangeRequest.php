@@ -167,13 +167,13 @@ class ExpenseChangeRequest extends Model
         if ($this->isPending() && User::count() === $this->getApprovedVotesCount()) {
             if ($this->applyChanges()) {
                 foreach (User::all() as $user) {
-                    $user->notify(new \App\Notifications\ExpenseChangeRequestCompleted($this, true));
+                    $user->notify(new \App\Notifications\ExpenseChangeRequestCompleted($this, 'completed'));
                 }
             }
         } else if ($decision === 'rejected') {
             $this->update(['status' => $decision]);
             foreach (User::all() as $user) {
-                $user->notify(new \App\Notifications\ExpenseChangeRequestCompleted($this, false));
+                $user->notify(new \App\Notifications\ExpenseChangeRequestCompleted($this, 'rejected'));
             }
         }
 

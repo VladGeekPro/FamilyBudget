@@ -60,7 +60,7 @@ class ExpenseChangeRequestVote extends Model
         return $this->vote === 'rejected';
     }
 
-    public static function vote(int $requestId, int $userId, string $approved, ?string $notes = null): self
+    public static function vote(int $requestId, int $userId, string $vote, ?string $notes = null): self
     {
 
         return self::updateOrCreate(
@@ -69,7 +69,7 @@ class ExpenseChangeRequestVote extends Model
                 'user_id' => $userId
             ],
             [
-                'vote' => $approved,
+                'vote' => $vote,
                 'notes' => $notes,
             ]
         );
