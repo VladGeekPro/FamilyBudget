@@ -6,17 +6,13 @@ use App\Filament\Resources\ExpenseChangeRequestResource;
 use App\Models\ExpenseChangeRequest;
 use Filament\Notifications\Actions\Action;
 use Filament\Notifications\Notification as FilamentNotification;
-use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Notification;
 use Illuminate\Support\HtmlString;
 
-class ExpenseChangeRequestCompleted extends Notification implements ShouldQueue
+class ExpenseChangeRequestCompleted extends Notification
 {
-    use Queueable;
-
     public function __construct(
-        public ExpenseChangeRequest $changeRequest,
+        public ExpenseChangeRequest $expenseChangeRequest,
         public string $event
     ) {}
 
@@ -27,14 +23,14 @@ class ExpenseChangeRequestCompleted extends Notification implements ShouldQueue
 
     public function toDatabase($notifiable): array
     {
-        $actionType = $this->changeRequest->action_type;
+        $actionType = $this->expenseChangeRequest->action_type;
 
         $translationBase = "resources.notifications.warn.expense_change_request.{$this->event}";
 
         $body = __($translationBase . '.body', [
-            'date' => $this->changeRequest->updated_at?->format('d.m.Y H:i') ?? $this->changeRequest->created_at->format('d.m.Y H:i'),
+            'date' => $this->expenseChangeRequest->updated_at?->format('d.m.Y H:i') ?? $this->expenseChangeRequest->created_at->format('d.m.Y H:i'),
             'actionType' => __('resources.fields.action_type.notification_options.' . $actionType),
-            'creator' => $this->changeRequest->user_id->name,
+            'creator' => $this->expenseChangeRequest->user_id->name,
         ]);
 
         $iconMap = [
@@ -52,7 +48,7 @@ class ExpenseChangeRequestCompleted extends Notification implements ShouldQueue
                     ->label(__('resources.buttons.view'))
                     ->icon('heroicon-o-eye')
                     ->button()
-                    ->url(fn() => ExpenseChangeRequestResource::getUrl('view', ['record' => $this->changeRequest->id])),
+                    ->url(fn() => ExpenseChangeRequestResource::getUrl('view', ['record' => $this->expenseChangeRequest->id])),
 
                 Action::make('markAsRead')
                     ->label(__('resources.buttons.mark_as_read'))

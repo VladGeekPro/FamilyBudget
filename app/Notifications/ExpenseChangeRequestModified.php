@@ -9,10 +9,8 @@ use Filament\Notifications\Actions\Action;
 use Filament\Notifications\Notification as FilamentNotification;
 use Illuminate\Notifications\Notification;
 
-
-class ExpenseChangeRequestCreated extends Notification
+class ExpenseChangeRequestModified extends Notification
 {
-
     public function __construct(
         public ExpenseChangeRequest $changeRequest,
         public string $event
@@ -25,7 +23,6 @@ class ExpenseChangeRequestCreated extends Notification
 
     public function toDatabase($notifiable): array
     {
-
         $actionType = $this->changeRequest->action_type;
 
         $translationBase = "resources.notifications.warn.expense_change_request.{$this->event}";
@@ -33,14 +30,14 @@ class ExpenseChangeRequestCreated extends Notification
         $body = __($translationBase . '.body', [
             'date' => $this->changeRequest->updated_at?->format('d.m.Y H:i') ?? $this->changeRequest->created_at->format('d.m.Y H:i'),
             'actionType' => __('resources.fields.action_type.notification_options.' . $actionType),
-            'creator' => $this->changeRequest->user_id->name,
+            'creator' => $this->changeRequest->user->name,
             'expense_id' => $this->changeRequest->expense_id,
         ]);
 
         $iconMap = [
-            'created' => ['icon' => 'heroicon-o-document-plus', 'color' => 'success'],
-            'edited'  => ['icon' => 'heroicon-o-pencil-square', 'color' => 'warning'],
-            'deleted' => ['icon' => 'heroicon-o-trash', 'color' => 'danger'],
+            'create' => ['icon' => 'heroicon-o-document-plus', 'color' => 'success'],
+            'edit' => ['icon' => 'heroicon-o-pencil-square', 'color' => 'warning'],
+            'delete' => ['icon' => 'heroicon-o-trash', 'color' => 'danger'],
         ];
 
         return FilamentNotification::make()
@@ -48,12 +45,15 @@ class ExpenseChangeRequestCreated extends Notification
             ->body(new \Illuminate\Support\HtmlString($body))
             ->icon($iconMap[$this->event]['icon'])
             ->iconColor($iconMap[$this->event]['color'])
-            ->actions([
-                Action::make('view')
+            ->actions(array_values(array_filter([
+
+                $this->event !== 'delete'
+                    ? Action::make('view')
                     ->label(__('resources.buttons.view'))
                     ->icon('heroicon-o-eye')
                     ->button()
-                    ->url(fn() => ExpenseChangeRequestResource::getUrl('view', ['record' => $this->changeRequest->id])),
+                    ->url(fn() => ExpenseChangeRequestResource::getUrl('view', ['record' => $this->changeRequest->id]))
+                    : null,
 
                 Action::make('markAsRead')
                     ->label(__('resources.buttons.mark_as_read'))
@@ -61,7 +61,7 @@ class ExpenseChangeRequestCreated extends Notification
                     ->button()
                     ->color('success')
                     ->markAsRead(),
-            ])
+            ])))
             ->getDatabaseMessage();
     }
 }

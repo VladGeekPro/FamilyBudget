@@ -5,7 +5,7 @@ namespace App\Filament\Resources\ExpenseChangeRequestResource\Pages;
 use App\Filament\Resources\ExpenseChangeRequestResource;
 use App\Models\Expense;
 use App\Models\User;
-use App\Notifications\ExpenseChangeRequestCreated;
+use App\Notifications\ExpenseChangeRequestModified;
 use Filament\Actions;
 use App\Filament\Resources\Base\CreateBase;
 use App\Models\ExpenseChangeRequestVote;
@@ -91,7 +91,7 @@ class CreateExpenseChangeRequest extends CreateBase
         $users = User::all();
 
         foreach ($users as $user) {
-            $user->notify(new ExpenseChangeRequestCreated($this->record, 'created'));
+            $user->notify(new ExpenseChangeRequestModified($this->record, 'create'));
         }
     }
 }

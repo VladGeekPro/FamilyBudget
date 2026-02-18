@@ -5,7 +5,7 @@ namespace App\Filament\Resources\ExpenseChangeRequestResource\Pages;
 use App\Filament\Resources\Base\EditBase;
 use App\Filament\Resources\ExpenseChangeRequestResource;
 use App\Models\User;
-use App\Notifications\ExpenseChangeRequestCreated;
+use App\Notifications\ExpenseChangeRequestModified;
 use Filament\Actions;
 
 class EditExpenseChangeRequest extends EditBase
@@ -22,7 +22,7 @@ class EditExpenseChangeRequest extends EditBase
                 ->after(function () {
                     $users = User::all();
                     foreach ($users as $user) {
-                        $user->notify(new ExpenseChangeRequestCreated($this->record, 'deleted'));
+                        $user->notify(new ExpenseChangeRequestModified($this->record, 'delete'));
                     }
                 }),
         ];
@@ -33,7 +33,7 @@ class EditExpenseChangeRequest extends EditBase
         $users = User::all();
 
         foreach ($users as $user) {
-            $user->notify(new ExpenseChangeRequestCreated($this->record, 'edited'));
+            $user->notify(new ExpenseChangeRequestModified($this->record, 'edit'));
         }
     }
 }

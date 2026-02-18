@@ -79,7 +79,12 @@ class ExpenseChangeRequestVote extends Model
     {
         static::saved(function ($vote) {
 
-            foreach (User::all() as $user) {
+            $users = User::query()
+                ->whereKeyNot(auth()->id())
+                ->get();
+
+
+            foreach ($users as $user) {
                 $user->notify(
                     new \App\Notifications\ExpenseChangeRequestVoted($vote)
                 );

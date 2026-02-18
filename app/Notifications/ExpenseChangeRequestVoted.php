@@ -6,12 +6,10 @@ use App\Filament\Resources\ExpenseChangeRequestResource;
 use App\Models\ExpenseChangeRequestVote;
 use Filament\Notifications\Actions\Action;
 use Filament\Notifications\Notification as FilamentNotification;
-use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Notification;
 use Illuminate\Support\HtmlString;
 
-class ExpenseChangeRequestVoted extends Notification implements ShouldQueue
+class ExpenseChangeRequestVoted extends Notification
 {
     public function __construct(
         public ExpenseChangeRequestVote $vote
@@ -30,9 +28,8 @@ class ExpenseChangeRequestVoted extends Notification implements ShouldQueue
         $icon = $isApproved ? 'heroicon-o-hand-thumb-up' : 'heroicon-o-hand-thumb-down';
         $iconColor = $isApproved ? 'success' : 'danger';
 
-        $expenseChangeRequestId = $this->vote->expenseChangeRequest->id;
 
-        $body = "{$this->vote->user->name} {$voteText} запрос #{$expenseChangeRequestId}";
+        $body = "{$this->vote->user->name} {$voteText} запрос #{$this->vote->expenseChangeRequest->expense_id}";
         if (!empty($this->vote->notes)) {
             $body .= "<br><br>💬 {$this->vote->notes}";
         }
@@ -47,7 +44,7 @@ class ExpenseChangeRequestVoted extends Notification implements ShouldQueue
                     ->label(__('resources.buttons.view'))
                     ->icon('heroicon-o-eye')
                     ->button()
-                    ->url(fn() => ExpenseChangeRequestResource::getUrl('view', ['record' => $expenseChangeRequestId])),
+                    ->url(fn() => ExpenseChangeRequestResource::getUrl('view', ['record' => $this->vote->expenseChangeRequest->id])),
                 Action::make('markAsRead')
                     ->label(__('resources.buttons.mark_as_read'))
                     ->icon('heroicon-o-check')

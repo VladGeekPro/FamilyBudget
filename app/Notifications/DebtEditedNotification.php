@@ -25,9 +25,9 @@ class DebtEditedNotification extends Notification
     {
         $editedByProgram = is_string($this->editor);
         $editorName = $editedByProgram ? $this->editor : $this->editor->name;
-        
+
         $notification = $editedByProgram ? 'created_debt' : 'edited_debt';
-        
+
         $body = __('resources.notifications.warn.' . $notification . '.body', [
             'user' => $editorName,
             'date' => $this->debt->date->format('d.m.Y'),
