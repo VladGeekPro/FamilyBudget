@@ -458,8 +458,8 @@ class ExpenseChangeRequestResource extends BaseResource
                         Forms\Components\Radio::make('vote_decision')
                             ->label('Ваше решение')
                             ->options([
-                                'approve' => 'Одобрить изменения',
-                                'reject' => 'Отклонить изменения',
+                                'approved' => 'Одобрить изменения',
+                                'rejected' => 'Отклонить изменения',
                             ])
                             ->required()
                             ->inline(),
@@ -479,7 +479,7 @@ class ExpenseChangeRequestResource extends BaseResource
 
                         Notification::make()
                             ->title('Голос учтён')
-                            ->body($data['vote_decision'] === 'approve' ? 'Вы одобрили изменения' : 'Вы отклонили изменения')
+                            ->body($data['vote_decision'] === 'approved' ? 'Вы одобрили изменения' : 'Вы отклонили изменения')
                             ->success()
                             ->send();
                     })
@@ -491,12 +491,50 @@ class ExpenseChangeRequestResource extends BaseResource
                     ->label(__('resources.buttons.votes'))
                     ->icon('heroicon-o-users')
                     ->color('gray')
-
-                    ->registerModalActions([
-                        Action::make('report')
-                            ->requiresConfirmation()
-                            ->action(fn($record) => dd($record))
+                    ->form([
+                        Forms\Components\Radio::make('vote_decision')
+                            ->label('Ваше решение')
+                            ->options([
+                                'approved' => 'Одобрить изменения',
+                                'rejected' => 'Отклонить изменения',
+                            ])
+                            ->required()
+                            ->inline(),
+                        Forms\Components\Textarea::make('vote_comment')
+                            ->label('Комментарий (необязательно)')
+                            ->maxLength(500),
                     ])
+                    ->action(function (ExpenseChangeRequest $record, array $data) {
+                        $user = auth()->user();
+
+                        if (!$user || $record->status !== 'pending' || $record->hasUserVoted($user)) {
+                            Notification::make()
+                                ->title('Голосование недоступно')
+                                ->danger()
+                                ->send();
+
+                            return;
+                        }
+
+                        ExpenseChangeRequestVote::vote(
+                            $record->id,
+                            $user->id,
+                            $data['vote_decision'],
+                            $data['vote_comment'] ?? null
+                        );
+
+                        Notification::make()
+                            ->title('Голос учтён')
+                            ->body($data['vote_decision'] === 'approved' ? 'Вы одобрили изменения' : 'Вы отклонили изменения')
+                            ->success()
+                            ->send();
+                    })
+                    ->modalSubmitActionLabel('Голосовать')
+                    ->modalSubmitAction(fn($action) => $action
+                        ->label('Голосовать')
+                        ->icon('heroicon-o-hand-thumb-up')
+                        ->color('primary'))
+                    ->modalCancelAction(false)
 
                     ->modalContent(function (ExpenseChangeRequest $record) {
                         return view('filament.forms.components.view-votes', [

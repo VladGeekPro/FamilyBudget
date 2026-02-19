@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 
 namespace App\Notifications;
 
@@ -30,7 +30,7 @@ class ExpenseChangeRequestCompleted extends Notification
         $body = __($translationBase . '.body', [
             'date' => $this->expenseChangeRequest->updated_at?->format('d.m.Y H:i') ?? $this->expenseChangeRequest->created_at->format('d.m.Y H:i'),
             'actionType' => __('resources.fields.action_type.notification_options.' . $actionType),
-            'creator' => $this->expenseChangeRequest->user_id->name,
+            'creator' => $this->expenseChangeRequest->user->name,
         ]);
 
         $iconMap = [
