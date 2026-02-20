@@ -177,6 +177,7 @@ return [
         'mark_as_read' => 'Прочитано',
         'select' => 'Выбрать',
         'votes' => 'Голоса',
+        'vote' => 'Голосовать',
     ],
     'toggleButtons' => [
         'options' => [

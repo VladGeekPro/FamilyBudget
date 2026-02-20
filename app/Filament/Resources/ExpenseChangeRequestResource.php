@@ -412,7 +412,7 @@ class ExpenseChangeRequestResource extends BaseResource
                 Tables\Filters\SelectFilter::make('action_type')
                     ->label('Тип операции')
                     ->options(__('resources.fields.action_type.notification_options'))
-                     ->multiple()
+                    ->multiple()
                     ->placeholder(''),
                 \Filament\Tables\Filters\Filter::make('created_at')
                     ->form([
@@ -490,7 +490,7 @@ class ExpenseChangeRequestResource extends BaseResource
                 Action::make('view_votes')
                     ->label(__('resources.buttons.votes'))
                     ->icon('heroicon-o-users')
-                    ->color('gray')
+                    ->color('info')
                     ->form([
                         Forms\Components\Radio::make('vote_decision')
                             ->label('Ваше решение')
@@ -529,12 +529,14 @@ class ExpenseChangeRequestResource extends BaseResource
                             ->success()
                             ->send();
                     })
-                    ->modalSubmitActionLabel('Голосовать')
-                    ->modalSubmitAction(fn($action) => $action
-                        ->label('Голосовать')
-                        ->icon('heroicon-o-hand-thumb-up')
-                        ->color('primary'))
-                    ->modalCancelAction(false)
+                    ->modalFooterActions(fn(Action $action): array => [
+                        $action->getModalCancelAction(),
+                        $action->getModalSubmitAction()
+                            ->label(__('resources.buttons.vote'))
+                            ->icon('heroicon-o-hand-thumb-up')
+                            ->color('primary')
+                            ->extraAttributes(['class' => 'ml-auto']),
+                    ])
 
                     ->modalContent(function (ExpenseChangeRequest $record) {
                         return view('filament.forms.components.view-votes', [
