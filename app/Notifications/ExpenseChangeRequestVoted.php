@@ -29,7 +29,7 @@ class ExpenseChangeRequestVoted extends Notification
         $iconColor = $isApproved ? 'success' : 'danger';
 
 
-        $body = "{$this->vote->user->name} {$voteText} запрос #{$this->vote->expenseChangeRequest->expense_id}";
+        $body = "{$this->vote->user->name} {$voteText}(а) запрос на редактирование затраты #{$this->vote->expenseChangeRequest->expense_id}";
         if (!empty($this->vote->notes)) {
             $body .= "<br><br>💬 {$this->vote->notes}";
         }

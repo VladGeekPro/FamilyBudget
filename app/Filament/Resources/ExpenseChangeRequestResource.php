@@ -17,15 +17,14 @@ use Filament\Tables\Columns\Layout\Split;
 use Filament\Tables\Columns\Layout\Stack;
 use Filament\Tables\Columns\Layout\Grid as TableGrid;
 use Filament\Tables\Columns\Layout\Panel;
-use Filament\Tables\Columns\TextColumn\TextColumnSize;
-use Filament\Support\Enums\FontWeight;
 use Filament\Forms\Components\Actions\Action as FormAction;
 use Filament\Notifications\Notification;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Filament\Support\Enums\MaxWidth;
 use Filament\Forms\Components\Grid;
-use Filament\Forms\Components\Group;
+use Filament\Forms\Components\Section;
+use Filament\Actions\StaticAction;
+use Illuminate\Support\HtmlString;
 
 class ExpenseChangeRequestResource extends BaseResource
 {
@@ -152,6 +151,39 @@ class ExpenseChangeRequestResource extends BaseResource
         }
     }
 
+    public static function getVoteForm(): array
+    {
+        return [
+            Forms\Components\Radio::make('vote')
+                ->label(__('resources.radio_buttons.vote.title'))
+                ->options(__('resources.radio_buttons.vote.options'))
+                ->inline()
+                ->required()
+                ->extraAttributes(['class' => 'ml-auto']),
+
+            Forms\Components\Textarea::make('notes')
+                ->label(__('resources.fields.vote_comment')),
+
+            Forms\Components\Group::make([
+                Forms\Components\Placeholder::make('confirm_vote_notice')
+                    ->hiddenLabel()
+                    ->content(new HtmlString('
+                    <p class="text-sm font-semibold text-amber-900">Подтверждение голоса</p>
+                    <p class="mt-1 text-xs text-amber-800">
+                        Голос нельзя будет изменить после отправки. Если комментарий заполнен, проверьте его перед подтверждением.
+                    </p>
+                ')),
+
+                Forms\Components\Checkbox::make('confirm_vote')
+                    ->label(__('resources.buttons.confirm_vote'))
+                    ->accepted()
+                    ->required(),
+            ])->extraAttributes([
+                'class' => 'rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 space-y-3',
+            ]),
+        ];
+    }
+
     public static function form(Form $form): Form
     {
         return $form
@@ -160,16 +192,41 @@ class ExpenseChangeRequestResource extends BaseResource
                 Forms\Components\Hidden::make('user_id')
                     ->default(auth()->id()),
 
-                Forms\Components\Section::make(__('resources.sections.user_votes.title'))
-                    ->description(__('resources.sections.user_votes.description'))
+                Forms\Components\Section::make(__('resources.sections.user_votes'))
+                    ->headerActions([
+                        FormAction::make('vote')
+                            ->label(__('resources.buttons.vote'))
+                            ->icon('heroicon-o-hand-thumb-up')
+                            ->color(fn(?ExpenseChangeRequest $record): string => !$record || $record->hasUserVoted(auth()->user()) ? 'gray' : 'primary')
+                            ->disabled(fn(?ExpenseChangeRequest $record): bool => !$record || $record->hasUserVoted(auth()->user()))
+                            ->form(static::getVoteForm())
+                            ->modalFooterActions(fn(FormAction $action): array => [
+                                $action->getModalCancelAction(),
+                                $action->getModalSubmitAction()
+                                    ->label(__('resources.buttons.vote'))
+                                    ->icon('heroicon-o-hand-thumb-up')
+                                    ->extraAttributes(['class' => 'ml-auto']),
+                            ])
+                            ->action(function (?ExpenseChangeRequest $record, array $data): void {
+                                ExpenseChangeRequestVote::vote(
+                                    $record->id,
+                                    auth()->id(),
+                                    $data['vote'],
+                                    $data['notes'],
+                                );
+
+                                Notification::make()
+                                    ->title(__('resources.notifications.warn.vote.title'))
+                                    ->body(__('resources.notifications.warn.vote.body.' . $data['vote']))
+                                    ->success()
+                                    ->send();
+                            })
+
+                    ])
                     ->schema([
                         Forms\Components\View::make('filament.forms.components.view-votes')
                             ->columnSpanFull(),
-                    ])
-                    ->visible(
-
-                        fn(string $operation, ?ExpenseChangeRequest $record) => ($operation === 'edit' || $operation === 'view')
-                    ),
+                    ])->visible(fn(string $operation) => in_array($operation, ['edit', 'view'])),
 
                 Grid::make(2)
                     ->schema([
@@ -375,7 +432,7 @@ class ExpenseChangeRequestResource extends BaseResource
                             'success' => 'completed',
                             'danger' => 'rejected',
                         ])
-                        ->formatStateUsing(fn($state) => __('resources.toggleButtons.vote_status.' . $state)),
+                        ->formatStateUsing(fn($state) => __('resources.toggle_buttons.vote_status.' . $state)),
 
                     Tables\Columns\TextColumn::make('votes_summary')
                         ->getStateUsing(function (ExpenseChangeRequest $record) {
@@ -406,7 +463,7 @@ class ExpenseChangeRequestResource extends BaseResource
                     ->placeholder(''),
                 Tables\Filters\SelectFilter::make('status')
                     ->label(__('resources.fields.status'))
-                    ->options(__('resources.toggleButtons.change_request_status'))
+                    ->options(__('resources.toggle_buttons.change_request_status'))
                     ->multiple()
                     ->placeholder(''),
                 Tables\Filters\SelectFilter::make('action_type')
@@ -444,107 +501,56 @@ class ExpenseChangeRequestResource extends BaseResource
             ])
             ->actions([
                 Tables\Actions\ViewAction::make()
-                    ->modalWidth(MaxWidth::FourExtraLarge),
+                    ->extraAttributes(['class' => 'mr-auto']),
 
-                Action::make('vote')
-                    ->label('Голосовать')
-                    ->icon('heroicon-o-hand-thumb-up')
-                    ->color('primary')
-                    ->visible(function (ExpenseChangeRequest $record) {
-                        $user = auth()->user();
-                        return $record->status === 'pending' && !$record->hasUserVoted($user);
-                    })
-                    ->form([
-                        Forms\Components\Radio::make('vote_decision')
-                            ->label('Ваше решение')
-                            ->options([
-                                'approved' => 'Одобрить изменения',
-                                'rejected' => 'Отклонить изменения',
-                            ])
-                            ->required()
-                            ->inline(),
+                Action::make('view_votes')
+                    ->label(__('resources.buttons.votes'))
+                    ->icon('heroicon-o-users')
+                    ->color('info')
+                    ->form(fn(ExpenseChangeRequest $record): array => [
 
-                        Forms\Components\Textarea::make('vote_comment')
-                            ->label('Комментарий (необязательно)')
-                            ->maxLength(500),
+                        Section::make(__('resources.sections.user_votes'))
+                            ->schema([
+                                Forms\Components\View::make('filament.forms.components.view-votes')
+                                    ->viewData([
+                                        'getRecord' => function () use ($record) {
+                                            return $record;
+                                        },
+                                    ])
+                            ]),
+
+                        Section::make(__('resources.sections.to_vote'))
+                            ->schema(static::getVoteForm())
+                            ->visible(fn(ExpenseChangeRequest $record) => !$record->hasUserVoted(auth()->user())),
                     ])
                     ->action(function (ExpenseChangeRequest $record, array $data) {
 
                         ExpenseChangeRequestVote::vote(
                             $record->id,
                             auth()->user()->id,
-                            $data['vote_decision'],
-                            $data['vote_comment']
+                            $data['vote'],
+                            $data['notes']
                         );
 
                         Notification::make()
-                            ->title('Голос учтён')
-                            ->body($data['vote_decision'] === 'approved' ? 'Вы одобрили изменения' : 'Вы отклонили изменения')
-                            ->success()
-                            ->send();
-                    })
-                    ->requiresConfirmation()
-                    ->modalHeading('Голосование за изменения')
-                    ->modalDescription('Внимательно ознакомьтесь с предлагаемыми изменениями перед голосованием'),
-
-                Action::make('view_votes')
-                    ->label(__('resources.buttons.votes'))
-                    ->icon('heroicon-o-users')
-                    ->color('info')
-                    ->form([
-                        Forms\Components\Radio::make('vote_decision')
-                            ->label('Ваше решение')
-                            ->options([
-                                'approved' => 'Одобрить изменения',
-                                'rejected' => 'Отклонить изменения',
-                            ])
-                            ->required()
-                            ->inline(),
-                        Forms\Components\Textarea::make('vote_comment')
-                            ->label('Комментарий (необязательно)')
-                            ->maxLength(500),
-                    ])
-                    ->action(function (ExpenseChangeRequest $record, array $data) {
-                        $user = auth()->user();
-
-                        if (!$user || $record->status !== 'pending' || $record->hasUserVoted($user)) {
-                            Notification::make()
-                                ->title('Голосование недоступно')
-                                ->danger()
-                                ->send();
-
-                            return;
-                        }
-
-                        ExpenseChangeRequestVote::vote(
-                            $record->id,
-                            $user->id,
-                            $data['vote_decision'],
-                            $data['vote_comment'] ?? null
-                        );
-
-                        Notification::make()
-                            ->title('Голос учтён')
-                            ->body($data['vote_decision'] === 'approved' ? 'Вы одобрили изменения' : 'Вы отклонили изменения')
+                            ->title(__('resources.notifications.warn.vote.title'))
+                            ->body(__('resources.notifications.warn.vote.body.' . $data['vote']))
                             ->success()
                             ->send();
                     })
                     ->modalFooterActions(fn(Action $action): array => [
                         $action->getModalCancelAction(),
-                        $action->getModalSubmitAction()
+                        $action->getModalSubmitAction(),
+                    ])
+                    ->modalSubmitAction(function (StaticAction $action, ExpenseChangeRequest $record) {
+                        return $action
                             ->label(__('resources.buttons.vote'))
                             ->icon('heroicon-o-hand-thumb-up')
-                            ->color('primary')
-                            ->extraAttributes(['class' => 'ml-auto']),
-                    ])
-
-                    ->modalContent(function (ExpenseChangeRequest $record) {
-                        return view('filament.forms.components.view-votes', [
-                            'getRecord' => function () use ($record) {
-                                return $record;
-                            },
-                        ]);
+                            ->disabled(fn() => $record->hasUserVoted(auth()->user()))
+                            ->color(fn() => $record->hasUserVoted(auth()->user()) ? 'gray' : 'primary')
+                            ->extraAttributes(['class' => 'ml-auto']);
                     })
+                    ->modalHeading(__('resources.sections.voting'))
                     ->modalWidth(MaxWidth::TwoExtraLarge),
 
                 Tables\Actions\EditAction::make()

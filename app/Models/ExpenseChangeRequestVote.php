@@ -60,37 +60,63 @@ class ExpenseChangeRequestVote extends Model
         return $this->vote === 'rejected';
     }
 
+    // public static function vote(int $requestId, int $userId, string $vote, ?string $notes = null): self
+    // {
+
+    //     return self::updateOrCreate(
+    //         [
+    //             'expense_change_request_id' => $requestId,
+    //             'user_id' => $userId
+    //         ],
+    //         [
+    //             'vote' => $vote,
+    //             'notes' => $notes,
+    //         ]
+    //     );
+    // }
+
+    // protected function afterSave(): void
+    // {
+
+    //     $users = User::query()
+    //         ->whereKeyNot(auth()->id())
+    //         ->get();
+
+
+    //     foreach ($users as $user) {
+    //         $user->notify(
+    //             new \App\Notifications\ExpenseChangeRequestVoted($this->record)
+    //         );
+    //     }
+
+    //     $this->record->expenseChangeRequest->checkAndApplyIfReady($this->record->vote);
+    // }
+
     public static function vote(int $requestId, int $userId, string $vote, ?string $notes = null): self
     {
-
-        return self::updateOrCreate(
+        $voteModel = self::updateOrCreate(
             [
                 'expense_change_request_id' => $requestId,
-                'user_id' => $userId
+                'user_id' => $userId,
             ],
             [
                 'vote' => $vote,
                 'notes' => $notes,
             ]
         );
-    }
 
-    protected static function booted(): void
-    {
-        static::saved(function ($vote) {
+        $users = User::query()
+            ->whereKeyNot($userId) // лучше, чем auth()->id() в модели
+            ->get();
 
-            $users = User::query()
-                ->whereKeyNot(auth()->id())
-                ->get();
+        foreach ($users as $user) {
+            $user->notify(
+                new \App\Notifications\ExpenseChangeRequestVoted($voteModel)
+            );
+        }
 
+        $voteModel->expenseChangeRequest->checkAndApplyIfReady($voteModel->vote);
 
-            foreach ($users as $user) {
-                $user->notify(
-                    new \App\Notifications\ExpenseChangeRequestVoted($vote)
-                );
-            }
-
-            $vote->expenseChangeRequest->checkAndApplyIfReady($vote->vote);
-        });
+        return $voteModel;
     }
 }

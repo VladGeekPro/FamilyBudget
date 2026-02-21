@@ -141,8 +141,7 @@ $expenses = $expenses->take(2);
                                                 </div>
                                                 <p class="font-bold text-gray-900 dark:text-white text-sm sm:text-base truncate">{{ $minName }}</p>
                                             </div>
-                                            <p class="font-bold text-lg sm:text-2xl text-gray-900 dark:text-white mt-1 sm:mt-2">{{ $minSum }}</p>
-                                            <p class="text-xs text-gray-500 dark:text-gray-400">MDL</p>
+                                            <p class="font-bold text-lg sm:text-2xl text-gray-900 dark:text-white mt-1 sm:mt-2">{{ $minSum }} <span class="text-sm text-gray-500 dark:text-gray-400">MDL</span></p>
 
                                         </div>
 
@@ -160,8 +159,7 @@ $expenses = $expenses->take(2);
                                                 </div>
                                                 <p class="font-bold text-gray-900 dark:text-white text-sm sm:text-base truncate">{{ $maxName }}</p>
                                             </div>
-                                            <p class="font-bold text-lg sm:text-2xl text-gray-900 dark:text-white mt-1 sm:mt-2">{{ $maxSum }}</p>
-                                            <p class="text-xs text-gray-500 dark:text-gray-400">MDL</p>
+                                            <p class="font-bold text-lg sm:text-2xl text-gray-900 dark:text-white mt-1 sm:mt-2">{{ $maxSum }} <span class="text-sm text-gray-500 dark:text-gray-400">MDL</span> </p>
                                         </div>
                                     </div>
 

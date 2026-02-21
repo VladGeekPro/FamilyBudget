@@ -23,57 +23,97 @@ $pendingUsersCount = $pendingUsers->count();
                 {{ $approvedVotesCount }}
             </span>
         </h4>
-        <div class="space-y-1">
+        <div class="space-y-3">
             @foreach($approvedVotes as $vote)
-            <div class="flex items-center justify-between p-2 bg-green-50 rounded border border-green-200 text-sm">
-                <div class="flex items-center space-x-2">
-                    @if($vote->user->image)
-                    <img src="{{ Storage::url($vote->user->image) }}" alt="{{ $vote->user->name }}" class="w-10 h-10 rounded-full object-cover">
-                    @else
-                    <div class="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
-                        {{ substr($vote->user->name, 0, 1) }}
+            <article class="rounded-lg border border-emerald-200 bg-gradient-to-br from-emerald-50 to-white shadow-sm">
+                <div class="flex items-center justify-between gap-3 border-b border-emerald-100 px-4 py-3">
+                    <div class="flex min-w-0 items-center gap-3">
+                        @if($vote->user->image)
+                        <img
+                            src="{{ Storage::url($vote->user->image) }}"
+                            alt="{{ $vote->user->name }}"
+                            class="h-10 w-10 rounded-full object-cover ring-2 ring-white shadow-sm">
+                        @else
+                        <div class="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-600 text-sm font-semibold text-white shadow-sm">
+                            {{ mb_substr($vote->user->name, 0, 1) }}
+                        </div>
+                        @endif
+
+                        <div class="min-w-0">
+                            <p class="truncate text-sm font-semibold text-gray-900">{{ $vote->user->name }}</p>
+                        </div>
                     </div>
-                    @endif
-                    <span class="font-medium text-gray-900">{{ $vote->user->name }}</span>
+
+                    <span class="flex min-w-[110px] items-center justify-center rounded-full border border-emerald-300 bg-emerald-100 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-emerald-800">
+                        {{ $vote->updated_at->format('d.m.Y H:i') }}
+                    </span>
                 </div>
-                <span class="text-xs text-gray-500">{{ $vote->updated_at->format('d.m.Y H:i') }}</span>
-            </div>
+
+                @if($vote->notes)
+                <div class="px-4 py-3">
+                    <p class="text-sm leading-relaxed text-gray-700">
+                        {{ $vote->notes }}
+                    </p>
+                </div>
+                @endif
+            </article>
             @endforeach
         </div>
+
     </div>
     @endif
 
     <!-- Отклонили -->
-    @if($rejectedVotes->count())
+    @if($rejectedVotesCount)
     <div class="space-y-2">
-        <h4 class="font-semibold text-sm text-red-700 flex items-center space-x-2">
+        <h4 class="font-semibold text-sm text-rose-700 flex items-center space-x-2">
             <span>❌ Отклонили</span>
-            <span class="inline-flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-red-500 rounded-full">
+            <span class="inline-flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-rose-500 rounded-full">
                 {{ $rejectedVotesCount }}
             </span>
         </h4>
-        <div class="space-y-1">
+
+        <div class="space-y-3">
             @foreach($rejectedVotes as $vote)
-            <div class="flex items-center justify-between p-2 bg-red-50 rounded border border-red-200 text-sm">
-                <div class="flex items-center space-x-2">
-                    @if($vote->user->image)
-                    <img src="{{ Storage::url($vote->user->image) }}" alt="{{ $vote->user->name }}" class="w-10 h-10 rounded-full object-cover">
-                    @else
-                    <div class="w-10 h-10 bg-red-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
-                        {{ substr($vote->user->name, 0, 1) }}
+            <article class="rounded-lg border border-rose-200 bg-gradient-to-br from-rose-50 to-white shadow-sm">
+                <div class="flex items-center justify-between gap-3 border-b border-rose-100 px-4 py-3">
+                    <div class="flex min-w-0 items-center gap-3">
+                        @if($vote->user->image)
+                        <img
+                            src="{{ Storage::url($vote->user->image) }}"
+                            alt="{{ $vote->user->name }}"
+                            class="h-10 w-10 rounded-full object-cover ring-2 ring-white shadow-sm">
+                        @else
+                        <div class="flex h-10 w-10 items-center justify-center rounded-full bg-rose-600 text-sm font-semibold text-white shadow-sm">
+                            {{ mb_substr($vote->user->name, 0, 1) }}
+                        </div>
+                        @endif
+
+                        <div class="min-w-0">
+                            <p class="truncate text-sm font-semibold text-gray-900">{{ $vote->user->name }}</p>
+                        </div>
                     </div>
-                    @endif
-                    <span class="font-medium text-gray-900">{{ $vote->user->name }}</span>
+
+                    <span class="flex min-w-[110px] items-center justify-center rounded-full border border-rose-300 bg-rose-100 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-rose-800">
+                        {{ $vote->updated_at->format('d.m.Y H:i') }}
+                    </span>
                 </div>
-                <span class="text-xs text-gray-500">{{ $vote->updated_at->format('d.m.Y H:i') }}</span>
-            </div>
+
+                @if($vote->notes)
+                <div class="px-4 py-3">
+                    <p class="text-sm leading-relaxed text-gray-700 whitespace-pre-line">
+                        {{ $vote->notes }}
+                    </p>
+                </div>
+                @endif
+            </article>
             @endforeach
         </div>
     </div>
     @endif
 
     <!-- Ожидают голосования -->
-    @if($pendingUsersCount > 0)
+    @if($pendingUsersCount)
     <div class="space-y-2">
         <h4 class="font-semibold text-sm text-amber-700 flex items-center space-x-2">
             <span>⏳ Ожидают голосования</span>
@@ -81,23 +121,37 @@ $pendingUsersCount = $pendingUsers->count();
                 {{ $pendingUsersCount }}
             </span>
         </h4>
-        <div class="space-y-1">
+
+        <div class="space-y-3">
             @foreach($pendingUsers as $user)
-            <div class="flex items-center justify-between p-2 bg-amber-50 rounded border border-amber-200 text-sm">
-                <div class="flex items-center space-x-2">
-                    @if($user->image)
-                    <img src="{{ Storage::url($user->image) }}" alt="{{ $user->name }}" class="w-10 h-10 rounded-full object-cover">
-                    @else
-                    <div class="w-10 h-10 bg-amber-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
-                        {{ substr($user->name, 0, 1) }}
+            <article class="rounded-lg border border-amber-200 bg-gradient-to-br from-amber-50 to-white shadow-sm">
+                <div class="flex items-center justify-between gap-3 px-4 py-3">
+                    <div class="flex min-w-0 items-center gap-3">
+                        @if($user->image)
+                        <img
+                            src="{{ Storage::url($user->image) }}"
+                            alt="{{ $user->name }}"
+                            class="h-10 w-10 rounded-full object-cover ring-2 ring-white shadow-sm">
+                        @else
+                        <div class="flex h-10 w-10 items-center justify-center rounded-full bg-amber-600 text-sm font-semibold text-white shadow-sm">
+                            {{ mb_substr($user->name, 0, 1) }}
+                        </div>
+                        @endif
+
+                        <div class="min-w-0">
+                            <p class="truncate text-sm font-semibold text-gray-900">{{ $user->name }}</p>
+                        </div>
                     </div>
-                    @endif
-                    <span class="font-medium text-gray-900">{{ $user->name }}</span>
+
+                    <span class="flex min-w-[110px] items-center justify-center rounded-full border border-amber-300 bg-amber-100 px-2.5 py-1 text-[11px] font-semibold tracking-wide text-amber-800">
+                        Не голосовал
+                    </span>
                 </div>
-                <span class="text-xs text-amber-600 font-medium">Не голосовал</span>
-            </div>
+            </article>
             @endforeach
         </div>
     </div>
     @endif
+
+
 </div>

@@ -175,8 +175,8 @@ class DebtResource extends BaseResource
                                 ->label(__('resources.fields.payment_status'))
                                 ->options(fn() => collect(['unpaid', 'partial', 'paid'])
                                     ->mapWithKeys(function ($key) {
-                                        $name = __("resources.toggleButtons.options.$key");
-                                        $color = __("resources.toggleButtons.color.$key");
+                                        $name = __("resources.toggle_buttons.options.$key");
+                                        $color = __("resources.toggle_buttons.color.$key");
 
                                         return [$key => static::formatOptionWithIcon($name, null, $color)];
                                     })
@@ -330,7 +330,7 @@ class DebtResource extends BaseResource
                                         'partial' => 'warning',
                                         'unpaid' => 'danger',
                                     })
-                                    ->formatStateUsing(fn($state) => __('resources.toggleButtons.options.' . $state))
+                                    ->formatStateUsing(fn($state) => __('resources.toggle_buttons.options.' . $state))
                                     ->alignment('right')
                                     ->columnSpan(2),
                             ])->grow()
@@ -375,9 +375,9 @@ class DebtResource extends BaseResource
                 SelectFilter::make('payment_status')
                     ->label(__('resources.fields.payment_status'))
                     ->options([
-                        'paid' => __('resources.toggleButtons.options.paid'),
-                        'partial' => __('resources.toggleButtons.options.partial'),
-                        'unpaid' => __('resources.toggleButtons.options.unpaid'),
+                        'paid' => __('resources.toggle_buttons.options.paid'),
+                        'partial' => __('resources.toggle_buttons.options.partial'),
+                        'unpaid' => __('resources.toggle_buttons.options.unpaid'),
                     ])
                     ->multiple()
                     ->placeholder(''),

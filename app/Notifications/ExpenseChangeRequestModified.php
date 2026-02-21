@@ -13,7 +13,8 @@ class ExpenseChangeRequestModified extends Notification
 {
     public function __construct(
         public ExpenseChangeRequest $changeRequest,
-        public string $event
+        public string $event,
+        public bool $canceledVote = false
     ) {}
 
     public function via($notifiable): array
@@ -30,8 +31,9 @@ class ExpenseChangeRequestModified extends Notification
         $body = __($translationBase . '.body', [
             'date' => $this->changeRequest->updated_at?->format('d.m.Y H:i') ?? $this->changeRequest->created_at->format('d.m.Y H:i'),
             'actionType' => __('resources.fields.action_type.notification_options.' . $actionType),
-            'creator' => $this->changeRequest->user->name,
+            'creator' => auth()->user()->name,
             'expense_id' => $this->changeRequest->expense_id,
+            'canceledVoteText' => $this->canceledVote ? __('resources.notifications.warn.expense_change_request.edit.canceled_vote_text') : '',
         ]);
 
         $iconMap = [
