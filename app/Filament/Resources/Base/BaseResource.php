@@ -92,22 +92,25 @@ abstract class BaseResource extends Resource
     protected static function applyFieldConditions($field, bool $forExpense, bool $isCurrentField)
     {
         if (!$forExpense) {
+            $fieldName = $field->getName();
+
             if ($isCurrentField) {
                 $field->disabled(true)->dehydrated(true);
             } else {
                 $field
-                    ->required(fn($get) => $get('action_type') !== 'delete' && $field->getName() !== 'requested_notes')
+                    ->required(fn($get) => $get('action_type') !== 'delete' && $fieldName !== 'requested_notes')
                     ->disabled(fn($get) => $get('action_type') === 'delete');
             }
 
             $selectFields = ['user_id', 'category_id', 'supplier_id'];
-            $fieldName = $field->getName();
-
             $baseFieldName = str_replace(['current_', 'requested_'], '', $fieldName);
             if (in_array($baseFieldName, $selectFields)) {
                 $field
                     ->placeholder('Выбрать вариант')
                     ->extraAttributes(fn($get) => $get('action_type') === 'edit' ? ['class' => 'min-h-[52px] items-center'] : []);
+            } else if ($baseFieldName === 'date') {
+                $field
+                    ->maxDate(now()->subMonth()->endOfMonth());
             }
         } else {
             $field->required();
@@ -277,8 +280,7 @@ abstract class BaseResource extends Resource
                 'heading',
                 'table',
                 'link',
-            ])
-            ->columnSpanFull();
+            ]);
 
         static::applyFieldConditions($notesField, $forExpense, $isCurrentField);
 

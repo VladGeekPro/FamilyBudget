@@ -46,6 +46,7 @@ class EditExpenseChangeRequest extends EditBase
             $user->notify(new ExpenseChangeRequestModified($this->record, 'edit'));
         }
 
+        sleep(1);
         ExpenseChangeRequestVote::vote(
             $this->record->id,
             auth()->id(),

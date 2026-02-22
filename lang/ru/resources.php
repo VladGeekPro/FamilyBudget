@@ -130,16 +130,17 @@ return [
                 ],
                 'create' => [
                     'title' => 'Новый запрос на редактирование расхода',
-                    'body' => '<br>:date<br>Создан запрос на ":actionType" с Ид #:expense_id пользователем :creator.',
+                    'body' => '<br>:date<br>Создан запрос на ":actionType" :expense пользователем :creator.',
+                    'expense_id' => 'c Ид #:expense_id',
                 ],
                 'edit' => [
                     'title' => 'Запрос на редактирование расхода обновлён',
-                    'body' => '<br>:date<br>Обновлён запрос на ":actionType" с Ид #:expense_id пользователем :creator. :canceledVoteText',
+                    'body' => '<br>:date<br>Обновлён запрос на ":actionType" :expense пользователем :creator. :canceledVoteText',
                     'canceled_vote_text' => '<br><br>⚠️ ВАЖНО: Ваш голос был отменён после редактирования затраты. Проголосуйте повторно.',
                 ],
                 'delete' => [
                     'title' => 'Запрос на редактирование расхода удалён',
-                    'body' => '<br>:date<br>Удалён запрос на ":actionType" с Ид #:expense_id пользователем :creator.',
+                    'body' => '<br>:date<br>Удалён запрос на ":actionType" :expense пользователем :creator.',
                 ],
                 'already_exists' => [
                     'title' => 'Запрос уже существует',

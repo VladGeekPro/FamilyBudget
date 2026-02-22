@@ -324,7 +324,6 @@ class ExpenseChangeRequestResource extends BaseResource
                     ->columnSpanFull(),
 
                 Forms\Components\Section::make('Сравнение данных')
-                    ->description('Текущие значения и новые значения для сравнения')
                     ->schema([
                         Grid::make(2)
                             ->schema([

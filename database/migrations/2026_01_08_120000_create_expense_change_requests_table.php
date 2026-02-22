@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('expense_change_requests', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('expense_id')->nullable()->constrained('expenses')->onDelete('cascade');
+            $table->foreignId('expense_id')->nullable()->constrained('expenses')->onDelete('set null');
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
             $table->enum('action_type', ['create', 'edit', 'delete']);
             

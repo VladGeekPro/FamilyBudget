@@ -4,7 +4,6 @@ namespace App\Notifications;
 
 use App\Filament\Resources\ExpenseChangeRequestResource;
 use App\Models\ExpenseChangeRequest;
-use App\Models\User;
 use Filament\Notifications\Actions\Action;
 use Filament\Notifications\Notification as FilamentNotification;
 use Illuminate\Notifications\Notification;
@@ -32,7 +31,7 @@ class ExpenseChangeRequestModified extends Notification
             'date' => $this->changeRequest->updated_at?->format('d.m.Y H:i') ?? $this->changeRequest->created_at->format('d.m.Y H:i'),
             'actionType' => __('resources.fields.action_type.notification_options.' . $actionType),
             'creator' => auth()->user()->name,
-            'expense_id' => $this->changeRequest->expense_id,
+            'expense' => $actionType === 'create' ? '' : __('resources.notifications.warn.expense_change_request.create.expense_id', ['expense_id' => $this->changeRequest->expense_id]),
             'canceledVoteText' => $this->canceledVote ? __('resources.notifications.warn.expense_change_request.edit.canceled_vote_text') : '',
         ]);
 
