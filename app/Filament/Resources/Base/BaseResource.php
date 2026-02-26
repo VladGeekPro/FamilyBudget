@@ -91,11 +91,14 @@ abstract class BaseResource extends Resource
 
     protected static function applyFieldConditions($field, bool $forExpense, bool $isCurrentField)
     {
+
+        $fieldName = $field->getName();
         if (!$forExpense) {
-            $fieldName = $field->getName();
 
             if ($isCurrentField) {
-                $field->disabled(true)->dehydrated(true);
+                $field
+                    ->disabled(true)
+                    ->dehydrated(false);
             } else {
                 $field
                     ->required(fn($get) => $get('action_type') !== 'delete' && $fieldName !== 'requested_notes')
@@ -112,7 +115,7 @@ abstract class BaseResource extends Resource
                 $field
                     ->maxDate(now()->subMonth()->endOfMonth());
             }
-        } else {
+        } else if ($fieldName !== 'notes') {
             $field->required();
         }
 
@@ -273,6 +276,7 @@ abstract class BaseResource extends Resource
 
         $notesField = MarkdownEditor::make($prefix . 'notes')
             ->label(__('resources.fields.notes'))
+            ->columnSpanFull()
             ->disableToolbarButtons([
                 'attachFiles',
                 'blockquote',
