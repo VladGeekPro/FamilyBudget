@@ -30,8 +30,8 @@ abstract class BaseResource extends Resource
     protected static string  $defaultSortDirection = 'asc';
 
     /** Пагинация по умолчанию (можно переопределить в дочерних) */
-    protected static int    $defaultPerPage   = 10;
-    protected static array  $defaultPerPageOptions   = [10, 25, 50, 100, 'all'];
+    protected static int    $defaultPerPage = 25;
+    protected static array  $defaultPerPageOptions = [10, 25, 50, 100, 'all'];
 
     protected static function getModelBase(): string
     {
@@ -98,11 +98,12 @@ abstract class BaseResource extends Resource
             if ($isCurrentField) {
                 $field
                     ->disabled(true)
-                    ->dehydrated(false);
+                    ->dehydrated(fn($get) => $get('action_type') !== 'create');
             } else {
                 $field
                     ->required(fn($get) => $get('action_type') !== 'delete' && $fieldName !== 'requested_notes')
-                    ->disabled(fn($get) => $get('action_type') === 'delete');
+                    ->disabled(fn($get) => $get('action_type') === 'delete')
+                    ->dehydrated(fn($get) => $get('action_type') !== 'delete');
             }
 
             $selectFields = ['user_id', 'category_id', 'supplier_id'];

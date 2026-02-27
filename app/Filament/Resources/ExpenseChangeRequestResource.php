@@ -46,6 +46,28 @@ class ExpenseChangeRequestResource extends BaseResource
 
     protected static string  $defaultSortDirection = 'desc';
 
+    //  public static function getNavigationBadge(): ?string
+    // {
+    //     $unpaidRecords = Debt::unpaid()->get();
+
+    //     if ($unpaidRecords->isEmpty()) {
+    //         return null;
+    //     }
+
+    //     $badgeMessage = "";
+    //     foreach ($unpaidRecords as $record) {
+    //         $icon = User::getIcon($record->user_email);
+    //         $badgeMessage .= "{$record->unpaid_count} {$icon}";
+    //     }
+
+    //     return trim($badgeMessage);
+    // }
+
+    public static function getNavigationBadgeColor(): ?string
+    {
+        return 'warning';
+    }
+
     protected static function getFieldDisplay(ExpenseChangeRequest $record, string $field): array
     {
         $fieldNames = [

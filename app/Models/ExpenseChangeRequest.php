@@ -151,6 +151,27 @@ class ExpenseChangeRequest extends Model
         return User::whereNotIn('id', $votedUserIds)->get();
     }
 
+    //public function getAllVotesPendingUserCount() {
+    // public function getAllVotesPendingUserCount()
+    // {
+    //     $userId = auth()->id();
+    //     if (!$userId) {
+    //         return 0;
+    //     }
+
+    //     $ecrTable = (new static)->getTable();
+    //     $votesTable = (new ExpenseChangeRequestVote)->getTable();
+
+    //     return self::query()
+    //         ->where($ecrTable . '.status', 'pending')
+    //         ->leftJoin($votesTable, function ($join) use ($votesTable, $ecrTable, $userId) {
+    //             $join->on($votesTable . '.expense_change_request_id', '=', $ecrTable . '.id')
+    //                  ->where($votesTable . '.user_id', '=', $userId);
+    //         })
+    //         ->whereNull($votesTable . '.id')
+    //         ->count($ecrTable . '.id');
+    // }
+
     public function hasUserVoted(User $user): bool
     {
         return $this->votes()->where('user_id', $user->id)->exists();

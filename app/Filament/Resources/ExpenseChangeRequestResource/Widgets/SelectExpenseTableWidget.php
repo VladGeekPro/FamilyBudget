@@ -12,6 +12,7 @@ use Filament\Tables\Columns\Layout\Grid as TableGrid;
 use Filament\Tables\Columns\Layout\Split;
 use Filament\Tables\Columns\Layout\Stack;
 use Filament\Tables\Columns\TextColumn\TextColumnSize;
+use Filament\Tables\Grouping\Group as TableGroup;
 use Filament\Support\Enums\FontWeight;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\Filter;
@@ -91,6 +92,23 @@ class SelectExpenseTableWidget extends BaseWidget
                 '2xl' => 3,
             ])
             ->filters(\App\Filament\Resources\Base\BaseResource::getExpenseTableFilters())
+            ->defaultGroup(
+                TableGroup::make('date')
+                    ->getTitleFromRecordUsing(function (Expense $record): string {
+                        $monthName = mb_convert_case(
+                            $record->date->locale('ru')->translatedFormat('F Y'),
+                            MB_CASE_TITLE,
+                            'UTF-8'
+                        );
+
+                        return $monthName;
+                    })
+                    ->orderQueryUsing(
+                        fn(Builder $query) => $query->orderBy('date', 'desc')
+                    )
+                    ->titlePrefixedWithLabel(false)
+                    ->collapsible()
+            )
             ->actions([
                 Tables\Actions\Action::make('select')
                     ->label(__('resources.buttons.select'))
