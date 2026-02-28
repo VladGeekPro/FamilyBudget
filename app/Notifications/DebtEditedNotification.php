@@ -13,7 +13,8 @@ class DebtEditedNotification extends Notification
 {
     public function __construct(
         public Debt $debt,
-        public User|string $editor
+        public User|string $editor,
+        public String $event
     ) {}
 
     public function via($notifiable): array
@@ -26,9 +27,7 @@ class DebtEditedNotification extends Notification
         $editedByProgram = is_string($this->editor);
         $editorName = $editedByProgram ? $this->editor : $this->editor->name;
 
-        $notification = $editedByProgram ? 'created_debt' : 'edited_debt';
-
-        $body = __('resources.notifications.warn.' . $notification . '.body', [
+        $body = __('resources.notifications.warn.' . $this->event . '.body', [
             'user' => $editorName,
             'date' => $this->debt->date->format('d.m.Y'),
             'sum' => number_format($this->debt->debt_sum, 2, ',', ' '),
@@ -36,7 +35,7 @@ class DebtEditedNotification extends Notification
         ]);
 
         return FilamentNotification::make()
-            ->title(__('resources.notifications.warn.' . $notification . '.title'))
+            ->title(__('resources.notifications.warn.' . $this->event . '.title'))
             ->body(new \Illuminate\Support\HtmlString($body))
             ->icon('heroicon-o-pencil-square')
             ->iconColor('info')

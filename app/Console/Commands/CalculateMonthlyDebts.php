@@ -5,10 +5,13 @@ namespace App\Console\Commands;
 use App\Models\Debt;
 use App\Models\Expense;
 use App\Models\Overpayment;
+use App\Models\PaidDebt;
+use App\Models\PaidDebts;
 use App\Models\User;
 use App\Notifications\DebtEditedNotification;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\DB;
 
 class CalculateMonthlyDebts extends Command
 {
@@ -81,30 +84,52 @@ class CalculateMonthlyDebts extends Command
 
         if ($existingDebt) {
             $this->warn("Долг за {$date->translatedFormat('d F Y')} уже существует для пользователя {$minExpenseUser['user']->name}❗");
-            if ($this->option('period')) {
-                if (!$this->confirm('Вы хотите пересчитать долг?', false)) {
-                    $this->info('Операция отменена');
-                    return;
-                }
+            if (in_array($existingDebt->payment_status, ['partial', 'paid']) && $existingDebt->user_id) {
+                $paidSum = $existingDebt->payment_status === 'partial' ? $existingDebt->partial_sum : $existingDebt->debt_sum;
+                PaidDebts::create([
+                    'debt_id' => $existingDebt->id,
+                    'changed_debt_date' => now(),
+                    'paid_by_user_id' => $existingDebt->user_id,
+                    'payment_status' => $existingDebt->payment_status,
+                    'paid_sum' => $paidSum,
+                ]);
+            }
 
-                $existingDebt->delete();
-            } else {
-                $existingDebt->delete();
+            $debtTable = (new Debt)->getTable();
+            $paidDebtTable = (new PaidDebts)->getTable();
+
+            $paidDebtsRecords = Debt::where($debtTable . '.id', $existingDebt->id)
+                ->join($paidDebtTable, $debtTable . '.id', '=', $paidDebtTable . '.debt_id')
+                ->select(
+                    $paidDebtTable . '.paid_by_user_id as user_id',
+                    DB::raw('SUM(' . $paidDebtTable . '.paid_sum) as paid_sum')
+                )
+                ->groupBy($paidDebtTable . '.paid_by_user_id')
+                ->get();
+
+            foreach ($paidDebtsRecords as $paidDebt) {
+                if ($maxExpenseUser['user']->id === $paidDebt['user_id']) {
+                    $difference += $paidDebt['paid_sum'];
+                } elseif ($minExpenseUser['user']->id === $paidDebt['user_id']) {
+                    $difference -= $paidDebt['paid_sum'];
+                    if ($difference < 0) {
+                        [$minExpenseUser, $maxExpenseUser] = [$maxExpenseUser, $minExpenseUser];
+                        $difference = abs($difference);
+                    }
+                }
             }
         }
 
         if ($difference == 0) {
-
-            $debt = Debt::create([
+            $debtMessage = 'Расходы одинаковые, никто никому не должен.';
+            $attributes = [
                 'date' => $date,
                 'user_id' => null,
                 'overpayment_id' => $overpayment?->id,
                 'payment_status' => 'paid',
                 'date_paid' => now(),
-                'notes' => 'Расходы были равны, никто никому не должен.',
-            ]);
-
-            $this->info('Расходы одинаковые, долг не создан');
+                'notes' => $debtMessage,
+            ];
         } else {
             $formattedDifference = number_format($difference, 2, '.', ' ');
             $debtMessage = __('resources.fields.notes_message.unpaid', [
@@ -113,22 +138,32 @@ class CalculateMonthlyDebts extends Command
                 'sum' => $formattedDifference,
             ]);
 
-            $debt = Debt::create([
+            $attributes = [
                 'date' => $date,
                 'user_id' => $minExpenseUser['user']->id,
                 'overpayment_id' => $overpayment?->id,
+                'payment_status' => 'unpaid',
                 'debt_sum' => $difference,
                 'notes' => $debtMessage,
-            ]);
+            ];
+        }
 
-            $this->info($debtMessage);
-        };
+        if ($existingDebt) {
+            $existingDebt->update($attributes);
+            $debt = $existingDebt;
+            $event = 'edited_debt';
+        } else {
+            $debt = Debt::create($attributes);
+            $event = 'created_debt';
+        }
+
+        $this->info($debtMessage);
 
         $editor = 'Программа расчёта долгов';
 
         $users = User::all();
         foreach ($users as $user) {
-            $user->notify(new DebtEditedNotification($debt, $editor));
+            $user->notify(new DebtEditedNotification($debt, $editor, $event));
         }
     }
 }

@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 
@@ -191,6 +192,12 @@ class ExpenseChangeRequest extends Model
             if ($this->applyChanges()) {
                 foreach (User::all() as $user) {
                     $user->notify(new \App\Notifications\ExpenseChangeRequestCompleted($this, 'completed'));
+                }
+
+                try {
+                    Artisan::call('calculate:monthly-debts', ['--period' => $this->current_date->format('m.Y')]);
+                } catch (\Exception $e) {
+                    Log::error('Ошибка при расчёте долгов после применения изменений для редактирования затраты: #' . $this->expense . '; созданной: ' . $this->created_at . '; пользователем: ' . $this->user->name . '; ' . 'Ошибка: ' . $e->getMessage());
                 }
             }
         } else if ($decision === 'rejected') {

@@ -21,7 +21,7 @@ class EditDebt extends EditBase
 
         $users = User::all();
         foreach ($users as $user) {
-            $user->notify(new DebtEditedNotification($debt, $editor));
+            $user->notify(new DebtEditedNotification($debt, $editor, 'edited_debt'));
         }
     }
 
