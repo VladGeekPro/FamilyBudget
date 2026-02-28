@@ -13,8 +13,8 @@ return new class extends Migration
     {
         Schema::create('expense_change_request_votes', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('expense_change_request_id')->constrained('expense_change_requests')->onDelete('cascade');
-            $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
+            $table->foreignId('expense_change_request_id')->constrained('expense_change_requests')->cascadeOnDelete();
+            $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
             $table->enum('vote', ['approved', 'rejected']);
             $table->text('notes')->nullable();
             $table->timestamps();

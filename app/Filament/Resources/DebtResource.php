@@ -90,7 +90,7 @@ class DebtResource extends BaseResource
 
     public static function getNavigationBadge(): ?string
     {
-        $unpaidRecords = Debt::unpaid()->get();
+        $unpaidRecords = Debt::Unpaid()->get();
 
         if ($unpaidRecords->isEmpty()) {
             return null;
@@ -98,7 +98,7 @@ class DebtResource extends BaseResource
 
         $badgeMessage = "";
         foreach ($unpaidRecords as $record) {
-            $icon = User::getIcon($record->user_email);
+            $icon = User::getIcon($record->email);
             $badgeMessage .= "{$record->unpaid_count} {$icon}";
         }
 

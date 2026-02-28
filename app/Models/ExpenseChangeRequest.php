@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 
 class ExpenseChangeRequest extends Model
 {
@@ -151,26 +152,27 @@ class ExpenseChangeRequest extends Model
         return User::whereNotIn('id', $votedUserIds)->get();
     }
 
-    //public function getAllVotesPendingUserCount() {
-    // public function getAllVotesPendingUserCount()
-    // {
-    //     $userId = auth()->id();
-    //     if (!$userId) {
-    //         return 0;
-    //     }
+    public function scopeUnanswered()
+    {
+        $ecr = (new static)->getTable();
+        $votes = (new ExpenseChangeRequestVote)->getTable();
+        $users = (new User)->getTable();
 
-    //     $ecrTable = (new static)->getTable();
-    //     $votesTable = (new ExpenseChangeRequestVote)->getTable();
+        $pendingEcrs = DB::table($ecr)
+            ->where($ecr . '.status', 'pending')
+            ->select($ecr . '.id as ecr_id');
 
-    //     return self::query()
-    //         ->where($ecrTable . '.status', 'pending')
-    //         ->leftJoin($votesTable, function ($join) use ($votesTable, $ecrTable, $userId) {
-    //             $join->on($votesTable . '.expense_change_request_id', '=', $ecrTable . '.id')
-    //                  ->where($votesTable . '.user_id', '=', $userId);
-    //         })
-    //         ->whereNull($votesTable . '.id')
-    //         ->count($ecrTable . '.id');
-    // }
+        return DB::table($users)
+            ->crossJoinSub($pendingEcrs, 'pe', function () {})
+            ->leftJoin($votes, function ($join) use ($votes, $users) {
+                $join->on($votes . '.expense_change_request_id', '=', 'pe.ecr_id')
+                    ->on($votes . '.user_id', '=', $users . '.id');
+            })
+            ->whereNull($votes . '.id')
+            ->select($users . '.email', DB::raw('COUNT(pe.ecr_id) as unanswered_count'))
+            ->groupBy($users . '.email')
+            ->orderBy($users . '.email');
+    }
 
     public function hasUserVoted(User $user): bool
     {

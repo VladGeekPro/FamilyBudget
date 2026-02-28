@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 
 class Debt extends Model
 {
@@ -43,13 +44,16 @@ class Debt extends Model
 
     public function scopeUnpaid($query)
     {
+        $debtsTable = (new static)->getTable();
+        $usersTable = (new User)->getTable();
+
         return $query
-            ->selectRaw('debts.user_id, COUNT(*) as unpaid_count')
-            ->where('payment_status', 'unpaid')
-            ->groupBy('user_id')
-            ->join('users', 'debts.user_id', '=', 'users.id')
-            ->addSelect('users.name as user_name', 'users.email as user_email')
-            ->orderBy('user_email');
+            ->select($debtsTable . '.user_id', DB::raw('COUNT(*) as unpaid_count'))
+            ->where($debtsTable . '.payment_status', 'unpaid')
+            ->join($usersTable, $debtsTable . '.user_id', '=', $usersTable . '.id')
+            ->addSelect($usersTable . '.email as email')
+            ->groupBy($debtsTable . '.user_id')
+            ->orderBy($usersTable . '.email');
     }
 
     

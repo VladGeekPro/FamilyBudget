@@ -34,11 +34,11 @@ class ExpenseChangeRequestResource extends BaseResource
 
     protected static ?string $navigationIcon = 'heroicon-o-document-arrow-up';
 
-    protected static ?string $navigationLabel = 'Запросы на изменения';
+    protected static ?string $navigationLabel = 'Запросы';
 
-    protected static ?string $modelLabel = 'запрос на изменение';
+    protected static ?string $modelLabel = 'запрос';
 
-    protected static ?string $pluralModelLabel = 'запросы на изменения';
+    protected static ?string $pluralModelLabel = 'запросы';
 
     protected static ?int $navigationSort = 4;
 
@@ -46,22 +46,23 @@ class ExpenseChangeRequestResource extends BaseResource
 
     protected static string  $defaultSortDirection = 'desc';
 
-    //  public static function getNavigationBadge(): ?string
-    // {
-    //     $unpaidRecords = Debt::unpaid()->get();
+    public static function getNavigationBadge(): ?string
+    {
 
-    //     if ($unpaidRecords->isEmpty()) {
-    //         return null;
-    //     }
+        $unansweredRecords = ExpenseChangeRequest::Unanswered()->get();
 
-    //     $badgeMessage = "";
-    //     foreach ($unpaidRecords as $record) {
-    //         $icon = User::getIcon($record->user_email);
-    //         $badgeMessage .= "{$record->unpaid_count} {$icon}";
-    //     }
+        if ($unansweredRecords->isEmpty()) {
+            return null;
+        }
 
-    //     return trim($badgeMessage);
-    // }
+        $badgeMessage = "";
+        foreach ($unansweredRecords as $record) {
+        $icon = User::getIcon($record->email);
+            $badgeMessage .= "{$record->unanswered_count} {$icon}";
+        }
+
+        return trim($badgeMessage);
+    }
 
     public static function getNavigationBadgeColor(): ?string
     {
