@@ -81,11 +81,6 @@ $overpayment = Overpayment::where('created_at', '<=', $date)
         }
         }
 
-
-
-        // Проверка нулевого долга (с учетом погрешности float)
-        $isDebtZero=abs($finalDifference) < 0.01;
-
         // Форматирование для вывода
         $minName=$minUser->user->name ?? 'Unknown';
         $maxName = $maxUser->user->name ?? 'Unknown';
@@ -97,7 +92,6 @@ $overpayment = Overpayment::where('created_at', '<=', $date)
         $minSum = number_format($minUser->total_sum, 2, ',', ' ');
         $maxSum = number_format($maxUser->total_sum, 2, ',', ' ');
         $baseDiffFormatted = number_format($baseDifference, 2, ',', ' ');
-        $finalDiffFormatted = number_format($finalDifference, 2, ',', ' ');
         @endphp
 
         <div class="w-full">
@@ -217,11 +211,12 @@ $overpayment = Overpayment::where('created_at', '<=', $date)
                                 @endif
 
                                 @if($paidDebts->count())
-                                <details class="group bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-950/30 dark:to-teal-950/30 rounded-lg p-3 border-2 border-emerald-300/50 dark:border-emerald-700/50 shadow-sm">
-                                    <summary class="list-none cursor-pointer select-none">
+                                <details class="group relative bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 dark:from-emerald-950/30 dark:via-teal-950/30 dark:to-cyan-950/30 rounded-xl p-3 border-2 border-emerald-300/50 dark:border-emerald-700/50 shadow-md shadow-emerald-900/5 dark:shadow-black/30 overflow-hidden transition-all duration-300 hover:shadow-lg">
+                                    <div class="absolute -top-10 -right-10 w-24 h-24 rounded-full bg-emerald-300/20 dark:bg-emerald-500/10 blur-2xl pointer-events-none"></div>
+                                    <summary class="relative list-none cursor-pointer select-none rounded-lg px-1 py-1 hover:bg-white/40 dark:hover:bg-slate-900/30 transition-colors duration-200">
                                         <div class="flex items-center justify-between gap-3">
                                             <div class="flex items-center gap-2 sm:gap-3 min-w-0">
-                                                <div class="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-emerald-500/20 dark:bg-emerald-500/30 flex items-center justify-center flex-shrink-0">
+                                                <div class="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-gradient-to-br from-emerald-400/30 to-teal-500/30 dark:from-emerald-500/40 dark:to-teal-500/40 ring-1 ring-emerald-400/30 dark:ring-emerald-500/20 flex items-center justify-center flex-shrink-0 shadow-sm">
                                                     <svg class="w-3 h-3 sm:w-4 sm:h-4 text-emerald-700 dark:text-emerald-300" fill="currentColor" viewBox="0 0 20 20">
                                                         <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
                                                     </svg>
@@ -236,40 +231,50 @@ $overpayment = Overpayment::where('created_at', '<=', $date)
                                         </div>
                                     </summary>
 
-                                    <div class="mt-3 space-y-2">
+                                    <div class="relative mt-3 space-y-2.5">
                                         @php
-                                            $sortedPaidDebts = $paidDebts->sortBy('changed_debt_date')->values();
-                                            $runningDiff = (float) ($debt->debt_sum ?? 0);
-                                            $runningDebtorName = $finalMinName ?? data_get($debt, 'user.name') ?? 'Должник';
-                                            $runningCreditorName = $finalMaxName ?? 'Кредитор';
-                                            $runningDebtorId = data_get($debt, 'user_id');
+                                        $sortedPaidDebts = $paidDebts->sortBy('changed_debt_date')->values();
                                         @endphp
+
+                                        <div class="rounded-xl border border-emerald-200/90 dark:border-emerald-800/80 bg-white/85 dark:bg-slate-900/55 backdrop-blur-sm px-3 py-2.5 shadow-sm">
+                                            <p class="text-[11px] uppercase tracking-wide text-emerald-700 dark:text-emerald-300 font-semibold">До учёта оплат</p>
+                                            <p class="text-xs sm:text-sm text-slate-700 dark:text-slate-200 mt-1">
+                                                {{ $finalMinUser->user->name }} должен(на) {{ $finalMaxUser->user->name }}
+                                                <span class="inline-flex items-center rounded-md bg-emerald-100/80 dark:bg-emerald-900/40 px-1.5 py-0.5 font-extrabold text-emerald-800 dark:text-emerald-200">{{ number_format($finalDifference, 2, ',', ' ') }} MDL</span>
+                                            </p>
+                                        </div>
+
                                         @foreach($sortedPaidDebts as $paidDebt)
                                         @php
-                                            $paidById = data_get($paidDebt, 'user_id') ?? data_get($paidDebt, 'paid_by_user_id');
-                                            $isPaidByDebtor = $runningDebtorId ? ((string) $paidById === (string) $runningDebtorId) : false;
-                                            $paidSumRaw = (float) (data_get($paidDebt, 'paid_sum') ?? 0);
+                                        $beforeDifference = (float) $finalDifference;
+                                        $beforeMinName = $finalMinUser->user->name ?? 'Unknown';
+                                        $beforeMaxName = $finalMaxUser->user->name ?? 'Unknown';
+                                        $paidSum = (float) $paidDebt->paid_sum;
+                                        $calculationSign = '−';
+                                        $calculationAction = 'уменьшение долга';
 
-                                            if ($isPaidByDebtor) {
-                                                $runningDiff -= $paidSumRaw;
-                                            } else {
-                                                $runningDiff += $paidSumRaw;
-                                            }
+                                        if ($finalMaxUser->user_id === $paidDebt->paid_by_user_id) {
+                                            $finalDifference += $paidSum;
+                                            $calculationSign = '+';
+                                            $calculationAction = 'увеличение долга (платит получатель)';
+                                        } elseif ($finalMinUser->user_id === $paidDebt->paid_by_user_id) {
+                                            $finalDifference -= $paidSum;
+                                        }
 
-                                            if ($runningDiff < 0) {
-                                                $runningDiff = abs($runningDiff);
-                                                [$runningDebtorName, $runningCreditorName] = [$runningCreditorName, $runningDebtorName];
-                                                $runningDebtorId = null;
-                                            }
+                                        $swapOccurred = false;
+                                        if ($finalDifference < 0) {
+                                            [$finalMinUser, $finalMaxUser] = [$finalMaxUser, $finalMinUser];
+                                            $finalDifference = abs($finalDifference);
+                                            $swapOccurred = true;
+                                        }
 
-                                            if (abs($runningDiff) < 0.01) {
-                                                $runningDiff = 0;
-                                            }
+                                        $afterDifference = (float) $finalDifference;
                                         @endphp
-                                        <div class="rounded-lg border border-emerald-200/70 dark:border-emerald-800/70 bg-white/80 dark:bg-slate-900/60 px-3 py-2">
+
+                                            <div class="rounded-xl border border-emerald-200/80 dark:border-emerald-800/70 bg-white/90 dark:bg-slate-900/60 px-3 py-3 shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-[1px]">
                                             <div class="grid grid-cols-1 sm:grid-cols-4 gap-2 sm:gap-3 text-xs sm:text-sm">
                                                 <div class="flex flex-col">
-                                                    <span class="text-slate-500 dark:text-slate-400">Дата оплаты</span>
+                                                    <span class="text-slate-500 dark:text-slate-400">Дата отредактированного долга</span>
                                                     <span class="font-medium text-slate-900 dark:text-slate-100">
                                                         {{ \Illuminate\Support\Carbon::parse($paidDebt->changed_debt_date)->format('d.m.Y H:i:s') }}
                                                     </span>
@@ -277,14 +282,14 @@ $overpayment = Overpayment::where('created_at', '<=', $date)
                                                 <div class="flex flex-col">
                                                     <span class="text-slate-500 dark:text-slate-400">Статус</span>
                                                     <span class="font-medium text-slate-900 dark:text-slate-100">
-                                                        {{ $paidDebt->payment_status === 'paid' ? 'Оплачено' : ($paidDebt->payment_status === 'partial' ? 'Частично оплачено' : $paidDebt->payment_status) }}
+                                                        {{ __('resources.toggle_buttons.options.' . $paidDebt->payment_status) }}
                                                     </span>
                                                 </div>
                                                 <div class="flex flex-col">
                                                     <span class="text-slate-500 dark:text-slate-400">Кем оплачено</span>
                                                     @php
                                                     $paidByUser = $paidDebt->user;
-                                                    $userName = $paidByUser->name ?? ('ID: ' . ($paidDebt->user_id ?? $paidDebt->paid_by_user_id ?? 'Unknown'));
+                                                    $userName = $paidByUser->name ?? 'Unknown';
                                                     $userImage = $paidByUser->image ?? null;
                                                     @endphp
                                                     <div class="flex items-center gap-2 mt-0.5 min-w-0">
@@ -301,232 +306,250 @@ $overpayment = Overpayment::where('created_at', '<=', $date)
                                                     </div>
                                                 </div>
                                                 <div class="flex flex-col">
-                                                    <span class="text-slate-500 dark:text-slate-400">Сумма оплаты (ред.)</span>
-                                                    <div class="flex items-center gap-1.5">
-                                                        <input type="number" step="0.01" value="{{ number_format((float) $paidDebt->paid_sum, 2, '.', '') }}"
-                                                            class="w-full rounded-md border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-xs sm:text-sm px-2 py-1.5">
-                                                        <span class="font-semibold text-emerald-700 dark:text-emerald-300 whitespace-nowrap">MDL</span>
-                                                    </div>
+                                                    <span class="text-slate-500 dark:text-slate-400">Сумма оплаты</span>
+                                                    <span class="inline-flex items-center w-fit rounded-md bg-emerald-100/80 dark:bg-emerald-900/40 px-2 py-0.5 font-black text-emerald-700 dark:text-emerald-300">{{ number_format($paidSum, 2, ',', ' ') }} MDL</span>
                                                 </div>
                                             </div>
 
+                                            <div class="mt-2.5 rounded-lg border border-slate-200/90 dark:border-slate-700 bg-gradient-to-br from-slate-50/90 to-white/80 dark:from-slate-800/50 dark:to-slate-900/40 p-2.5">
+                                                <p class="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400">Расчёт по шагу</p>
+                                                <p class="mt-1 text-xs sm:text-sm text-slate-700 dark:text-slate-200">
+                                                    До оплаты:
+                                                    <span class="font-semibold">{{ $beforeMinName }} → {{ $beforeMaxName }}</span>
+                                                    на <span class="font-black">{{ number_format($beforeDifference, 2, ',', ' ') }} MDL</span>
+                                                </p>
+                                                <p class="mt-1 text-xs sm:text-sm text-slate-700 dark:text-slate-200">
+                                                    Формула:
+                                                    <span class="font-mono rounded bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5">{{ number_format($beforeDifference, 2, ',', ' ') }} {{ $calculationSign }} {{ number_format($paidSum, 2, ',', ' ') }} = {{ number_format($afterDifference, 2, ',', ' ') }}</span> MDL
+                                                </p>
+                                                <p class="mt-1 text-[11px] sm:text-xs text-slate-500 dark:text-slate-400">{{ $calculationAction }}</p>
+                                                @if($swapOccurred)
+                                                <p class="mt-1 text-[11px] sm:text-xs text-orange-700 dark:text-orange-300 font-medium">Направление долга сменилось после пересчёта.</p>
+                                                @endif
+                                            </div>
+
                                             <div class="mt-2">
-                                                @if($runningDiff == 0)
-                                                <div class="rounded-md px-2.5 py-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white">
+                                                @if($afterDifference == 0)
+                                                <div class="rounded-lg px-2.5 py-2 bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500 text-white shadow-md shadow-emerald-900/20">
                                                     <p class="text-[11px] uppercase tracking-wide opacity-90">После оплаты</p>
                                                     <p class="text-sm font-black leading-tight">Никто никому не должен</p>
                                                 </div>
                                                 @else
-                                                <div class="rounded-md px-2.5 py-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white">
+                                                <div class="rounded-lg px-2.5 py-2 bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 text-white shadow-md shadow-orange-900/20">
                                                     <p class="text-[11px] uppercase tracking-wide opacity-90">После оплаты</p>
                                                     <div class="flex items-center gap-1.5 min-w-0 mt-0.5">
-                                                        <input type="text" value="{{ $runningDebtorName }}" class="min-w-0 w-24 sm:w-28 rounded bg-white/15 text-white placeholder-white/70 text-xs sm:text-sm px-2 py-1 border border-white/20">
+                                                        <span class="min-w-0 w-24 sm:w-28 rounded-md bg-white/15 text-white text-xs sm:text-sm px-2 py-1 border border-white/25 truncate">{{ $finalMinUser->user->name }}</span>
                                                         <svg class="w-3.5 h-3.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                                                             <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd"></path>
                                                         </svg>
-                                                        <input type="text" value="{{ $runningCreditorName }}" class="min-w-0 w-24 sm:w-28 rounded bg-white/15 text-white placeholder-white/70 text-xs sm:text-sm px-2 py-1 border border-white/20">
-                                                        <span class="ml-auto text-base sm:text-lg font-black whitespace-nowrap">{{ number_format((float) $runningDiff, 2, '.', ' ') }} MDL</span>
+                                                        <span class="min-w-0 w-24 sm:w-28 rounded-md bg-white/15 text-white text-xs sm:text-sm px-2 py-1 border border-white/25 truncate">{{ $finalMaxUser->user->name }}</span>
+                                                        <span class="ml-auto text-base sm:text-lg font-black whitespace-nowrap">{{ number_format($afterDifference, 2, ',', ' ') }} MDL</span>
                                                     </div>
                                                 </div>
                                                 @endif
                                             </div>
-                                        </div>
-                                        @endforeach
                                     </div>
-                                </details>
-                                @endif
-                            </div>
+                                    @endforeach
 
-                            <!-- Разделитель -->
-                            <div class="flex items-center gap-2 sm:gap-3 py-4 sm:py-3">
-                                <div class="flex-1 h-px bg-gradient-to-r from-transparent via-amber-300 dark:via-amber-700 to-transparent"></div>
-                                <div class="px-5 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-lg border border-amber-200 dark:border-amber-800">
-                                    <svg class="w-3 h-3 sm:w-4 sm:h-4 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 12h14"></path>
-                                    </svg>
-                                </div>
-                                <div class="flex-1 h-px bg-gradient-to-r from-transparent via-amber-300 dark:via-amber-700 to-transparent"></div>
+                                    @php
+                                    $finalMinName = $finalMinUser->user->name ?? 'Unknown';
+                                    $finalMaxName = $finalMaxUser->user->name ?? 'Unknown';
+                                    @endphp
                             </div>
+            </details>
+            @endif
+        </div>
 
-                            <!-- Итоговая карточка -->
-                            @if($isDebtZero)
-                            <div class="relative bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500 rounded-lg p-3 text-white">
+        <!-- Разделитель -->
+        <div class="flex items-center gap-2 sm:gap-3 py-4 sm:py-3">
+            <div class="flex-1 h-px bg-gradient-to-r from-transparent via-amber-300 dark:via-amber-700 to-transparent"></div>
+            <div class="px-5 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-lg border border-amber-200 dark:border-amber-800">
+                <svg class="w-3 h-3 sm:w-4 sm:h-4 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 12h14"></path>
+                </svg>
+            </div>
+            <div class="flex-1 h-px bg-gradient-to-r from-transparent via-amber-300 dark:via-amber-700 to-transparent"></div>
+        </div>
 
-                                <div class="relative z-10">
-                                    <div class="flex flex-col items-center justify-center gap-3 sm:gap-4 text-center py-2">
-                                        <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-white/20 flex items-center justify-center">
-                                            <svg class="w-8 h-8 sm:w-10 sm:h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                            </svg>
-                                        </div>
-                                        <div>
-                                            <p class="text-xs sm:text-sm font-semibold opacity-90 mb-1">Итоговый расчёт</p>
-                                            <p class="text-2xl sm:text-3xl md:text-4xl font-black">Никто никому ничего не должен</p>
-                                            <p class="text-xs sm:text-sm opacity-90 mt-2">Долг полностью погашен ✓</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            @else
-                            <div class="relative bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 rounded-lg p-3 text-white">
-                                <!-- Декоративные элементы -->
-                                <div class="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-16 translate-x-16 blur-2xl"></div>
-                                <div class="absolute bottom-0 left-0 w-24 h-24 bg-black/10 rounded-full translate-y-12 -translate-x-12 blur-xl"></div>
+        <!-- Итоговая карточка -->
+        @if($finalDifference == 0)
+        <div class="relative bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500 rounded-lg p-3 text-white">
 
-                                <div class="relative z-10">
-                                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
-                                        <div class="flex-1">
-                                            <p class="text-xs sm:text-sm font-semibold opacity-90 mb-1 sm:mb-2 flex items-center gap-2">
-                                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                                    <path fill-rule="evenodd" d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V4a2 2 0 00-2-2H6zm1 2a1 1 0 000 2h6a1 1 0 100-2H7zm6 7a1 1 0 011 1v3a1 1 0 11-2 0v-3a1 1 0 011-1zm-3 3a1 1 0 100 2h.01a1 1 0 100-2H10zm-4 1a1 1 0 011-1h.01a1 1 0 110 2H7a1 1 0 01-1-1zm1-4a1 1 0 100 2h.01a1 1 0 100-2H7zm2 1a1 1 0 011-1h.01a1 1 0 110 2H10a1 1 0 01-1-1zm4-4a1 1 0 100 2h.01a1 1 0 100-2H13zM9 9a1 1 0 011-1h.01a1 1 0 110 2H10a1 1 0 01-1-1zM7 8a1 1 0 000 2h.01a1 1 0 000-2H7z" clip-rule="evenodd"></path>
-                                                </svg>
-                                                Итоговый долг
-                                            </p>
-                                            <div class="flex items-center gap-2 sm:gap-3">
-                                                <p class="text-base sm:text-xl font-bold truncate">{{ $finalMinName }}</p>
-                                                <svg class="w-5 h-5 sm:w-6 sm:h-6 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                                                    <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd"></path>
-                                                </svg>
-                                                <p class="text-base sm:text-xl font-bold truncate">{{ $finalMaxName }}</p>
-                                            </div>
-                                        </div>
-                                        <div class="text-left sm:text-right">
-                                            <p class="text-3xl sm:text-4xl md:text-5xl font-black leading-none">{{ $finalDiffFormatted }}</p>
-                                            <p class="text-xs sm:text-sm opacity-90 mt-1">MDL</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            @endif
+            <div class="relative z-10">
+                <div class="flex flex-col items-center justify-center gap-3 sm:gap-4 text-center py-2">
+                    <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-white/20 flex items-center justify-center">
+                        <svg class="w-8 h-8 sm:w-10 sm:h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="text-xs sm:text-sm font-semibold opacity-90 mb-1">Итоговый расчёт</p>
+                        <p class="text-2xl sm:text-3xl md:text-4xl font-black">Никто никому ничего не должен</p>
+                        <p class="text-xs sm:text-sm opacity-90 mt-2">Долг полностью погашен ✓</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        @else
+        <div class="relative bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 rounded-lg p-3 text-white">
+            <!-- Декоративные элементы -->
+            <div class="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-16 translate-x-16 blur-2xl"></div>
+            <div class="absolute bottom-0 left-0 w-24 h-24 bg-black/10 rounded-full translate-y-12 -translate-x-12 blur-xl"></div>
+
+            <div class="relative z-10">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+                    <div class="flex-1">
+                        <p class="text-xs sm:text-sm font-semibold opacity-90 mb-1 sm:mb-2 flex items-center gap-2">
+                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V4a2 2 0 00-2-2H6zm1 2a1 1 0 000 2h6a1 1 0 100-2H7zm6 7a1 1 0 011 1v3a1 1 0 11-2 0v-3a1 1 0 011-1zm-3 3a1 1 0 100 2h.01a1 1 0 100-2H10zm-4 1a1 1 0 011-1h.01a1 1 0 110 2H7a1 1 0 01-1-1zm1-4a1 1 0 100 2h.01a1 1 0 100-2H7zm2 1a1 1 0 011-1h.01a1 1 0 110 2H10a1 1 0 01-1-1zm4-4a1 1 0 100 2h.01a1 1 0 100-2H13zM9 9a1 1 0 011-1h.01a1 1 0 110 2H10a1 1 0 01-1-1zM7 8a1 1 0 000 2h.01a1 1 0 000-2H7z" clip-rule="evenodd"></path>
+                            </svg>
+                            Итоговый долг
+                        </p>
+                        <div class="flex items-center gap-2 sm:gap-3">
+                            <p class="text-base sm:text-xl font-bold truncate">{{ $finalMinName }}</p>
+                            <svg class="w-5 h-5 sm:w-6 sm:h-6 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                            </svg>
+                            <p class="text-base sm:text-xl font-bold truncate">{{ $finalMaxName }}</p>
                         </div>
                     </div>
+                    <div class="text-left sm:text-right">
+                        <p class="text-3xl sm:text-4xl md:text-5xl font-black leading-none">{{ number_format($finalDifference, 2, ',', ' ') }}</p>
+                        <p class="text-xs sm:text-sm opacity-90 mt-1">MDL</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        @endif
+        </div>
+        </div>
 
-                    <!-- Детали затрат -->
-                    <details class="group/expenses bg-white dark:bg-gray-800 rounded-lg border-2 border-gray-200 dark:border-gray-700 overflow-hidden">
-                        <summary class="font-bold text-gray-900 dark:text-white text-sm sm:text-base cursor-pointer px-3 py-3 bg-gradient-to-r from-gray-50 to-white dark:from-gray-800 dark:to-gray-900 hover:from-gray-100 hover:to-gray-50 dark:hover:from-gray-700 dark:hover:to-gray-800 transition-all duration-200 flex items-center gap-2 sm:gap-3 active:scale-[0.99]">
-                            <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center shadow-md flex-shrink-0">
-                                <svg class="w-4 h-4 sm:w-5 sm:h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-                                </svg>
-                            </div>
-                            <span class="flex-1 text-left">Детализация затрат</span>
-                            <svg class="w-5 h-5 sm:w-6 sm:h-6 text-gray-400 transition-transform duration-300 group-open/expenses:rotate-180 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"></path>
+        <!-- Детали затрат -->
+        <details class="group/expenses bg-white dark:bg-gray-800 rounded-lg border-2 border-gray-200 dark:border-gray-700 overflow-hidden">
+            <summary class="font-bold text-gray-900 dark:text-white text-sm sm:text-base cursor-pointer px-3 py-3 bg-gradient-to-r from-gray-50 to-white dark:from-gray-800 dark:to-gray-900 hover:from-gray-100 hover:to-gray-50 dark:hover:from-gray-700 dark:hover:to-gray-800 transition-all duration-200 flex items-center gap-2 sm:gap-3 active:scale-[0.99]">
+                <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center shadow-md flex-shrink-0">
+                    <svg class="w-4 h-4 sm:w-5 sm:h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                    </svg>
+                </div>
+                <span class="flex-1 text-left">Детализация затрат</span>
+                <svg class="w-5 h-5 sm:w-6 sm:h-6 text-gray-400 transition-transform duration-300 group-open/expenses:rotate-180 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"></path>
+                </svg>
+            </summary>
+
+            <div class="p-3 space-y-2 sm:space-y-3 bg-gray-50 dark:bg-gray-900/30">
+                @foreach($expenses as $userExpense)
+                @php
+                $userName = $userExpense->user->name ?? 'Unknown';
+                $userImage = $userExpense->user->image ?? null;
+                $userTotal = number_format($userExpense->total_sum, 2, ',', ' ');
+                $userExpenseDetails = Expense::where('user_id', $userExpense->user_id)
+                ->whereMonth('date', $date->month)
+                ->whereYear('date', $date->year)
+                ->with('category:id,name', 'supplier:id,name')
+                ->orderBy('date')
+                ->get();
+                @endphp
+
+                <details class="group/user bg-white dark:bg-gray-800 rounded-lg border-l-4 border-amber-400 dark:border-amber-600 overflow-hidden">
+                    <summary class="cursor-pointer px-3 py-3 hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors duration-150 flex items-center gap-2 sm:gap-3 active:scale-[0.98]">
+                        <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                            @if($userImage)
+                            <img src="{{ asset('storage/' . $userImage) }}" alt="{{ $userName }}" class="w-full h-full object-cover">
+                            @else
+                            <svg class="w-4 h-4 sm:w-5 sm:h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path>
                             </svg>
-                        </summary>
+                            @endif
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="font-bold text-gray-900 dark:text-white text-sm sm:text-base truncate">{{ $userName }}</p>
+                            <p class="text-xs sm:text-sm text-gray-500 dark:text-gray-400">{{ $userExpenseDetails->count() }} операций</p>
+                        </div>
+                        <div class="text-right flex-shrink-0">
+                            <p class="font-black text-gray-900 dark:text-white text-sm sm:text-lg">{{ $userTotal }}</p>
+                            <p class="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">MDL</p>
+                        </div>
+                        <svg class="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 transition-transform duration-300 group-open/user:rotate-180 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"></path>
+                        </svg>
+                    </summary>
 
-                        <div class="p-3 space-y-2 sm:space-y-3 bg-gray-50 dark:bg-gray-900/30">
-                            @foreach($expenses as $userExpense)
+                    <div class="border-t-2 border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
+                        <!-- Мобильная версия (карточки) -->
+                        <div class="sm:hidden p-3 space-y-2">
+                            @foreach($userExpenseDetails as $expense)
                             @php
-                            $userName = $userExpense->user->name ?? 'Unknown';
-                            $userImage = $userExpense->user->image ?? null;
-                            $userTotal = number_format($userExpense->total_sum, 2, ',', ' ');
-                            $userExpenseDetails = Expense::where('user_id', $userExpense->user_id)
-                            ->whereMonth('date', $date->month)
-                            ->whereYear('date', $date->year)
-                            ->with('category:id,name', 'supplier:id,name')
-                            ->orderBy('date')
-                            ->get();
+                            $expDate = $expense->date instanceof Carbon ? $expense->date->format('d.m.Y') : $expense->date;
+                            $expSum = number_format($expense->sum, 2, ',', ' ');
                             @endphp
-
-                            <details class="group/user bg-white dark:bg-gray-800 rounded-lg border-l-4 border-amber-400 dark:border-amber-600 overflow-hidden">
-                                <summary class="cursor-pointer px-3 py-3 hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors duration-150 flex items-center gap-2 sm:gap-3 active:scale-[0.98]">
-                                    <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center flex-shrink-0 overflow-hidden">
-                                        @if($userImage)
-                                        <img src="{{ asset('storage/' . $userImage) }}" alt="{{ $userName }}" class="w-full h-full object-cover">
-                                        @else
-                                        <svg class="w-4 h-4 sm:w-5 sm:h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                                            <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path>
-                                        </svg>
-                                        @endif
+                            <a href="{{ \App\Filament\Resources\ExpenseResource::getUrl('view', ['record' => $expense]) }}" class="block bg-white dark:bg-gray-800 rounded-lg p-3 border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md hover:border-amber-400 dark:hover:border-amber-600 transition-all duration-200 active:scale-[0.98]">
+                                <div class="flex justify-between items-start mb-2">
+                                    <span class="text-xs font-semibold text-gray-900 dark:text-white">{{ $expDate }}</span>
+                                    <span class="text-sm font-bold text-amber-600 dark:text-amber-400">{{ $expSum }} MDL</span>
+                                </div>
+                                <div class="space-y-1">
+                                    <div class="flex items-center gap-2 text-xs">
+                                        <span class="text-gray-500 dark:text-gray-400">Категория:</span>
+                                        <span class="text-gray-700 dark:text-gray-300">{{ $expense->category?->name ?? '—' }}</span>
                                     </div>
-                                    <div class="flex-1 min-w-0">
-                                        <p class="font-bold text-gray-900 dark:text-white text-sm sm:text-base truncate">{{ $userName }}</p>
-                                        <p class="text-xs sm:text-sm text-gray-500 dark:text-gray-400">{{ $userExpenseDetails->count() }} операций</p>
-                                    </div>
-                                    <div class="text-right flex-shrink-0">
-                                        <p class="font-black text-gray-900 dark:text-white text-sm sm:text-lg">{{ $userTotal }}</p>
-                                        <p class="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">MDL</p>
-                                    </div>
-                                    <svg class="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 transition-transform duration-300 group-open/user:rotate-180 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"></path>
-                                    </svg>
-                                </summary>
-
-                                <div class="border-t-2 border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
-                                    <!-- Мобильная версия (карточки) -->
-                                    <div class="sm:hidden p-3 space-y-2">
-                                        @foreach($userExpenseDetails as $expense)
-                                        @php
-                                        $expDate = $expense->date instanceof Carbon ? $expense->date->format('d.m.Y') : $expense->date;
-                                        $expSum = number_format($expense->sum, 2, ',', ' ');
-                                        @endphp
-                                        <a href="{{ \App\Filament\Resources\ExpenseResource::getUrl('view', ['record' => $expense]) }}" class="block bg-white dark:bg-gray-800 rounded-lg p-3 border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md hover:border-amber-400 dark:hover:border-amber-600 transition-all duration-200 active:scale-[0.98]">
-                                            <div class="flex justify-between items-start mb-2">
-                                                <span class="text-xs font-semibold text-gray-900 dark:text-white">{{ $expDate }}</span>
-                                                <span class="text-sm font-bold text-amber-600 dark:text-amber-400">{{ $expSum }} MDL</span>
-                                            </div>
-                                            <div class="space-y-1">
-                                                <div class="flex items-center gap-2 text-xs">
-                                                    <span class="text-gray-500 dark:text-gray-400">Категория:</span>
-                                                    <span class="text-gray-700 dark:text-gray-300">{{ $expense->category?->name ?? '—' }}</span>
-                                                </div>
-                                                <div class="flex items-center gap-2 text-xs">
-                                                    <span class="text-gray-500 dark:text-gray-400">Поставщик:</span>
-                                                    <span class="text-gray-700 dark:text-gray-300">{{ $expense->supplier?->name ?? '—' }}</span>
-                                                </div>
-                                            </div>
-                                        </a>
-                                        @endforeach
-                                    </div>
-
-                                    <!-- Десктопная версия (таблица) -->
-                                    <div class="hidden sm:block overflow-x-auto">
-                                        <table class="w-full text-xs sm:text-sm">
-                                            <thead>
-                                                <tr class="bg-gray-100 dark:bg-gray-800 border-b-2 border-gray-300 dark:border-gray-600">
-                                                    <th class="text-left py-3 px-3 text-gray-700 dark:text-gray-300 font-bold">Дата</th>
-                                                    <th class="text-left py-3 px-3 text-gray-700 dark:text-gray-300 font-bold">Категория</th>
-                                                    <th class="text-left py-3 px-3 text-gray-700 dark:text-gray-300 font-bold">Поставщик</th>
-                                                    <th class="text-right py-3 px-3 text-gray-700 dark:text-gray-300 font-bold">Сумма</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
-                                                @foreach($userExpenseDetails as $expense)
-                                                @php
-                                                $expDate = $expense->date instanceof Carbon ? $expense->date->format('d.m.Y') : $expense->date;
-                                                $expSum = number_format($expense->sum, 2, ',', ' ');
-                                                $expenseUrl = \App\Filament\Resources\ExpenseResource::getUrl('view', ['record' => $expense]);
-                                                @endphp
-                                                <tr class="hover:bg-white dark:hover:bg-gray-800 hover:shadow-sm transition-all duration-100 cursor-pointer" onclick="window.location.href='{{ $expenseUrl }}'">
-                                                    <td class="py-3 px-3 text-gray-600 dark:text-gray-400 whitespace-nowrap">{{ $expDate }}</td>
-                                                    <td class="py-3 px-3 text-gray-600 dark:text-gray-400">{{ $expense->category?->name ?? '—' }}</td>
-                                                    <td class="py-3 px-3 text-gray-600 dark:text-gray-400">{{ $expense->supplier?->name ?? '—' }}</td>
-                                                    <td class="py-3 px-3 text-right text-gray-900 dark:text-white font-bold whitespace-nowrap">{{ $expSum }} MDL</td>
-                                                </tr>
-                                                @endforeach
-                                            </tbody>
-                                            <tfoot>
-                                                <tr class="bg-gradient-to-r from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 border-t-2 border-gray-300 dark:border-gray-600">
-                                                    <td colspan="3" class="py-3 px-3 font-black text-gray-900 dark:text-white">Итого:</td>
-                                                    <td class="py-3 px-3 text-right font-black text-gray-900 dark:text-white whitespace-nowrap text-base sm:text-lg">{{ $userTotal }} MDL</td>
-                                                </tr>
-                                            </tfoot>
-                                        </table>
-                                    </div>
-
-                                    <!-- Итого для мобильной версии -->
-                                    <div class="sm:hidden bg-gradient-to-r from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 p-3 border-t-2 border-gray-300 dark:border-gray-600">
-                                        <div class="flex justify-between items-center">
-                                            <span class="font-black text-gray-900 dark:text-white text-sm">Итого:</span>
-                                            <span class="font-black text-gray-900 dark:text-white text-lg">{{ $userTotal }} MDL</span>
-                                        </div>
+                                    <div class="flex items-center gap-2 text-xs">
+                                        <span class="text-gray-500 dark:text-gray-400">Поставщик:</span>
+                                        <span class="text-gray-700 dark:text-gray-300">{{ $expense->supplier?->name ?? '—' }}</span>
                                     </div>
                                 </div>
-                            </details>
+                            </a>
                             @endforeach
                         </div>
-                    </details>
-                </div>
-            </details>
+
+                        <!-- Десктопная версия (таблица) -->
+                        <div class="hidden sm:block overflow-x-auto">
+                            <table class="w-full text-xs sm:text-sm">
+                                <thead>
+                                    <tr class="bg-gray-100 dark:bg-gray-800 border-b-2 border-gray-300 dark:border-gray-600">
+                                        <th class="text-left py-3 px-3 text-gray-700 dark:text-gray-300 font-bold">Дата</th>
+                                        <th class="text-left py-3 px-3 text-gray-700 dark:text-gray-300 font-bold">Категория</th>
+                                        <th class="text-left py-3 px-3 text-gray-700 dark:text-gray-300 font-bold">Поставщик</th>
+                                        <th class="text-right py-3 px-3 text-gray-700 dark:text-gray-300 font-bold">Сумма</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                                    @foreach($userExpenseDetails as $expense)
+                                    @php
+                                    $expDate = $expense->date instanceof Carbon ? $expense->date->format('d.m.Y') : $expense->date;
+                                    $expSum = number_format($expense->sum, 2, ',', ' ');
+                                    $expenseUrl = \App\Filament\Resources\ExpenseResource::getUrl('view', ['record' => $expense]);
+                                    @endphp
+                                    <tr class="hover:bg-white dark:hover:bg-gray-800 hover:shadow-sm transition-all duration-100 cursor-pointer" onclick="window.location.href='{{ $expenseUrl }}'">
+                                        <td class="py-3 px-3 text-gray-600 dark:text-gray-400 whitespace-nowrap">{{ $expDate }}</td>
+                                        <td class="py-3 px-3 text-gray-600 dark:text-gray-400">{{ $expense->category?->name ?? '—' }}</td>
+                                        <td class="py-3 px-3 text-gray-600 dark:text-gray-400">{{ $expense->supplier?->name ?? '—' }}</td>
+                                        <td class="py-3 px-3 text-right text-gray-900 dark:text-white font-bold whitespace-nowrap">{{ $expSum }} MDL</td>
+                                    </tr>
+                                    @endforeach
+                                </tbody>
+                                <tfoot>
+                                    <tr class="bg-gradient-to-r from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 border-t-2 border-gray-300 dark:border-gray-600">
+                                        <td colspan="3" class="py-3 px-3 font-black text-gray-900 dark:text-white">Итого:</td>
+                                        <td class="py-3 px-3 text-right font-black text-gray-900 dark:text-white whitespace-nowrap text-base sm:text-lg">{{ $userTotal }} MDL</td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+
+                        <!-- Итого для мобильной версии -->
+                        <div class="sm:hidden bg-gradient-to-r from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 p-3 border-t-2 border-gray-300 dark:border-gray-600">
+                            <div class="flex justify-between items-center">
+                                <span class="font-black text-gray-900 dark:text-white text-sm">Итого:</span>
+                                <span class="font-black text-gray-900 dark:text-white text-lg">{{ $userTotal }} MDL</span>
+                            </div>
+                        </div>
+                    </div>
+                </details>
+                @endforeach
+            </div>
+        </details>
+        </div>
+        </details>
         </div>
