@@ -82,16 +82,16 @@ class CreateExpenseChangeRequest extends CreateBase
 
     protected function afterCreate(): void
     {
-        ExpenseChangeRequestVote::vote(
-            $this->record->id,
-            $this->record->user_id,
-            'approved'
-        );
-
         $users = User::all();
 
         foreach ($users as $user) {
             $user->notify(new ExpenseChangeRequestModified($this->record, 'create'));
         }
+
+        ExpenseChangeRequestVote::vote(
+            $this->record->id,
+            $this->record->user_id,
+            'approved'
+        );
     }
 }

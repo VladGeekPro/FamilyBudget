@@ -8,14 +8,17 @@ use App\Models\User;
 use Filament\Notifications\Actions\Action;
 use Filament\Notifications\Notification as FilamentNotification;
 use Illuminate\Notifications\Notification;
+use Illuminate\Support\Str;
 
 class DebtEditedNotification extends Notification
 {
     public function __construct(
         public Debt $debt,
         public User|string $editor,
-        public String $event
-    ) {}
+        public string $event
+    ) {
+        $this->id = (string) Str::ulid();
+    }
 
     public function via($notifiable): array
     {
@@ -44,7 +47,7 @@ class DebtEditedNotification extends Notification
                     ->label(__('resources.buttons.view'))
                     ->icon('heroicon-o-eye')
                     ->button()
-                    ->url(fn() => DebtResource::getUrl('index') . '?tableAction=view&tableActionRecord=' . $this->debt->id),
+                    ->url(fn() => DebtResource::getUrl('view', ['record' => $this->debt->id])),
 
                 Action::make('markAsRead')
                     ->label(__('resources.buttons.mark_as_read'))

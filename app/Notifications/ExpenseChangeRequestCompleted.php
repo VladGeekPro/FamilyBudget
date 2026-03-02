@@ -8,13 +8,16 @@ use Filament\Notifications\Actions\Action;
 use Filament\Notifications\Notification as FilamentNotification;
 use Illuminate\Notifications\Notification;
 use Illuminate\Support\HtmlString;
+use Illuminate\Support\Str;
 
 class ExpenseChangeRequestCompleted extends Notification
 {
     public function __construct(
         public ExpenseChangeRequest $expenseChangeRequest,
         public string $event
-    ) {}
+    ) {
+        $this->id = (string) Str::ulid();
+    }
 
     public function via($notifiable): array
     {
@@ -35,7 +38,7 @@ class ExpenseChangeRequestCompleted extends Notification
 
         $iconMap = [
             'completed' => ['icon' => 'heroicon-o-check-circle', 'color' => 'success'],
-            'rejected'  => ['icon' => 'heroicon-o-x-circle', 'color' => 'danger'],
+            'rejected' => ['icon' => 'heroicon-o-x-circle', 'color' => 'danger'],
         ];
 
         return FilamentNotification::make()
@@ -59,5 +62,4 @@ class ExpenseChangeRequestCompleted extends Notification
             ])
             ->getDatabaseMessage();
     }
-
 }

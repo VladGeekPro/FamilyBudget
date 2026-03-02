@@ -7,6 +7,7 @@ use App\Models\ExpenseChangeRequest;
 use Filament\Notifications\Actions\Action;
 use Filament\Notifications\Notification as FilamentNotification;
 use Illuminate\Notifications\Notification;
+use Illuminate\Support\Str;
 
 class ExpenseChangeRequestModified extends Notification
 {
@@ -14,7 +15,9 @@ class ExpenseChangeRequestModified extends Notification
         public ExpenseChangeRequest $changeRequest,
         public string $event,
         public bool $canceledVote = false
-    ) {}
+    ) {
+        $this->id = (string) Str::ulid();
+    }
 
     public function via($notifiable): array
     {

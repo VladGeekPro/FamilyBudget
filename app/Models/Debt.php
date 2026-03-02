@@ -50,6 +50,7 @@ class Debt extends Model
         return $query
             ->select($debtsTable . '.user_id', DB::raw('COUNT(*) as unpaid_count'))
             ->where($debtsTable . '.payment_status', 'unpaid')
+            ->orWhere($debtsTable . '.payment_status', 'partial')
             ->join($usersTable, $debtsTable . '.user_id', '=', $usersTable . '.id')
             ->addSelect($usersTable . '.email as email')
             ->groupBy($debtsTable . '.user_id')
