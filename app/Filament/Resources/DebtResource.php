@@ -193,7 +193,7 @@ class DebtResource extends BaseResource
                                         $set('date_paid', null);
                                     }
 
-                                    $set('partial_sum', $state === 'paid' ? $get('debt_sum') : 0);
+                                    $set('partial_sum', $state === 'paid' ? $get('debt_sum') : null);
 
                                     static::updateDebtNotes($get, $set);
                                 })
@@ -204,12 +204,13 @@ class DebtResource extends BaseResource
                                 ->label(__('resources.fields.partial_sum'))
                                 ->suffix('MDL')
                                 ->numeric()
+                                ->placeholder('0.00')
                                 ->visible(fn($get) => $get('payment_status') === 'partial')
                                 ->required(fn($get) => $get('payment_status') === 'partial')
                                 ->live(onBlur: true)
                                 ->afterStateUpdated(function ($state, $set, $get) {
                                     if ($get('payment_status') === 'partial' && $state >= $get('debt_sum')) {
-                                        $set('partial_sum', 0);
+                                        $set('partial_sum', null);
                                         $state = 0;
 
                                         Notification::make()
@@ -364,7 +365,7 @@ class DebtResource extends BaseResource
 
             ])
             ->filters([
-                
+
                 SelectFilter::make('user')
                     ->label(__('resources.fields.user'))
                     ->relationship('user', 'name')
@@ -464,6 +465,7 @@ class DebtResource extends BaseResource
         return [
             'index' => Pages\ListDebts::route('/'),
             'edit' => Pages\EditDebt::route('/{record}/edit'),
+            'view' => Pages\ViewDebt::route('/{record}'),
         ];
     }
 }

@@ -128,6 +128,7 @@ class CalculateMonthlyDebts extends Command
                 'overpayment_id' => $overpayment?->id,
                 'payment_status' => 'paid',
                 'date_paid' => now(),
+                'partial_sum' => 0,
                 'notes' => $debtMessage,
             ];
         } else {
@@ -143,6 +144,8 @@ class CalculateMonthlyDebts extends Command
                 'user_id' => $minExpenseUser['user']->id,
                 'overpayment_id' => $overpayment?->id,
                 'payment_status' => 'unpaid',
+                'date_paid' => null,
+                'partial_sum' => 0,
                 'debt_sum' => $difference,
                 'notes' => $debtMessage,
             ];

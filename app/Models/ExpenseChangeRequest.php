@@ -195,7 +195,7 @@ class ExpenseChangeRequest extends Model
                 }
 
                 try {
-                    Artisan::call('calculate:monthly-debts', ['--period' => $this->current_date->format('m.Y')]);
+                    Artisan::call('calculate:monthly-debts', ['--period' => $this->current_date?->format('m.Y') ?? $this->requested_date->format('m.Y')]);
                 } catch (\Exception $e) {
                     Log::error('Ошибка при расчёте долгов после применения изменений для редактирования затраты: #' . $this->expense . '; созданной: ' . $this->created_at . '; пользователем: ' . $this->user->name . '; ' . 'Ошибка: ' . $e->getMessage());
                 }
