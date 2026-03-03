@@ -300,10 +300,9 @@ class ExpenseChangeRequest extends Model
 
             $title = "Ошибка редактирования затраты";
             $message = new HtmlString(implode('<br>', [
-                '<strong>Затрата:</strong> ' . ($this->expense->id ?? 'Новая затрата'),
                 '<strong>Создано:</strong> ' . ($this->created_at?->format('d.m.Y H:i:s') ?? '-'),
                 '<strong>Пользователь:</strong> ' . ($this->user?->name ?? '-'),
-                '<strong>Ошибка:</strong> ' . 'Не удалось отредактировать затрату, потому что не найдена затрата: ' . ($this->expense->id ? '#' . $this->expense->id : 'новая затрата'),
+                '<strong>Ошибка:</strong> Не удалось отредактировать затрату, потому что она не найдена.',
             ]));
 
             foreach (User::all() as $user) {
@@ -320,10 +319,9 @@ class ExpenseChangeRequest extends Model
 
             $title = "Ошибка удаления затраты";
             $message = new HtmlString(implode('<br>', [
-                '<strong>Затрата:</strong> ' . ($this->expense->id ?? 'Новая затрата'),
                 '<strong>Создано:</strong> ' . ($this->created_at?->format('d.m.Y H:i:s') ?? '-'),
                 '<strong>Пользователь:</strong> ' . ($this->user?->name ?? '-'),
-                '<strong>Ошибка:</strong> ' . 'Не удалось удалить затрату, потому что не найдена затрата: ' . ($this->expense->id ? '#' . $this->expense->id : 'новая затрата'),
+                '<strong>Ошибка:</strong> Не удалось удалить затрату, потому что она не найдена.',
             ]));
 
             foreach (User::all() as $user) {

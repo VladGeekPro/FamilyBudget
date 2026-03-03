@@ -57,7 +57,7 @@ class ExpenseChangeRequestResource extends BaseResource
 
         $badgeMessage = "";
         foreach ($unansweredRecords as $record) {
-        $icon = User::getIcon($record->email);
+            $icon = User::getIcon($record->email);
             $badgeMessage .= "{$record->unanswered_count} {$icon}";
         }
 
@@ -325,6 +325,10 @@ class ExpenseChangeRequestResource extends BaseResource
                                         return [$expense->id => "#{$expense->id} - {$expense->supplier->name} - {$expense->sum} MDL ({$expense->date->format('d.m.Y')})"];
                                     });
                             })
+                            ->getOptionLabelUsing(function ($value): string {
+                                $expense = Expense::find($value);
+                                return "#{$expense->id} - {$expense->supplier->name} - {$expense->sum} MDL ({$expense->date->format('d.m.Y')})";
+                            })
                             ->prefixAction(
                                 FormAction::make('select_expense')
                                     ->icon('heroicon-o-magnifying-glass')
@@ -334,6 +338,7 @@ class ExpenseChangeRequestResource extends BaseResource
                                     ->modalSubmitAction(false)
                                     ->modalCancelAction(false)
                                     ->slideOver()
+                                    ->disabled(fn(string $operation) => $operation === 'view')
                             )
                             ->required(fn($get) => $get('action_type') !== 'create')
                             ->visible(fn($get) => $get('action_type') !== 'create')
@@ -595,11 +600,5 @@ class ExpenseChangeRequestResource extends BaseResource
             'view' => Pages\ViewExpenseChangeRequest::route('/{record}'),
             'edit' => Pages\EditExpenseChangeRequest::route('/{record}/edit'),
         ];
-    }
-
-    public static function getEloquentQuery(): Builder
-    {
-        return parent::getEloquentQuery()
-            ->with(['expense.supplier', 'user', 'votes.user']);
     }
 }
