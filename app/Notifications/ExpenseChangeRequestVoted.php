@@ -53,7 +53,8 @@ class ExpenseChangeRequestVoted extends Notification
                     ->icon('heroicon-o-check')
                     ->button()
                     ->color('success')
-                    ->markAsRead(),
+                    ->markAsRead()
+                    ->extraAttributes(['class' => 'ml-auto']),
             ])
             ->getDatabaseMessage();
     }

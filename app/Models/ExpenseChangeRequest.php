@@ -9,6 +9,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\HtmlString;
+use Illuminate\Support\Str;
 
 class ExpenseChangeRequest extends Model
 {
@@ -197,7 +199,18 @@ class ExpenseChangeRequest extends Model
                 try {
                     Artisan::call('calculate:monthly-debts', ['--period' => $this->current_date?->format('m.Y') ?? $this->requested_date->format('m.Y')]);
                 } catch (\Exception $e) {
-                    Log::error('Ошибка при расчёте долгов после применения изменений для редактирования затраты: #' . $this->expense . '; созданной: ' . $this->created_at . '; пользователем: ' . $this->user->name . '; ' . 'Ошибка: ' . $e->getMessage());
+
+                    $title = "Ошибка перерасчёта долга";
+                    $message = new HtmlString(implode('<br>', [
+                        '<strong>Затрата:</strong> ' . ($this->expense->id ?? 'Новая затрата'),
+                        '<strong>Создано:</strong> ' . ($this->created_at?->format('d.m.Y H:i:s') ?? '-'),
+                        '<strong>Пользователь:</strong> ' . ($this->user?->name ?? '-'),
+                        '<strong>Ошибка:</strong> ' . (Str::limit($e->getMessage(), 500)),
+                    ]));
+
+                    foreach (User::all() as $user) {
+                        $user->notify(new \App\Notifications\ErrorNotification($title, $message));
+                    }
                 }
             }
         } else if ($decision === 'rejected') {
@@ -218,7 +231,19 @@ class ExpenseChangeRequest extends Model
             if (method_exists($this, $methodName)) {
                 $this->$methodName();
             } else {
-                Log::error('Ошибка при применении изменений для редактирования затраты: #' . $this->expense . '; созданной: ' . $this->created_at . '; пользователем: ' . $this->user->name . '; ' . 'Ошибка: не удалось отредактировать затрату, потому что небыл обнаружен следующий метод ' . $methodName);
+
+                $title = "Ошибка редактирования затраты";
+                $message = new HtmlString(implode('<br>', [
+                    '<strong>Затрата:</strong> ' . ($this->expense->id ?? 'Новая затрата'),
+                    '<strong>Создано:</strong> ' . ($this->created_at?->format('d.m.Y H:i:s') ?? '-'),
+                    '<strong>Пользователь:</strong> ' . ($this->user?->name ?? '-'),
+                    '<strong>Ошибка:</strong> ' . 'Не удалось отредактировать затрату, потому что небыл обнаружен следующий метод ' . $methodName,
+                ]));
+
+                foreach (User::all() as $user) {
+                    $user->notify(new \App\Notifications\ErrorNotification($title, $message));
+                }
+
                 return false;
             }
 
@@ -229,7 +254,19 @@ class ExpenseChangeRequest extends Model
 
             return true;
         } catch (\Exception $e) {
-            Log::error('Ошибка при применении изменений для редактирования затраты: #' . $this->expense . '; созданной: ' . $this->created_at . '; пользователем: ' . $this->user->name . '; ' . 'Ошибка: ' . $e->getMessage());
+
+            $title = "Ошибка редактирования затраты";
+            $message = new HtmlString(implode('<br>', [
+                '<strong>Затрата:</strong> ' . ($this->expense->id ?? 'Новая затрата'),
+                '<strong>Создано:</strong> ' . ($this->created_at?->format('d.m.Y H:i:s') ?? '-'),
+                '<strong>Пользователь:</strong> ' . ($this->user?->name ?? '-'),
+                '<strong>Ошибка:</strong> ' . (Str::limit($e->getMessage(), 500)),
+            ]));
+
+            foreach (User::all() as $user) {
+                $user->notify(new \App\Notifications\ErrorNotification($title, $message));
+            }
+
             return false;
         }
     }
@@ -260,7 +297,18 @@ class ExpenseChangeRequest extends Model
 
             $this->expense->update($updateData);
         } else {
-            Log::error('Ошибка при применении изменений для редактирования затраты: #' . $this->expense . '; созданной: ' . $this->created_at . '; пользователем: ' . $this->user->name . '; ' . 'Ошибка: не удалось отредактировать затрату, потому что не найдена затрата: #' . $this->expense);
+
+            $title = "Ошибка редактирования затраты";
+            $message = new HtmlString(implode('<br>', [
+                '<strong>Затрата:</strong> ' . ($this->expense->id ?? 'Новая затрата'),
+                '<strong>Создано:</strong> ' . ($this->created_at?->format('d.m.Y H:i:s') ?? '-'),
+                '<strong>Пользователь:</strong> ' . ($this->user?->name ?? '-'),
+                '<strong>Ошибка:</strong> ' . 'Не удалось отредактировать затрату, потому что не найдена затрата: ' . ($this->expense->id ? '#' . $this->expense->id : 'новая затрата'),
+            ]));
+
+            foreach (User::all() as $user) {
+                $user->notify(new \App\Notifications\ErrorNotification($title, $message));
+            }
         }
     }
 
@@ -269,7 +317,18 @@ class ExpenseChangeRequest extends Model
         if ($this->expense) {
             $this->expense->delete();
         } else {
-            Log::error('Ошибка при применении изменений для редактирования затраты: #' . $this->expense . '; созданной: ' . $this->created_at . '; пользователем: ' . $this->user->name . '; ' . 'Ошибка: не удалось удалить затрату, потому что не найдена затрата: #' . $this->expense);
+
+            $title = "Ошибка удаления затраты";
+            $message = new HtmlString(implode('<br>', [
+                '<strong>Затрата:</strong> ' . ($this->expense->id ?? 'Новая затрата'),
+                '<strong>Создано:</strong> ' . ($this->created_at?->format('d.m.Y H:i:s') ?? '-'),
+                '<strong>Пользователь:</strong> ' . ($this->user?->name ?? '-'),
+                '<strong>Ошибка:</strong> ' . 'Не удалось удалить затрату, потому что не найдена затрата: ' . ($this->expense->id ? '#' . $this->expense->id : 'новая затрата'),
+            ]));
+
+            foreach (User::all() as $user) {
+                $user->notify(new \App\Notifications\ErrorNotification($title, $message));
+            }
         }
     }
 
