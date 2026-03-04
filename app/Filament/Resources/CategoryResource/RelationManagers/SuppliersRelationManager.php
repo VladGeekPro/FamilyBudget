@@ -37,9 +37,10 @@ class SuppliersRelationManager extends BaseRelationManager
         return $schema
             ->schema([
 
-                Section::make(__('resources.sections.user.main'))
+                Section::make(__('resources.sections.main'))
                     ->icon('heroicon-o-identification')
                     ->iconColor('warning')
+                    ->columnSpanFull()
                     ->schema([
 
                         FormGrid::make([
@@ -55,7 +56,7 @@ class SuppliersRelationManager extends BaseRelationManager
                                     ->image()
                                     ->imageEditor()
                                     ->circleCropper()
-                                    ->imageEditorAspectRatios([
+                                    ->imageEditorAspectRatioOptions([
                                         null,
                                         '16:9',
                                         '4:3',

@@ -2,7 +2,7 @@
 
 namespace App\Notifications;
 
-use Filament\Notifications\Actions\Action;
+use Filament\Actions\Action;
 use Filament\Notifications\Notification as FilamentNotification;
 use Illuminate\Notifications\Notification;
 use Illuminate\Support\Str;

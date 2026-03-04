@@ -32,7 +32,10 @@ class CategoryResource extends BaseResource
 
     protected static ?string $model = Category::class;
 
-    protected static string|\UnitEnum|null $navigationGroup = 'Справочники';
+    public static function getNavigationGroup(): string|\UnitEnum|null
+    {
+        return 'Справочники';
+    }
 
     protected static ?int $navigationSort = 2;
 
@@ -51,6 +54,7 @@ class CategoryResource extends BaseResource
                 Section::make(__('resources.sections.main'))
                     ->icon('heroicon-o-document-text')
                     ->iconColor('primary')
+                    ->columnSpanFull()
                     ->schema([
 
                         FormGrid::make([
@@ -66,7 +70,7 @@ class CategoryResource extends BaseResource
                                     ->image()
                                     ->imageEditor()
                                     ->circleCropper()
-                                    ->imageEditorAspectRatios([
+                        ->imageEditorAspectRatioOptions([
                                         null,
                                         '16:9',
                                         '4:3',

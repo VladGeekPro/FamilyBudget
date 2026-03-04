@@ -38,7 +38,10 @@ class OverpaymentResource extends BaseResource
 {
     protected static ?string $model = Overpayment::class;
 
-    protected static string|\UnitEnum|null $navigationGroup = 'Транзакции';
+    public static function getNavigationGroup(): string|\UnitEnum|null
+    {
+        return 'Транзакции';
+    }
 
     protected static ?int $navigationSort = 3;
 
@@ -68,6 +71,7 @@ class OverpaymentResource extends BaseResource
                 Section::make(__('resources.sections.main'))
                     ->icon('heroicon-o-document-text')
                     ->iconColor('primary')
+                    ->columnSpanFull()
                     ->schema([
 
                         Select::make('user_id')

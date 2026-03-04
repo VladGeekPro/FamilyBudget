@@ -5,7 +5,7 @@ namespace App\Notifications;
 use App\Filament\Resources\DebtResource;
 use App\Models\Debt;
 use App\Models\User;
-use Filament\Notifications\Actions\Action;
+use Filament\Actions\Action;
 use Filament\Notifications\Notification as FilamentNotification;
 use Illuminate\Notifications\Notification;
 use Illuminate\Support\Str;

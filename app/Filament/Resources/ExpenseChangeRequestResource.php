@@ -9,6 +9,8 @@ use App\Models\ExpenseChangeRequestVote;
 use App\Models\User;
 use Filament\Forms;
 use Filament\Schemas\Schema;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
 use App\Filament\Resources\Base\BaseResource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -30,7 +32,10 @@ class ExpenseChangeRequestResource extends BaseResource
 {
     protected static ?string $model = ExpenseChangeRequest::class;
 
-    protected static string|\UnitEnum|null $navigationGroup = 'Транзакции';
+    public static function getNavigationGroup(): string|\UnitEnum|null
+    {
+        return 'Транзакции';
+    }
 
     protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-document-arrow-up';
 
@@ -213,6 +218,7 @@ class ExpenseChangeRequestResource extends BaseResource
             ->schema([
 
                 \Filament\Schemas\Components\Section::make(__('resources.sections.user_votes'))
+                    ->columnSpanFull()
                     ->headerActions([
                         FormAction::make('vote')
                             ->label(__('resources.buttons.vote'))
@@ -256,7 +262,7 @@ class ExpenseChangeRequestResource extends BaseResource
                             ->selectablePlaceholder(false)
                             ->default('edit')
                             ->live()
-                            ->afterStateUpdated(function ($state, Forms\Set $set, Forms\Get $get) {
+                            ->afterStateUpdated(function ($state, Set $set, Get $get) {
 
                                 $expense = $get('expense_id') && $get('action_type') !== 'create' ? \App\Models\Expense::find($get('expense_id')) : null;
 
@@ -288,7 +294,7 @@ class ExpenseChangeRequestResource extends BaseResource
                         Forms\Components\Select::make('expense_id')
                             ->label(__('resources.fields.change_expense'))
                             ->live()
-                            ->afterStateUpdated(function ($livewire, $state, Forms\Set $set, $get) {
+                            ->afterStateUpdated(function ($livewire, $state, Set $set, Get $get) {
                                 if ($get('action_type') === 'create') {
                                     return;
                                 }
@@ -341,7 +347,7 @@ class ExpenseChangeRequestResource extends BaseResource
                             ->visible(fn($get) => $get('action_type') !== 'create')
                             ->dehydrated(fn($get) => $get('action_type') !== 'create'),
 
-                    ]),
+                    ])->columnSpanFull(),
 
                 Forms\Components\Textarea::make('notes')
                     ->label(__('resources.fields.change_reason'))
@@ -367,7 +373,7 @@ class ExpenseChangeRequestResource extends BaseResource
                                     ->columnSpan(fn($get) => $get('action_type') !== 'create' ? 1 : 2)
                                     ->visible(fn($get) => $get('action_type') !== 'delete'),
                             ])
-                    ]),
+                    ])->columnSpanFull(),
             ]);
     }
 

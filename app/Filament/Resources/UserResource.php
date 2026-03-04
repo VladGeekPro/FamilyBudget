@@ -30,7 +30,10 @@ class UserResource extends BaseResource
 {
     protected static ?string $model = User::class;
 
-    protected static string|\UnitEnum|null $navigationGroup = 'Справочники';
+    public static function getNavigationGroup(): string|\UnitEnum|null
+    {
+        return 'Справочники';
+    }
 
     protected static ?int $navigationSort = 3;
 
@@ -49,6 +52,7 @@ class UserResource extends BaseResource
                 Section::make(__('resources.sections.main'))
                     ->icon('heroicon-o-document-text')
                     ->iconColor('primary')
+                    ->columnSpanFull()
                     ->schema([
 
                         FormGrid::make([
@@ -64,7 +68,7 @@ class UserResource extends BaseResource
                                     ->image()
                                     ->imageEditor()
                                     ->circleCropper()
-                                    ->imageEditorAspectRatios([
+                                    ->imageEditorAspectRatioOptions([
                                         null,
                                         '16:9',
                                         '4:3',

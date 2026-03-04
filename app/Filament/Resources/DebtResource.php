@@ -44,7 +44,10 @@ class DebtResource extends BaseResource
 {
     protected static ?string $model = Debt::class;
 
-    protected static string|\UnitEnum|null $navigationGroup = 'Транзакции';
+    public static function getNavigationGroup(): string|\UnitEnum|null
+    {
+        return 'Транзакции';
+    }
 
     protected static ?int $navigationSort = 2;
 
@@ -115,6 +118,7 @@ class DebtResource extends BaseResource
                 Section::make(__('resources.sections.main'))
                     ->icon('heroicon-o-document-text')
                     ->iconColor('primary')
+                    ->columnSpanFull()
                     ->schema([
                         Group::make([
                             FormGrid::make([

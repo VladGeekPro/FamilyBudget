@@ -37,7 +37,10 @@ class ExpenseResource extends BaseResource
 {
     protected static ?string $model = Expense::class;
 
-    protected static string|\UnitEnum|null $navigationGroup = 'Транзакции';
+    public static function getNavigationGroup(): string|\UnitEnum|null
+    {
+        return 'Транзакции';
+    }
 
     protected static ?int $navigationSort = 1;
 
@@ -129,6 +132,7 @@ class ExpenseResource extends BaseResource
                 Section::make(__('resources.sections.main'))
                     ->icon('heroicon-o-document-text')
                     ->iconColor('primary')
+                    ->columnSpanFull()
                     ->schema([
 
                         Group::make(

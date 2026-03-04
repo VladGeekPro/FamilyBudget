@@ -10,7 +10,7 @@ use Filament\Actions;
 use App\Filament\Resources\Base\CreateBase;
 use App\Models\ExpenseChangeRequestVote;
 use Filament\Notifications\Notification;
-use Filament\Notifications\Actions\Action;
+use Filament\Actions\Action;
 
 class CreateExpenseChangeRequest extends CreateBase
 {
