@@ -66,7 +66,7 @@ class ExpenseResource extends BaseResource
         if ($pending) {
             return [
                 'name' => 'expense_change_request_view',
-                'label' => __('resources.buttons.expense_change_request_view'),
+                'label' => __('resources.buttons.view'),
                 'icon' => 'heroicon-o-eye',
                 'url' => ExpenseChangeRequestResource::getUrl('view', ['record' => $pending->id]),
             ];
@@ -84,6 +84,13 @@ class ExpenseResource extends BaseResource
 
     protected static function getTableActions(): array
     {
+        $isCurrentMonthOrLater = fn(Expense $record): bool => $record->date->gte(now()->startOfMonth());
+
+        $parentActions = array_map(
+            fn($action) => $action->visible($isCurrentMonthOrLater),
+            parent::getTableActions()
+        );
+
         return array_merge(
             [
                 Action::make('copy')
@@ -95,32 +102,21 @@ class ExpenseResource extends BaseResource
                             $record->only(['user_id', 'category_id', 'supplier_id', 'notes']),
                             ['date' => now()->format('Y-m-d')]
                         );
+
                         return redirect()->route('filament.admin.resources.expenses.create', ['data' => $data]);
                     }),
 
                 Action::make('expense_change_request')
                     ->visible(fn(Expense $record) => static::getChangeRequestMeta($record) !== null)
-                    ->label(function (Expense $record) {
-                        $meta = static::getChangeRequestMeta($record);
-
-                        return $meta['label'] ?? '';
-                    })
-                    ->icon(function (Expense $record) {
-                        $meta = static::getChangeRequestMeta($record);
-
-                        return $meta['icon'] ?? null;
-                    })
-                    ->url(function (Expense $record) {
-                        $meta = static::getChangeRequestMeta($record);
-
-                        return $meta['url'] ?? null;
-                    }),
+                    ->label(fn(Expense $record) => static::getChangeRequestMeta($record)['label'] ?? '')
+                    ->icon(fn(Expense $record) => static::getChangeRequestMeta($record)['icon'] ?? null)
+                    ->url(fn(Expense $record) => static::getChangeRequestMeta($record)['url'] ?? null),
 
                 \Filament\Actions\ViewAction::make()
-                    ->visible(fn($record) => $record->date->isBefore(now()->startOfMonth()))
+                    ->visible(fn(Expense $record) => $record->date->lt(now()->startOfMonth()))
                     ->extraAttributes(['class' => 'ml-auto']),
             ],
-            parent::getTableActions()
+            $parentActions,
         );
     }
 

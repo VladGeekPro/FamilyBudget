@@ -188,7 +188,6 @@ return [
         'vote' => 'Голосовать',
         'confirm_vote' => 'Подтверждаю голос и согласен(на), что изменить его позже нельзя',
         'expense_change_request' => 'Исправить',
-        'expense_change_request_view' => 'Проанализировать',
     ],
     'radio_buttons' => [
         'vote' => [

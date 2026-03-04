@@ -34,17 +34,6 @@ class Expense extends Model
         return $this->hasMany(ExpenseChangeRequest::class);
     }
 
-    public function scopeCurrentMonthExpenses($query)
-    {
-        return $query->whereMonth('date', now()->month)
-            ->whereYear('date', now()->year)
-            ->selectRaw('expenses.user_id, SUM(expenses.sum) as total_sum')
-            ->groupBy('user_id')
-            ->join('users', 'expenses.user_id', '=', 'users.id')
-            ->addSelect('users.name as user_name', 'users.email as user_email')
-            ->orderBy('user_email');
-    }
-
     public function scopePreviousMonthsExpenses($query)
     {
         return $query->whereDate('date', '<', now()->startOfMonth())
