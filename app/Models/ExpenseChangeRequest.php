@@ -91,44 +91,13 @@ class ExpenseChangeRequest extends Model
         return $this->hasMany(ExpenseChangeRequestVote::class);
     }
 
-    // Scopes
-    public function scopePending($query)
-    {
-        return $query->where('status', 'pending');
-    }
-
-    public function scopeCompleted($query)
-    {
-        return $query->where('status', 'completed');
-    }
-
-    public function scopeRejected($query)
-    {
-        return $query->where('status', 'rejected');
-    }
-
     // Методы проверки статуса
     public function isPending(): bool
     {
         return $this->status === 'pending';
     }
 
-    public function isCompleted(): bool
-    {
-        return $this->status === 'completed';
-    }
-
-    public function isRejected(): bool
-    {
-        return $this->status === 'rejected';
-    }
-
     // Методы для работы с голосованием
-    public function getAllVotes()
-    {
-        return $this->votes()->with('user')->get();
-    }
-
     public function getApprovedVotes()
     {
         return $this->votes()->where('vote', 'approved')->with('user')->get();
@@ -180,11 +149,6 @@ class ExpenseChangeRequest extends Model
     public function hasUserVoted(User $user): bool
     {
         return $this->votes()->where('user_id', $user->id)->exists();
-    }
-
-    public function getUserVote(User $user)
-    {
-        return $this->votes()->where('user_id', $user->id)->first();
     }
 
     public function checkAndApplyIfReady(string $decision): bool
@@ -328,82 +292,5 @@ class ExpenseChangeRequest extends Model
                 $user->notify(new \App\Notifications\ErrorNotification($title, $message));
             }
         }
-    }
-
-    // Методы для удобства работы с заявками
-    public function getRequestedData(): array
-    {
-        return [
-            'user_id' => $this->requested_user_id,
-            'date' => $this->requested_date,
-            'category_id' => $this->requested_category_id,
-            'supplier_id' => $this->requested_supplier_id,
-            'sum' => $this->requested_sum,
-            'notes' => $this->requested_notes,
-        ];
-    }
-
-    public function setRequestedDataFromExpense(Expense $expense): void
-    {
-        $this->requested_user_id = $expense->user_id;
-        $this->requested_date = $expense->date;
-        $this->requested_category_id = $expense->category_id;
-        $this->requested_supplier_id = $expense->supplier_id;
-        $this->requested_sum = $expense->sum;
-        $this->requested_notes = $expense->notes;
-    }
-
-    public function hasRequestedChanges(): bool
-    {
-        return $this->requested_user_id !== null ||
-            $this->requested_date !== null ||
-            $this->requested_category_id !== null ||
-            $this->requested_supplier_id !== null ||
-            $this->requested_sum !== null ||
-            $this->requested_notes !== null;
-    }
-
-    public function getChangeSummary(): array
-    {
-        if (!$this->expense || $this->action_type === 'create') {
-            return ['action' => $this->action_type, 'changes' => $this->getRequestedData()];
-        }
-
-        $changes = [];
-
-        if ($this->requested_user_id && $this->requested_user_id != $this->expense->user_id) {
-            $changes['user'] = [
-                'old' => $this->expense->user->name ?? 'Unknown',
-                'new' => $this->requestedUser->name ?? 'Unknown'
-            ];
-        }
-
-        if ($this->requested_date && $this->requested_date != $this->expense->date) {
-            $changes['date'] = ['old' => $this->expense->date, 'new' => $this->requested_date];
-        }
-
-        if ($this->requested_category_id && $this->requested_category_id != $this->expense->category_id) {
-            $changes['category'] = [
-                'old' => $this->expense->category->name ?? 'Unknown',
-                'new' => $this->requestedCategory->name ?? 'Unknown'
-            ];
-        }
-
-        if ($this->requested_supplier_id && $this->requested_supplier_id != $this->expense->supplier_id) {
-            $changes['supplier'] = [
-                'old' => $this->expense->supplier->name ?? 'Unknown',
-                'new' => $this->requestedSupplier->name ?? 'Unknown'
-            ];
-        }
-
-        if ($this->requested_sum !== null && $this->requested_sum != $this->expense->sum) {
-            $changes['sum'] = ['old' => $this->expense->sum, 'new' => $this->requested_sum];
-        }
-
-        if ($this->requested_notes !== null && $this->requested_notes != $this->expense->notes) {
-            $changes['notes'] = ['old' => $this->expense->notes, 'new' => $this->requested_notes];
-        }
-
-        return ['action' => $this->action_type, 'changes' => $changes];
     }
 }

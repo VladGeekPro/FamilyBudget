@@ -28,38 +28,6 @@ class ExpenseChangeRequestVote extends Model
         return $this->belongsTo(User::class);
     }
 
-    // Scopes
-    public function scopeApproved($query)
-    {
-        return $query->where('vote', 'approved');
-    }
-
-    public function scopeRejected($query)
-    {
-        return $query->where('vote', 'rejected');
-    }
-
-    public function scopeForRequest($query, $requestId)
-    {
-        return $query->where('expense_change_request_id', $requestId);
-    }
-
-    public function scopeByUser($query, $userId)
-    {
-        return $query->where('user_id', $userId);
-    }
-
-    // Методы проверки
-    public function isApproved(): bool
-    {
-        return $this->vote === 'approved';
-    }
-
-    public function isRejected(): bool
-    {
-        return $this->vote === 'rejected';
-    }
-
     public static function vote(int $requestId, int $userId, string $vote, ?string $notes = null): self
     {
 
