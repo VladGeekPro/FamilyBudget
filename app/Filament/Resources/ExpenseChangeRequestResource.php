@@ -212,9 +212,6 @@ class ExpenseChangeRequestResource extends BaseResource
         return $form
             ->schema([
 
-                Forms\Components\Hidden::make('user_id')
-                    ->default(auth()->id()),
-
                 Forms\Components\Section::make(__('resources.sections.user_votes'))
                     ->headerActions([
                         FormAction::make('vote')

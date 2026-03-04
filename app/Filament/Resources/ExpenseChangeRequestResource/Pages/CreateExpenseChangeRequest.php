@@ -54,6 +54,22 @@ class CreateExpenseChangeRequest extends CreateBase
         );
     }
 
+    public function mount(): void
+    {
+        parent::mount();
+
+        if (request()->has('data')) {
+            $this->form->fill(request('data'));
+            $this->dispatch('expense:selected', expenseId: $this->data['expense_id']);
+        }
+    }
+
+    protected function mutateFormDataBeforeCreate(array $data): array
+    {
+        $data['user_id'] = auth()->id();
+        return $data;
+    }
+
     protected function beforeCreate(): void
     {
         if ($this->data['action_type'] === 'edit') {

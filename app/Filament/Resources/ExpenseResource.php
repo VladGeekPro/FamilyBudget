@@ -52,6 +52,34 @@ class ExpenseResource extends BaseResource
 
     protected static ?string $defaultSortColumn = null;
 
+    public static function getChangeRequestMeta(Expense $expense): ?array
+    {
+        if (! $expense->canRequestChange()) {
+            return null;
+        }
+
+        $expense->loadMissing('pendingChangeRequest');
+        $pending = $expense->pendingChangeRequest;
+
+        if ($pending) {
+            return [
+                'name' => 'expense_change_request_view',
+                'label' => __('resources.buttons.expense_change_request_view'),
+                'icon' => 'heroicon-o-eye',
+                'url' => ExpenseChangeRequestResource::getUrl('view', ['record' => $pending->id]),
+            ];
+        }
+
+        return [
+            'name' => 'expense_change_request_create',
+            'label' => __('resources.buttons.expense_change_request'),
+            'icon' => 'heroicon-o-pencil-square',
+            'url' => ExpenseChangeRequestResource::getUrl('create', [
+                'data' => ['expense_id' => $expense->id, 'action_type' => 'edit'],
+            ]),
+        ];
+    }
+
     protected static function getTableActions(): array
     {
         return array_merge(
@@ -67,6 +95,25 @@ class ExpenseResource extends BaseResource
                         );
                         return redirect()->route('filament.admin.resources.expenses.create', ['data' => $data]);
                     }),
+
+                Action::make('expense_change_request')
+                    ->visible(fn(Expense $record) => static::getChangeRequestMeta($record) !== null)
+                    ->label(function (Expense $record) {
+                        $meta = static::getChangeRequestMeta($record);
+
+                        return $meta['label'] ?? '';
+                    })
+                    ->icon(function (Expense $record) {
+                        $meta = static::getChangeRequestMeta($record);
+
+                        return $meta['icon'] ?? null;
+                    })
+                    ->url(function (Expense $record) {
+                        $meta = static::getChangeRequestMeta($record);
+
+                        return $meta['url'] ?? null;
+                    }),
+
                 Tables\Actions\ViewAction::make()
                     ->visible(fn($record) => $record->date->isBefore(now()->startOfMonth()))
                     ->extraAttributes(['class' => 'ml-auto']),
@@ -88,7 +135,7 @@ class ExpenseResource extends BaseResource
                         Group::make(
                             static::getExpenseFormFields()
                         )
-                           
+
                     ])
             ]);
     }
@@ -100,6 +147,7 @@ class ExpenseResource extends BaseResource
 
         return $table
 
+            ->modifyQueryUsing(fn($query) => $query->with('pendingChangeRequest'))
             ->columns([
                 TableGrid::make([
                     'default' => 2
@@ -127,7 +175,7 @@ class ExpenseResource extends BaseResource
                         ])->grow(false),
                     Stack::make([
                         TableGrid::make([
-                            'default' => 2
+                            'default' => 3
                         ])
                             ->schema([
                                 TextColumn::make('supplier.name')
@@ -135,7 +183,7 @@ class ExpenseResource extends BaseResource
                                     ->size(TextColumnSize::Medium)
                                     ->weight(FontWeight::Bold)
                                     ->searchable()
-                                    ->columnSpan(1),
+                                    ->columnSpan(2),
                                 TextColumn::make('sum')
                                     ->numeric(decimalPlaces: 2)
                                     ->color('warning')

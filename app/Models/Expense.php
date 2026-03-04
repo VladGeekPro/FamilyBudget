@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use App\Models\ExpenseChangeRequest;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Expense extends Model
 {
@@ -51,5 +52,17 @@ class Expense extends Model
             ->whereDoesntHave('changeRequest', function ($q) {
                 $q->where('status', 'pending');
             });
+    }
+
+    public function pendingChangeRequest(): HasOne
+    {
+        return $this->hasOne(ExpenseChangeRequest::class)
+            ->where('status', 'pending')
+            ->latestOfMany();
+    }
+
+    public function canRequestChange(): bool
+    {
+        return $this->date->isBefore(now()->startOfMonth());
     }
 }
