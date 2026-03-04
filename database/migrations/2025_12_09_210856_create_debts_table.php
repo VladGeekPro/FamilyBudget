@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('debts', function (Blueprint $table) {
             $table->id();
-            $table->date('date');
+            $table->date('date')->unique();
             $table->foreignId('user_id')->nullable()->constrained('users')->cascadeOnDelete();
             $table->decimal('debt_sum', 12, 2)->default(0);
             $table->foreignId('overpayment_id')->nullable()->constrained('overpayments')->cascadeOnDelete();
@@ -22,6 +22,8 @@ return new class extends Migration
             $table->decimal('partial_sum', 12, 2)->default(0);
             $table->date('date_paid')->nullable();
             $table->timestamps();
+
+            $table->index(['payment_status', 'date']);
         });
     }
 

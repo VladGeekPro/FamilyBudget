@@ -20,7 +20,6 @@ return new class extends Migration
             $table->timestamps();
 
             $table->unique(['expense_change_request_id', 'user_id'], 'unique_vote_per_user');
-            $table->index('expense_change_request_id');
             $table->index(['user_id', 'vote']);
         });
     }

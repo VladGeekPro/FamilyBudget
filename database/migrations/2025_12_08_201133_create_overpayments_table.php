@@ -17,6 +17,8 @@ return new class extends Migration
             $table->decimal('sum', 12, 2);
             $table->text('notes');
             $table->timestamps();
+
+            $table->index('created_at');
         });
     }
 

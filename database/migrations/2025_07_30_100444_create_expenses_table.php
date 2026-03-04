@@ -14,11 +14,14 @@ return new class extends Migration {
             $table->id();
             $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
             $table->date("date");
-            $table->foreignId('category_id')->constrained('categories')->cascadeOnDelete();
-            $table->foreignId('supplier_id')->constrained('suppliers')->cascadeOnDelete();
+            $table->foreignId('category_id')->constrained('categories')->nullOnDelete();
+            $table->foreignId('supplier_id')->constrained('suppliers')->nullOnDelete();
             $table->decimal('sum', 12, 2);
             $table->text('notes')->nullable();
             $table->timestamps();
+
+            $table->index('date');
+            $table->index(['user_id', 'date']);
         });
     }
 
