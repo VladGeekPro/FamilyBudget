@@ -8,21 +8,21 @@ use App\Models\ExpenseChangeRequest;
 use App\Models\ExpenseChangeRequestVote;
 use App\Models\User;
 use Filament\Forms;
-use Filament\Forms\Form;
+use Filament\Schemas\Schema;
 use App\Filament\Resources\Base\BaseResource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Filament\Tables\Actions\Action;
+use Filament\Actions\Action;
 use Filament\Tables\Columns\Layout\Split;
 use Filament\Tables\Columns\Layout\Stack;
 use Filament\Tables\Columns\Layout\Grid as TableGrid;
 use Filament\Tables\Columns\Layout\Panel;
-use Filament\Forms\Components\Actions\Action as FormAction;
+use Filament\Actions\Action as FormAction;
 use Filament\Notifications\Notification;
 use Illuminate\Database\Eloquent\Builder;
-use Filament\Support\Enums\MaxWidth;
-use Filament\Forms\Components\Grid;
-use Filament\Forms\Components\Section;
+use Filament\Support\Enums\Width;
+use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Section;
 use Filament\Actions\StaticAction;
 use Illuminate\Support\HtmlString;
 
@@ -30,9 +30,9 @@ class ExpenseChangeRequestResource extends BaseResource
 {
     protected static ?string $model = ExpenseChangeRequest::class;
 
-    protected static ?string $navigationGroup = 'Транзакции';
+    protected static string|\UnitEnum|null $navigationGroup = 'Транзакции';
 
-    protected static ?string $navigationIcon = 'heroicon-o-document-arrow-up';
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-document-arrow-up';
 
     protected static ?string $navigationLabel = 'Запросы';
 
@@ -187,7 +187,7 @@ class ExpenseChangeRequestResource extends BaseResource
             Forms\Components\Textarea::make('notes')
                 ->label(__('resources.fields.vote_comment')),
 
-            Forms\Components\Group::make([
+            \Filament\Schemas\Components\Group::make([
                 Forms\Components\Placeholder::make('confirm_vote_notice')
                     ->hiddenLabel()
                     ->content(new HtmlString('
@@ -207,12 +207,12 @@ class ExpenseChangeRequestResource extends BaseResource
         ];
     }
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form
+        return $schema
             ->schema([
 
-                Forms\Components\Section::make(__('resources.sections.user_votes'))
+                \Filament\Schemas\Components\Section::make(__('resources.sections.user_votes'))
                     ->headerActions([
                         FormAction::make('vote')
                             ->label(__('resources.buttons.vote'))
@@ -244,7 +244,7 @@ class ExpenseChangeRequestResource extends BaseResource
 
                     ])
                     ->schema([
-                        Forms\Components\View::make('filament.forms.components.view-votes')
+                        \Filament\Schemas\Components\View::make('filament.forms.components.view-votes')
                             ->columnSpanFull(),
                     ])->visible(fn(string $operation) => in_array($operation, ['edit', 'view'])),
 
@@ -330,7 +330,7 @@ class ExpenseChangeRequestResource extends BaseResource
                                 FormAction::make('select_expense')
                                     ->icon('heroicon-o-magnifying-glass')
                                     ->modalHeading('')
-                                    ->modalWidth(MaxWidth::SevenExtraLarge)
+                                    ->modalWidth(Width::SevenExtraLarge)
                                     ->modalContent(fn() => view('filament.resources.expense-change-request.select-expense-table'))
                                     ->modalSubmitAction(false)
                                     ->modalCancelAction(false)
@@ -348,11 +348,11 @@ class ExpenseChangeRequestResource extends BaseResource
                     ->required()
                     ->columnSpanFull(),
 
-                Forms\Components\Section::make('Сравнение данных')
+                \Filament\Schemas\Components\Section::make('Сравнение данных')
                     ->schema([
                         Grid::make(2)
                             ->schema([
-                                Forms\Components\Section::make('Текущее значение')
+                                \Filament\Schemas\Components\Section::make('Текущее значение')
                                     ->schema(
                                         static::getExpenseFormFields('current_', false)
                                     )
@@ -360,7 +360,7 @@ class ExpenseChangeRequestResource extends BaseResource
                                     ->extraAttributes(['class' => 'h-full'])
                                     ->visible(fn($get) => $get('action_type') !== 'create'),
 
-                                Forms\Components\Section::make('Новое значение')
+                                \Filament\Schemas\Components\Section::make('Новое значение')
                                     ->schema(
                                         static::getExpenseFormFields('requested_', false)
                                     )
@@ -524,7 +524,7 @@ class ExpenseChangeRequestResource extends BaseResource
                     }),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make()
+                \Filament\Actions\ViewAction::make()
                     ->extraAttributes(['class' => 'mr-auto']),
 
                 Action::make('view_votes')
@@ -535,7 +535,7 @@ class ExpenseChangeRequestResource extends BaseResource
 
                         Section::make(__('resources.sections.user_votes'))
                             ->schema([
-                                Forms\Components\View::make('filament.forms.components.view-votes')
+                                \Filament\Schemas\Components\View::make('filament.forms.components.view-votes')
                                     ->viewData([
                                         'getRecord' => function () use ($record) {
                                             return $record;
@@ -575,9 +575,9 @@ class ExpenseChangeRequestResource extends BaseResource
                             ->extraAttributes(['class' => 'ml-auto']);
                     })
                     ->modalHeading(__('resources.sections.voting'))
-                    ->modalWidth(MaxWidth::TwoExtraLarge),
+                    ->modalWidth(Width::TwoExtraLarge),
 
-                Tables\Actions\EditAction::make()
+                \Filament\Actions\EditAction::make()
                     ->visible(fn(ExpenseChangeRequest $record) => $record->status === 'pending'),
             ]);
     }

@@ -57,7 +57,7 @@ class Debt extends Model
             ->orderBy($usersTable . '.email');
     }
 
-    
+
 
     // /**
     //  * Scope a query to only include unpaid debts.

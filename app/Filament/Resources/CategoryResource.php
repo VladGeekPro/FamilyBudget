@@ -8,11 +8,11 @@ use App\Filament\Resources\Base\BaseResource;
 use App\Filament\Resources\CategoryResource\RelationManagers\SuppliersRelationManager;
 
 use Filament\Forms\Components\FileUpload;
-use Filament\Forms\Components\Group;
+use Filament\Schemas\Components\Group;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Form;
-use Filament\Forms\Components\Section;
-use Filament\Forms\Components\Grid as FormGrid;
+use Filament\Schemas\Schema;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Grid as FormGrid;
 use Filament\Forms\Components\MarkdownEditor;
 
 use Filament\Tables;
@@ -22,7 +22,6 @@ use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\Layout\Split;
 use Filament\Tables\Columns\Layout\Stack;
-use Filament\Tables\Columns\TextColumn\TextColumnSize;
 
 use Illuminate\Support\Str;
 
@@ -33,11 +32,11 @@ class CategoryResource extends BaseResource
 
     protected static ?string $model = Category::class;
 
-    protected static ?string $navigationGroup = 'Справочники';
+    protected static string|\UnitEnum|null $navigationGroup = 'Справочники';
 
     protected static ?int $navigationSort = 2;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-rectangle-stack';
 
     protected static ?string $navigationLabel = 'Категории';
 
@@ -45,9 +44,9 @@ class CategoryResource extends BaseResource
 
     protected static ?string $pluralModelLabel = 'категории';
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form
+        return $schema
             ->schema([
                 Section::make(__('resources.sections.main'))
                     ->icon('heroicon-o-document-text')
@@ -144,7 +143,7 @@ class CategoryResource extends BaseResource
                             Stack::make([
                                 TextColumn::make('name')
                                     ->label(__('resources.fields.category'))
-                                    ->size(TextColumnSize::Medium)
+                                    ->size('md')
                                     ->weight(FontWeight::Bold)
                                     ->searchable()
                                     ->sortable(),

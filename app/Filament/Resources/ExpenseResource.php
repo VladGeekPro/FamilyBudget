@@ -6,22 +6,21 @@ use App\Filament\Resources\ExpenseResource\Pages;
 use App\Models\Expense;
 use App\Filament\Resources\Base\BaseResource;
 
-use Filament\Forms\Components\Group;
+use Filament\Schemas\Components\Group;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Form;
-use Filament\Forms\Components\Section;
-use Filament\Forms\Components\Grid as FormGrid;
+use Filament\Schemas\Schema;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Grid as FormGrid;
 
 use Filament\Tables;
 use Filament\Tables\Table;
-use Filament\Tables\Actions\Action;
+use Filament\Actions\Action;
 use Filament\Tables\Columns\Layout\Grid as TableGrid;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\Layout\Split;
 use Filament\Tables\Columns\Layout\Stack;
-use Filament\Tables\Columns\TextColumn\TextColumnSize;
 use Filament\Tables\Grouping\Group as TableGroup;
 use Filament\Tables\Filters\SelectFilter;
 
@@ -38,11 +37,11 @@ class ExpenseResource extends BaseResource
 {
     protected static ?string $model = Expense::class;
 
-    protected static ?string $navigationGroup = 'Транзакции';
+    protected static string|\UnitEnum|null $navigationGroup = 'Транзакции';
 
     protected static ?int $navigationSort = 1;
 
-    protected static ?string $navigationIcon = 'heroicon-o-banknotes';
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-banknotes';
 
     protected static ?string $navigationLabel = 'Затраты';
 
@@ -114,7 +113,7 @@ class ExpenseResource extends BaseResource
                         return $meta['url'] ?? null;
                     }),
 
-                Tables\Actions\ViewAction::make()
+                \Filament\Actions\ViewAction::make()
                     ->visible(fn($record) => $record->date->isBefore(now()->startOfMonth()))
                     ->extraAttributes(['class' => 'ml-auto']),
             ],
@@ -122,9 +121,9 @@ class ExpenseResource extends BaseResource
         );
     }
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form
+        return $schema
             ->schema([
 
                 Section::make(__('resources.sections.main'))
@@ -180,7 +179,7 @@ class ExpenseResource extends BaseResource
                             ->schema([
                                 TextColumn::make('supplier.name')
                                     ->label(__('resources.fields.name.animate'))
-                                    ->size(TextColumnSize::Medium)
+                                    ->size('md')
                                     ->weight(FontWeight::Bold)
                                     ->searchable()
                                     ->columnSpan(2),

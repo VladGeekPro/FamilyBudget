@@ -9,13 +9,12 @@ use App\Models\Overpayment;
 use App\Models\User;
 use App\Filament\Resources\Base\BaseResource;
 
-use Filament\Forms;
 use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Components\Group;
+use Filament\Schemas\Components\Group;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Form;
-use Filament\Forms\Components\Section;
-use Filament\Forms\Components\Grid as FormGrid;
+use Filament\Schemas\Schema;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Grid as FormGrid;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\ToggleButtons;
 use Filament\Forms\Components\Textarea;
@@ -24,13 +23,12 @@ use Filament\Forms\Components\Hidden;
 
 use Filament\Tables;
 use Filament\Tables\Table;
-use Filament\Tables\Actions\Action;
+use Filament\Actions\Action;
 use Filament\Tables\Columns\Layout\Grid as TableGrid;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\Layout\Split;
 use Filament\Tables\Columns\Layout\Stack;
-use Filament\Tables\Columns\TextColumn\TextColumnSize;
 use Filament\Tables\Columns\ToggleColumn;
 use Filament\Tables\Grouping\Group as TableGroup;
 use Filament\Tables\Filters\SelectFilter;
@@ -46,11 +44,11 @@ class DebtResource extends BaseResource
 {
     protected static ?string $model = Debt::class;
 
-    protected static ?string $navigationGroup = 'Транзакции';
+    protected static string|\UnitEnum|null $navigationGroup = 'Транзакции';
 
     protected static ?int $navigationSort = 2;
 
-    protected static ?string $navigationIcon = 'heroicon-o-document-currency-dollar';
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-document-currency-dollar';
 
     protected static ?string $navigationLabel = 'Задолженности';
 
@@ -110,9 +108,9 @@ class DebtResource extends BaseResource
         return 'danger';
     }
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form
+        return $schema
             ->schema([
                 Section::make(__('resources.sections.main'))
                     ->icon('heroicon-o-document-text')
@@ -167,7 +165,7 @@ class DebtResource extends BaseResource
                         ]),
 
                         Group::make([
-                            Forms\Components\View::make('filament.components.debt-calculation-details')
+                            \Filament\Schemas\Components\View::make('filament.components.debt-calculation-details')
                         ]),
 
                         Group::make([
@@ -264,7 +262,7 @@ class DebtResource extends BaseResource
                             ->columnSpan(1),
 
                         Stack::make([
-                            TextColumn::make('')
+                            TextColumn::make('overpayment_status_label')
                                 ->state(
                                     fn($record) => $record->overpayment
                                         ? __('resources.fields.overpayment', ['user' => $record->overpayment->user->name])
@@ -296,7 +294,7 @@ class DebtResource extends BaseResource
                             ->schema([
 
                                 TextColumn::make('user.name')
-                                    ->size(TextColumnSize::Medium)
+                                    ->size('md')
                                     ->weight(FontWeight::Bold)
                                     ->getStateUsing(fn($record) => $record->user?->name ?? 'Null')
                                     ->columnSpan(1),
@@ -356,8 +354,8 @@ class DebtResource extends BaseResource
             ])
             ->recordClasses('debt-record')
             ->actions([
-                Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make()
+                \Filament\Actions\ViewAction::make(),
+                \Filament\Actions\EditAction::make()
                     ->label(__('resources.buttons.pay_off_debt'))
                     ->icon('heroicon-o-check')
                     ->visible(fn($record) => $record->payment_status !== 'paid')

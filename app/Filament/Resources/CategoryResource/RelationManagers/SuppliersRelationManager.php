@@ -9,11 +9,11 @@ use App\Models\Category;
 use App\Models\Supplier;
 
 use Filament\Forms\Components\FileUpload;
-use Filament\Forms\Components\Group;
+use Filament\Schemas\Components\Group;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Form;
-use Filament\Forms\Components\Section;
-use Filament\Forms\Components\Grid as FormGrid;
+use Filament\Schemas\Schema;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Grid as FormGrid;
 use Filament\Forms\Components\Select;
 
 use Filament\Tables;
@@ -23,7 +23,6 @@ use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\Layout\Split;
 use Filament\Tables\Columns\Layout\Stack;
-use Filament\Tables\Columns\TextColumn\TextColumnSize;
 
 use Illuminate\Support\Str;
 
@@ -33,9 +32,9 @@ class SuppliersRelationManager extends BaseRelationManager
 {
     protected static string $relationship = 'suppliers';
 
-    public function form(Form $form): Form
+    public function form(Schema $schema): Schema
     {
-        return $form
+        return $schema
             ->schema([
 
                 Section::make(__('resources.sections.user.main'))
@@ -168,7 +167,7 @@ class SuppliersRelationManager extends BaseRelationManager
                             Stack::make([
                                 TextColumn::make('name')
                                     ->label(__('resources.fields.name.inanimate'))
-                                    ->size(TextColumnSize::Medium)
+                                    ->size('md')
                                     ->weight(FontWeight::Bold)
                                     ->searchable(),
                             ])->grow(),

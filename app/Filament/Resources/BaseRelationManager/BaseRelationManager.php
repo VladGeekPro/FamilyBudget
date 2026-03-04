@@ -5,11 +5,11 @@ namespace App\Filament\Resources\BaseRelationManager;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables\Table;
 use Filament\Tables;
-use Filament\Tables\Actions\Action;
+use Filament\Actions\Action;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Lang;
 
-use Filament\Tables\Actions\BulkAction;
+use Filament\Actions\BulkAction;
 use Illuminate\Database\Eloquent\Collection;
 
 abstract class BaseRelationManager extends RelationManager
@@ -47,7 +47,7 @@ abstract class BaseRelationManager extends RelationManager
         );
 
         $table->headerActions([
-            Tables\Actions\CreateAction::make()
+            \Filament\Actions\CreateAction::make()
                 ->successNotificationTitle(__("resources.notifications.create.{$modelBase}"))
                 ->extraModalFooterActions(fn(Action $action): array => [
                     $action->makeModalSubmitAction('createAnother', arguments: ['another' => true])
@@ -56,9 +56,9 @@ abstract class BaseRelationManager extends RelationManager
         ]);
 
         $table->actions([
-            Tables\Actions\EditAction::make()->extraAttributes(['style' => 'margin-left: auto;'])
+            \Filament\Actions\EditAction::make()->extraAttributes(['style' => 'margin-left: auto;'])
                 ->successNotificationTitle(__("resources.notifications.edit.{$modelBase}")),
-            Tables\Actions\DeleteAction::make()
+            \Filament\Actions\DeleteAction::make()
                 ->successNotificationTitle(__("resources.notifications.delete.{$modelBase}")),
         ]);
 

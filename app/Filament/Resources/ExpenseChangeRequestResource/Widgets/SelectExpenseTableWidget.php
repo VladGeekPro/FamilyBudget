@@ -11,7 +11,6 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\Layout\Grid as TableGrid;
 use Filament\Tables\Columns\Layout\Split;
 use Filament\Tables\Columns\Layout\Stack;
-use Filament\Tables\Columns\TextColumn\TextColumnSize;
 use Filament\Tables\Grouping\Group as TableGroup;
 use Filament\Support\Enums\FontWeight;
 use Filament\Tables\Filters\SelectFilter;
@@ -63,7 +62,7 @@ class SelectExpenseTableWidget extends BaseWidget
                             ->schema([
                                 TextColumn::make('supplier.name')
                                     ->label(__('resources.fields.name.animate'))
-                                    ->size(TextColumnSize::Medium)
+                                    ->size('md')
                                     ->weight(FontWeight::Bold)
                                     ->searchable()
                                     ->columnSpan(1),
@@ -110,7 +109,7 @@ class SelectExpenseTableWidget extends BaseWidget
                     ->collapsible()
             )
             ->actions([
-                Tables\Actions\Action::make('select')
+                \Filament\Actions\Action::make('select')
                     ->label(__('resources.buttons.select'))
                     ->icon('heroicon-o-check')
                     ->color('success')

@@ -11,9 +11,9 @@ use Filament\Actions\DeleteAction;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Filament\Tables\Actions\Action;
+use Filament\Actions\Action;
 use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Components\Group;
+use Filament\Schemas\Components\Group;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\MarkdownEditor;
@@ -43,10 +43,10 @@ abstract class BaseResource extends Resource
         $modelBase = static::getModelBase();
 
         return [
-            Tables\Actions\EditAction::make()
+            \Filament\Actions\EditAction::make()
                 ->extraAttributes(['style' => 'margin-left: auto;']),
 
-            Tables\Actions\DeleteAction::make()
+            \Filament\Actions\DeleteAction::make()
                 ->successNotificationTitle(__("resources.notifications.delete.{$modelBase}")),
         ];
     }

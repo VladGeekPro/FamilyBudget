@@ -8,11 +8,11 @@ use App\Filament\Resources\Base\BaseResource;
 
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\FileUpload;
-use Filament\Forms\Components\Group;
+use Filament\Schemas\Components\Group;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Form;
-use Filament\Forms\Components\Section;
-use Filament\Forms\Components\Grid as FormGrid;
+use Filament\Schemas\Schema;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Grid as FormGrid;
 use Filament\Forms\Components\Hidden;
 
 use Filament\Tables;
@@ -22,7 +22,6 @@ use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\Layout\Split;
 use Filament\Tables\Columns\Layout\Stack;
-use Filament\Tables\Columns\TextColumn\TextColumnSize;
 
 use Filament\Support\Enums\FontWeight;
 
@@ -31,11 +30,11 @@ class UserResource extends BaseResource
 {
     protected static ?string $model = User::class;
 
-    protected static ?string $navigationGroup = 'Справочники';
+    protected static string|\UnitEnum|null $navigationGroup = 'Справочники';
 
     protected static ?int $navigationSort = 3;
 
-    protected static ?string $navigationIcon = 'heroicon-o-user-group';
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-user-group';
 
     protected static ?string $navigationLabel = 'Пользователи';
 
@@ -43,9 +42,9 @@ class UserResource extends BaseResource
 
     protected static ?string $pluralModelLabel = 'пользователи';
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form
+        return $schema
             ->schema([
                 Section::make(__('resources.sections.main'))
                     ->icon('heroicon-o-document-text')
@@ -193,7 +192,7 @@ class UserResource extends BaseResource
                             Stack::make([
                                 TextColumn::make('name')
                                     ->label(__('resources.fields.name.animate'))
-                                    ->size(TextColumnSize::Medium)
+                                    ->size('md')
                                     ->weight(FontWeight::Bold)
                                     ->searchable(),
                                 TextColumn::make('email')

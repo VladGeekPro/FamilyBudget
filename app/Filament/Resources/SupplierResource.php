@@ -8,11 +8,11 @@ use App\Models\Category;
 use App\Models\Supplier;
 
 use Filament\Forms\Components\FileUpload;
-use Filament\Forms\Components\Group;
+use Filament\Schemas\Components\Group;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Form;
-use Filament\Forms\Components\Section;
-use Filament\Forms\Components\Grid as FormGrid;
+use Filament\Schemas\Schema;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Grid as FormGrid;
 use Filament\Forms\Components\MarkdownEditor;
 use Filament\Forms\Components\Select;
 
@@ -23,7 +23,6 @@ use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\Layout\Split;
 use Filament\Tables\Columns\Layout\Stack;
-use Filament\Tables\Columns\TextColumn\TextColumnSize;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Grouping\Group as TableGroup;
 
@@ -35,11 +34,11 @@ class SupplierResource extends BaseResource
 {
     protected static ?string $model = Supplier::class;
 
-    protected static ?string $navigationGroup = 'Справочники';
+    protected static string|\UnitEnum|null $navigationGroup = 'Справочники';
 
     protected static ?int $navigationSort = 1;
 
-    protected static ?string $navigationIcon = 'heroicon-o-building-storefront';
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-building-storefront';
 
     protected static ?string $navigationLabel = 'Поставщики';
 
@@ -47,9 +46,9 @@ class SupplierResource extends BaseResource
 
     protected static ?string $pluralModelLabel = 'поставщики';
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form
+        return $schema
             ->schema([
 
                 Section::make(__('resources.sections.main'))
@@ -176,7 +175,7 @@ class SupplierResource extends BaseResource
                             Stack::make([
                                 TextColumn::make('name')
                                     ->label(__('resources.fields.supplier'))
-                                    ->size(TextColumnSize::Medium)
+                                    ->size('md')
                                     ->weight(FontWeight::Bold)
                                     ->searchable()
                                     ->sortable(),
