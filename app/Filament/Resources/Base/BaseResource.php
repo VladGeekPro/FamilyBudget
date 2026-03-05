@@ -343,98 +343,174 @@ abstract class BaseResource extends Resource
         return true;
     }
 
-    public static function getExpenseTableFilters(): array
-    {
+    protected static function makeRelationshipFilter(
+        string $name,
+        string $label,
+        string $relationship,
+        string $titleColumn = 'name',
+        bool $searchable = false
+    ): \Filament\Tables\Filters\SelectFilter {
+        $filter = \Filament\Tables\Filters\SelectFilter::make($name)
+            ->label($label)
+            ->relationship($relationship, $titleColumn)
+            ->multiple()
+            ->preload()
+            ->placeholder('');
+
+        if ($searchable) {
+            $filter->searchable();
+        }
+
+        return $filter;
+    }
+
+    protected static function makeSelectOptionsFilter(
+        string $name,
+        string $label,
+        array | \Closure $options,
+        bool $searchable = false
+    ): \Filament\Tables\Filters\SelectFilter {
+        $filter = \Filament\Tables\Filters\SelectFilter::make($name)
+            ->label($label)
+            ->options($options)
+            ->multiple()
+            ->preload()
+            ->placeholder('');
+
+        if ($searchable) {
+            $filter->searchable();
+        }
+
+        return $filter;
+    }
+
+    protected static function makeDateRangeFilter(
+        string $filterName = 'date',
+        string $label = 'resources.fields.date',
+        string $column = 'date'
+    ): \Filament\Tables\Filters\Filter {
+        return \Filament\Tables\Filters\Filter::make($filterName)
+            ->label(__($label))
+            ->form([
+                \Filament\Forms\Components\DatePicker::make("date_from")->label(__('resources.filters.date_from')),
+                \Filament\Forms\Components\DatePicker::make("date_until")->label(__('resources.filters.date_until')),
+            ])
+            ->columns(2)
+            ->query(function (\Illuminate\Database\Eloquent\Builder $query, array $data) use ($column): \Illuminate\Database\Eloquent\Builder {
+                return $query
+                    ->when(
+                        $data['date_from'] ?? null,
+                        fn(\Illuminate\Database\Eloquent\Builder $query, $date): \Illuminate\Database\Eloquent\Builder => $query->whereDate($column, '>=', $date),
+                    )
+                    ->when(
+                        $data['date_until'] ?? null,
+                        fn(\Illuminate\Database\Eloquent\Builder $query, $date): \Illuminate\Database\Eloquent\Builder => $query->whereDate($column, '<=', $date),
+                    );
+            })
+            ->indicateUsing(function (array $data): ?string {
+                if (! ($data['date_from'] ?? null) && ! ($data['date_until'] ?? null)) {
+                    return null;
+                } elseif (($data['date_from'] ?? null) && ! ($data['date_until'] ?? null)) {
+                    return 'С ' . \Carbon\Carbon::parse($data['date_from'])->translatedFormat('d F Y');
+                } elseif (! ($data['date_from'] ?? null) && ($data['date_until'] ?? null)) {
+                    return 'До ' . \Carbon\Carbon::parse($data['date_until'])->translatedFormat('d F Y');
+                } else {
+                    return 'Период: ' . \Carbon\Carbon::parse($data['date_from'])->translatedFormat('d F Y') . ' - ' . \Carbon\Carbon::parse($data['date_until'])->translatedFormat('d F Y');
+                }
+            });
+    }
+
+    protected static function makeAmountRangeFilter(
+        string $column = 'sum',
+        string $label = 'resources.fields.sum'
+    ): \Filament\Tables\Filters\Filter {
+        return \Filament\Tables\Filters\Filter::make('sum')
+            ->label(__($label))
+            ->form([
+                \Filament\Forms\Components\TextInput::make('sum_min')
+                    ->numeric()
+                    ->prefix('MDL')
+                    ->label(__('resources.filters.sum_min')),
+                \Filament\Forms\Components\TextInput::make('sum_max')
+                    ->numeric()
+                    ->prefix('MDL')
+                    ->label(__('resources.filters.sum_max')),
+            ])
+            ->columns(2)
+            ->query(function (\Illuminate\Database\Eloquent\Builder $query, array $data) use ($column): \Illuminate\Database\Eloquent\Builder {
+                return $query
+                    ->when($data['sum_min'] ?? null, fn(\Illuminate\Database\Eloquent\Builder $query, $min) => $query->where($column, '>=', $min))
+                    ->when($data['sum_max'] ?? null, fn(\Illuminate\Database\Eloquent\Builder $query, $max) => $query->where($column, '<=', $max));
+            })
+            ->indicateUsing(function (array $data): ?string {
+                $min = $data['sum_min'] ?? null;
+                $max = $data['sum_max'] ?? null;
+
+                if (! $min && ! $max) {
+                    return null;
+                } elseif ($min && ! $max) {
+                    return 'С ' . number_format($min, 2, ',', ' ') . ' MDL';
+                } elseif (! $min && $max) {
+                    return 'До ' . number_format($max, 2, ',', ' ') . ' MDL';
+                } else {
+                    return 'Интервал суммы: ' . number_format($min, 2, ',', ' ') . ' - ' . number_format($max, 2, ',', ' ') . ' MDL';
+                }
+            });
+    }
+
+    protected static function getCommonDateAndAmountFilters(
+        string $dateColumn = 'date',
+        string $sumColumn = 'sum',
+        string $dateFilterName = 'date'
+    ): array {
         return [
-
-            \Filament\Tables\Filters\SelectFilter::make('id')
-                ->label(__('resources.fields.id'))
-                ->multiple()
-                ->preload()
-                ->options(function () {
-                    return Expense::orderBy('date', 'desc')
-                        ->get()
-                        ->mapWithKeys(fn($expense) => [
-                            $expense->id => "#{$expense->id} - {$expense->supplier->name} - {$expense->sum} MDL ({$expense->date->format('d.m.Y')})"
-                        ]);
-                })
-                ->placeholder(''),
-            \Filament\Tables\Filters\SelectFilter::make('user')
-                ->label(__('resources.fields.user'))
-                ->relationship('user', 'name')
-                ->multiple()
-                ->preload()
-                ->placeholder(''),
-            \Filament\Tables\Filters\SelectFilter::make('category')
-                ->label(__('resources.fields.category'))
-                ->relationship('category', 'name')
-                ->multiple()
-                ->preload()
-                ->placeholder(''),
-            \Filament\Tables\Filters\SelectFilter::make('supplier')
-                ->label(__('resources.fields.supplier'))
-                ->relationship('supplier', 'name')
-                ->multiple()
-                ->preload()
-                ->placeholder(''),
-            \Filament\Tables\Filters\Filter::make('date')
-                ->label(__('resources.fields.date'))
-                ->form([
-                    \Filament\Forms\Components\DatePicker::make("date_from")->label(__('resources.filters.date_from')),
-                    \Filament\Forms\Components\DatePicker::make("date_until")->label(__('resources.filters.date_until')),
-                ])->columns(2)
-                ->query(function (\Illuminate\Database\Eloquent\Builder $query, array $data): \Illuminate\Database\Eloquent\Builder {
-                    return $query
-                        ->when(
-                            $data['date_from'],
-                            fn(\Illuminate\Database\Eloquent\Builder $query, $date): \Illuminate\Database\Eloquent\Builder => $query->whereDate('date', '>=', $date),
-                        )
-                        ->when(
-                            $data['date_until'],
-                            fn(\Illuminate\Database\Eloquent\Builder $query, $date): \Illuminate\Database\Eloquent\Builder => $query->whereDate('date', '<=', $date),
-                        );
-                })
-                ->indicateUsing(function (array $data): ?string {
-                    if (! $data['date_from'] && ! $data['date_until']) {
-                        return null;
-                    } elseif ($data['date_from'] && ! $data['date_until']) {
-                        return 'С ' . \Carbon\Carbon::parse($data['date_from'])->translatedFormat('d F Y');
-                    } elseif (! $data['date_from'] && $data['date_until']) {
-                        return 'До ' . \Carbon\Carbon::parse($data['date_until'])->translatedFormat('d F Y');
-                    } else {
-                        return 'Период: ' . \Carbon\Carbon::parse($data['date_from'])->translatedFormat('d F Y') . ' – ' . \Carbon\Carbon::parse($data['date_until'])->translatedFormat('d F Y');
-                    }
-                }),
-            \Filament\Tables\Filters\Filter::make('sum')
-                ->label(__('resources.fields.sum'))
-                ->form([
-                    \Filament\Forms\Components\TextInput::make('sum_min')
-                        ->numeric()
-                        ->label(__('resources.filters.sum_min')),
-                    \Filament\Forms\Components\TextInput::make('sum_max')
-                        ->numeric()
-                        ->label(__('resources.filters.sum_max')),
-                ])
-                ->columns(2)
-                ->query(function (\Illuminate\Database\Eloquent\Builder $query, array $data): \Illuminate\Database\Eloquent\Builder {
-                    return $query
-                        ->when($data['sum_min'], fn(\Illuminate\Database\Eloquent\Builder $query, $min) => $query->where('sum', '>=', $min))
-                        ->when($data['sum_max'], fn(\Illuminate\Database\Eloquent\Builder $query, $max) => $query->where('sum', '<=', $max));
-                })
-                ->indicateUsing(function (array $data): ?string {
-                    $min = $data['sum_min'] ?? null;
-                    $max = $data['sum_max'] ?? null;
-
-                    if (! $min && ! $max) {
-                        return null;
-                    } elseif ($min && ! $max) {
-                        return 'С ' . number_format($min, 2, ',', ' ') . ' MDL';
-                    } elseif (! $min && $max) {
-                        return 'До ' . number_format($max, 2, ',', ' ') . ' MDL';
-                    } else {
-                        return 'Интервал суммы: ' . number_format($min, 2, ',', ' ') . ' – ' . number_format($max, 2, ',', ' ') . ' MDL';
-                    }
-                }),
+            static::makeDateRangeFilter($dateFilterName, 'resources.fields.date', $dateColumn),
+            static::makeAmountRangeFilter($sumColumn, 'resources.fields.sum'),
         ];
+    }
+
+    protected static function getCommonUserDateAndAmountFilters(
+        string $userRelationship = 'user',
+        string $dateColumn = 'date',
+        string $sumColumn = 'sum',
+        string $dateFilterName = 'date'
+    ): array {
+        return array_merge(
+            [
+                static::makeRelationshipFilter('user', __('resources.fields.user'), $userRelationship),
+            ],
+            static::getCommonDateAndAmountFilters($dateColumn, $sumColumn, $dateFilterName),
+        );
+    }
+
+    public static function getExpenseTableFilters(bool $onlyPreviousMonthsForId = false): array
+    {
+        return array_merge(
+            [
+                static::makeSelectOptionsFilter(
+                    'id',
+                    __('resources.fields.id'),
+                    function () use ($onlyPreviousMonthsForId) {
+                        $query = Expense::query()
+                            ->with('supplier:id,name')
+                            ->orderBy('date', 'desc');
+
+                        if ($onlyPreviousMonthsForId) {
+                            $query->whereDate('date', '<', now()->startOfMonth());
+                        }
+
+                        return $query
+                            ->get()
+                            ->mapWithKeys(fn($expense) => [
+                                $expense->id => "#{$expense->id} - {$expense->supplier->name} - {$expense->sum} MDL ({$expense->date->format('d.m.Y')})",
+                            ]);
+                    }
+                ),
+                static::makeRelationshipFilter('user', __('resources.fields.user'), 'user', 'name', true),
+                static::makeRelationshipFilter('category', __('resources.fields.category'), 'category', 'name', true),
+                static::makeRelationshipFilter('supplier', __('resources.fields.supplier'), 'supplier', 'name', true),
+            ],
+            static::getCommonDateAndAmountFilters(),
+        );
     }
 }

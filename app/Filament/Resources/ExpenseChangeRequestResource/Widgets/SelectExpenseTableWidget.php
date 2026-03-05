@@ -2,27 +2,17 @@
 
 namespace App\Filament\Resources\ExpenseChangeRequestResource\Widgets;
 
+use App\Filament\Tables\Concerns\HasExpenseCardTableLayout;
 use App\Models\Expense;
-use Filament\Tables;
+use Filament\Tables\Grouping\Group as TableGroup;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget as BaseWidget;
-use Filament\Tables\Columns\ImageColumn;
-use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Columns\Layout\Grid as TableGrid;
-use Filament\Tables\Columns\Layout\Split;
-use Filament\Tables\Columns\Layout\Stack;
-use Filament\Tables\Grouping\Group as TableGroup;
-use Filament\Support\Enums\FontWeight;
-use Filament\Tables\Filters\SelectFilter;
-use Filament\Tables\Filters\Filter;
-use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Components\TextInput;
 use Illuminate\Database\Eloquent\Builder;
-use Carbon\Carbon;
-use Illuminate\Support\Str;
 
 class SelectExpenseTableWidget extends BaseWidget
 {
+    use HasExpenseCardTableLayout;
+
     protected static ?string $heading = 'Выберите расход';
 
     public function table(Table $table): Table
@@ -30,67 +20,9 @@ class SelectExpenseTableWidget extends BaseWidget
         return $table
             ->query(Expense::previousMonthsExpenses()->orderBy('date', 'desc'))
             ->searchPlaceHolder(__('resources.search_placeholder.resource.expense'))
-            ->columns([
-                TableGrid::make([
-                    'default' => 2
-                ])
-                    ->schema([
-                        TextColumn::make('date')
-                            ->label(__('resources.fields.date'))
-                            ->dateTime('d M. Y')
-                            ->color('info')
-                            ->columnSpan(1),
-                        ImageColumn::make('user.image')
-                            ->circular()
-                            ->height(40)
-                            ->width(40)
-                            ->extraAttributes(['style' => 'margin-left:auto;']),
-                    ]),
-                Split::make([
-                    TableGrid::make()
-                        ->columns(1)
-                        ->schema([
-                            ImageColumn::make('supplier.image')
-                                ->circular()
-                                ->height(100)
-                                ->width(100)
-                        ])->grow(false),
-                    Stack::make([
-                        TableGrid::make([
-                            'default' => 2
-                        ])
-                            ->schema([
-                                TextColumn::make('supplier.name')
-                                    ->label(__('resources.fields.name.animate'))
-                                    ->size('md')
-                                    ->weight(FontWeight::Bold)
-                                    ->searchable()
-                                    ->columnSpan(1),
-                                TextColumn::make('sum')
-                                    ->numeric(decimalPlaces: 2)
-                                    ->color('warning')
-                                    ->money('MDL')
-                                    ->extraAttributes(['class' => 'justify-end']),
-                            ])->grow(),
-
-                        TextColumn::make('notes')
-                            ->label(__('resources.fields.notes'))
-                            ->html()
-                            ->formatStateUsing(fn($state) => Str::markdown($state))
-                            ->searchable()
-                            ->color("gray")
-                            ->limit(100)
-                            ->toggleable(),
-                    ])
-                ])->extraAttributes(['class' => 'py-2'])
-            ])
-            ->contentGrid([
-                'md' => 2,
-                'lg' => 1,
-                'xl' => 2,
-                '2xl' => 3,
-            ])
-            ->filters(\App\Filament\Resources\Base\BaseResource::getExpenseTableFilters())
+            ->columns(static::getExpenseCardColumns())
+            ->contentGrid(static::getExpenseCardContentGrid())
+            ->filters(\App\Filament\Resources\Base\BaseResource::getExpenseTableFilters(true))
             ->defaultGroup(
                 TableGroup::make('date')
                     ->getTitleFromRecordUsing(function (Expense $record): string {
@@ -103,7 +35,7 @@ class SelectExpenseTableWidget extends BaseWidget
                         return $monthName;
                     })
                     ->orderQueryUsing(
-                        fn(Builder $query) => $query->orderBy('date', 'desc')
+                        fn (Builder $query) => $query->orderBy('date', 'desc')
                     )
                     ->titlePrefixedWithLabel(false)
                     ->collapsible()

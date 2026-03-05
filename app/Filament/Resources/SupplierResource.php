@@ -29,6 +29,7 @@ use Filament\Tables\Grouping\Group as TableGroup;
 use Illuminate\Support\Str;
 
 use Filament\Support\Enums\FontWeight;
+use Filament\Support\Enums\Width;
 
 class SupplierResource extends BaseResource
 {
@@ -213,21 +214,22 @@ class SupplierResource extends BaseResource
                     ->collapsible()
             )
 
-            ->filters([
-                SelectFilter::make('category')
-                    ->label(__('resources.fields.category'))
-                    ->relationship('category', 'name')
-                    ->multiple()
-                    ->preload()
-                    ->placeholder(''),
-                SelectFilter::make('name')
-                    ->label(__('resources.fields.supplier'))
-                    ->options(fn() => Supplier::orderBy('name')->pluck('name', 'id')->toArray())
-                    ->multiple()
-                    ->placeholder('')
-            ])
+            ->filters(static::getSupplierTableFilters())->filtersFormWidth(Width::Small)
 
             ->bulkActions([]);
+    }
+
+    protected static function getSupplierTableFilters(): array
+    {
+        return [
+            static::makeRelationshipFilter('category', __('resources.fields.category'), 'category'),
+            static::makeSelectOptionsFilter(
+                'name',
+                __('resources.fields.supplier'),
+                fn() => Supplier::orderBy('name')->pluck('name', 'id')->toArray(),
+                true,
+            ),
+        ];
     }
 
     public static function getRelations(): array
@@ -246,3 +248,4 @@ class SupplierResource extends BaseResource
         ];
     }
 }
+

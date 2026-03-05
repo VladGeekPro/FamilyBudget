@@ -39,6 +39,7 @@ use Illuminate\Support\HtmlString;
 
 use Filament\Support\Enums\FontWeight;
 use Filament\Notifications\Notification;
+use Filament\Support\Enums\Width;
 
 class DebtResource extends BaseResource
 {
@@ -366,85 +367,7 @@ class DebtResource extends BaseResource
                     ->extraAttributes(['style' => 'margin-left: auto;']),
 
             ])
-            ->filters([
-
-                SelectFilter::make('user')
-                    ->label(__('resources.fields.user'))
-                    ->relationship('user', 'name')
-                    ->multiple()
-                    ->preload()
-                    ->placeholder(''),
-
-                SelectFilter::make('payment_status')
-                    ->label(__('resources.fields.payment_status'))
-                    ->options([
-                        'paid' => __('resources.toggle_buttons.options.paid'),
-                        'partial' => __('resources.toggle_buttons.options.partial'),
-                        'unpaid' => __('resources.toggle_buttons.options.unpaid'),
-                    ])
-                    ->multiple()
-                    ->placeholder(''),
-
-                Filter::make('date')
-                    ->label(__('resources.fields.date'))
-                    ->form([
-                        DatePicker::make("date_from")->label(__('resources.filters.date_from')),
-                        DatePicker::make("date_until")->label(__('resources.filters.date_until')),
-                    ])->columns(2)
-                    ->query(function (Builder $query, array $data): Builder {
-                        return $query
-                            ->when(
-                                $data['date_from'],
-                                fn(Builder $query, $date): Builder => $query->whereDate('date', '>=', $date),
-                            )
-                            ->when(
-                                $data['date_until'],
-                                fn(Builder $query, $date): Builder => $query->whereDate('date', '<=', $date),
-                            );
-                    })
-                    ->indicateUsing(function (array $data): ?string {
-                        if (!$data['date_from'] && !$data['date_until']) {
-                            return null;
-                        } elseif ($data['date_from'] && !$data['date_until']) {
-                            return 'С ' . Carbon::parse($data['date_from'])->translatedFormat('d F Y');
-                        } elseif (!$data['date_from'] && $data['date_until']) {
-                            return 'До ' . Carbon::parse($data['date_until'])->translatedFormat('d F Y');
-                        } else {
-                            return 'Период: ' . Carbon::parse($data['date_from'])->translatedFormat('d F Y') . ' – ' . Carbon::parse($data['date_until'])->translatedFormat('d F Y');
-                        }
-                    }),
-
-                Filter::make('sum')
-                    ->label(__('resources.fields.sum'))
-                    ->form([
-                        TextInput::make('sum_min')
-                            ->numeric()
-                            ->label(__('resources.filters.sum_min')),
-                        TextInput::make('sum_max')
-                            ->numeric()
-                            ->label(__('resources.filters.sum_max')),
-                    ])
-                    ->columns(2)
-                    ->query(function (Builder $query, array $data): Builder {
-                        return $query
-                            ->when($data['sum_min'], fn(Builder $query, $min) => $query->where('debt_sum', '>=', $min))
-                            ->when($data['sum_max'], fn(Builder $query, $max) => $query->where('debt_sum', '<=', $max));
-                    })
-                    ->indicateUsing(function (array $data): ?string {
-                        $min = $data['sum_min'] ?? null;
-                        $max = $data['sum_max'] ?? null;
-
-                        if (!$min && !$max) {
-                            return null;
-                        } elseif ($min && !$max) {
-                            return 'С ' . number_format($min, 2, ',', ' ') . ' MDL';
-                        } elseif (!$min && $max) {
-                            return 'До ' . number_format($max, 2, ',', ' ') . ' MDL';
-                        } else {
-                            return 'Интервал суммы: ' . number_format($min, 2, ',', ' ') . ' – ' . number_format($max, 2, ',', ' ') . ' MDL';
-                        }
-                    }),
-            ])
+            ->filters(static::getDebtTableFilters())->filtersFormWidth(Width::Small)
             ->defaultGroup(
                 TableGroup::make('date')
                     ->getTitleFromRecordUsing(fn(Debt $record): string => Carbon::parse($record->date)->format('Y'))
@@ -453,6 +376,25 @@ class DebtResource extends BaseResource
                     ->collapsible()
             )
             ->bulkActions([]);
+    }
+
+    protected static function getDebtTableFilters(): array
+    {
+        return array_merge(
+            static::getCommonUserDateAndAmountFilters(
+                userRelationship: 'user',
+                dateColumn: 'date',
+                sumColumn: 'debt_sum',
+                dateFilterName: 'date',
+            ),
+            [
+                static::makeSelectOptionsFilter(
+                    'payment_status',
+                    __('resources.fields.payment_status'),
+                    __('resources.toggle_buttons.options'),
+                ),
+            ],
+        );
     }
 
     public static function getRelations(): array
@@ -471,3 +413,4 @@ class DebtResource extends BaseResource
         ];
     }
 }
+

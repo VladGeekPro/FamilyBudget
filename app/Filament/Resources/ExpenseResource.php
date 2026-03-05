@@ -2,39 +2,23 @@
 
 namespace App\Filament\Resources;
 
-use App\Filament\Resources\ExpenseResource\Pages;
-use App\Models\Expense;
 use App\Filament\Resources\Base\BaseResource;
-
-use Filament\Schemas\Components\Group;
-use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Components\TextInput;
-use Filament\Schemas\Schema;
-use Filament\Schemas\Components\Section;
-use Filament\Schemas\Components\Grid as FormGrid;
-
-use Filament\Tables;
-use Filament\Tables\Table;
-use Filament\Actions\Action;
-use Filament\Tables\Columns\Layout\Grid as TableGrid;
-use Filament\Tables\Columns\ImageColumn;
-use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Columns\Layout\Split;
-use Filament\Tables\Columns\Layout\Stack;
-use Filament\Tables\Grouping\Group as TableGroup;
-use Filament\Tables\Filters\SelectFilter;
-
-use Filament\Tables\Filters\Filter;
-use Illuminate\Database\Eloquent\Builder;
+use App\Filament\Resources\ExpenseResource\Pages;
+use App\Filament\Tables\Concerns\HasExpenseCardTableLayout;
+use App\Models\Expense;
 use Carbon\Carbon;
-
-use Illuminate\Support\Str;
-use Filament\Support\Enums\FontWeight;
-
-use \Illuminate\Database\Eloquent\Model;
+use Filament\Actions\Action;
+use Filament\Schemas\Components\Group;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Schema;
+use Filament\Tables\Grouping\Group as TableGroup;
+use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 class ExpenseResource extends BaseResource
 {
+    use HasExpenseCardTableLayout;
+
     protected static ?string $model = Expense::class;
 
     public static function getNavigationGroup(): string|\UnitEnum|null
@@ -84,10 +68,10 @@ class ExpenseResource extends BaseResource
 
     protected static function getTableActions(): array
     {
-        $isCurrentMonthOrLater = fn(Expense $record): bool => $record->date->gte(now()->startOfMonth());
+        $isCurrentMonthOrLater = fn (Expense $record): bool => $record->date->gte(now()->startOfMonth());
 
         $parentActions = array_map(
-            fn($action) => $action->visible($isCurrentMonthOrLater),
+            fn ($action) => $action->visible($isCurrentMonthOrLater),
             parent::getTableActions()
         );
 
@@ -107,13 +91,13 @@ class ExpenseResource extends BaseResource
                     }),
 
                 Action::make('expense_change_request')
-                    ->visible(fn(Expense $record) => static::getChangeRequestMeta($record) !== null)
-                    ->label(fn(Expense $record) => static::getChangeRequestMeta($record)['label'] ?? '')
-                    ->icon(fn(Expense $record) => static::getChangeRequestMeta($record)['icon'] ?? null)
-                    ->url(fn(Expense $record) => static::getChangeRequestMeta($record)['url'] ?? null),
+                    ->visible(fn (Expense $record) => static::getChangeRequestMeta($record) !== null)
+                    ->label(fn (Expense $record) => static::getChangeRequestMeta($record)['label'] ?? '')
+                    ->icon(fn (Expense $record) => static::getChangeRequestMeta($record)['icon'] ?? null)
+                    ->url(fn (Expense $record) => static::getChangeRequestMeta($record)['url'] ?? null),
 
                 \Filament\Actions\ViewAction::make()
-                    ->visible(fn(Expense $record) => $record->date->lt(now()->startOfMonth()))
+                    ->visible(fn (Expense $record) => $record->date->lt(now()->startOfMonth()))
                     ->extraAttributes(['class' => 'ml-auto']),
             ],
             $parentActions,
@@ -124,128 +108,64 @@ class ExpenseResource extends BaseResource
     {
         return $schema
             ->schema([
-
                 Section::make(__('resources.sections.main'))
                     ->icon('heroicon-o-document-text')
                     ->iconColor('primary')
                     ->columnSpanFull()
                     ->schema([
-
                         Group::make(
                             static::getExpenseFormFields()
-                        )
-
-                    ])
+                        ),
+                    ]),
             ]);
     }
 
     public static function table(Table $table): Table
     {
-
         $table = parent::table($table);
 
         return $table
-
-            ->modifyQueryUsing(fn($query) => $query->with('pendingChangeRequest'))
-            ->columns([
-                TableGrid::make([
-                    'default' => 2
-                ])
-                    ->schema([
-                        TextColumn::make('date')
-                            ->label(__('resources.fields.date'))
-                            ->dateTime('d M. Y')
-                            ->color('info')
-                            ->columnSpan(1),
-                        ImageColumn::make('user.image')
-                            ->circular()
-                            ->height(40)
-                            ->width(40)
-                            ->extraAttributes(['style' => 'margin-left:auto;']),
-                    ]),
-                Split::make([
-                    TableGrid::make()
-                        ->columns(1)
-                        ->schema([
-                            ImageColumn::make('supplier.image')
-                                ->circular()
-                                ->height(100)
-                                ->width(100)
-                        ])->grow(false),
-                    Stack::make([
-                        TableGrid::make([
-                            'default' => 3
-                        ])
-                            ->schema([
-                                TextColumn::make('supplier.name')
-                                    ->label(__('resources.fields.name.animate'))
-                                    ->size('md')
-                                    ->weight(FontWeight::Bold)
-                                    ->searchable()
-                                    ->columnSpan(2),
-                                TextColumn::make('sum')
-                                    ->numeric(decimalPlaces: 2)
-                                    ->color('warning')
-                                    ->money('MDL')
-                                    ->extraAttributes(['class' => 'justify-end']),
-                            ])->grow(),
-
-                        TextColumn::make('notes')
-                            ->label(__('resources.fields.notes'))
-                            ->html()
-                            ->formatStateUsing(fn($state) => Str::markdown($state))
-                            ->searchable()
-                            ->color("gray")
-                            ->limit(100)
-                            ->toggleable(),
-                    ])
-                ])->extraAttributes(['class' => 'py-2'])
-            ])->contentGrid([
-                'md' => 2,
-                'lg' => 1,
-                'xl' => 2,
-                '2xl' => 3,
-            ])
-
-            ->filters(static::getExpenseTableFilters(true))
+            ->modifyQueryUsing(fn ($query) => $query->with('pendingChangeRequest'))
+            ->columns(static::getExpenseCardColumns())
+            ->contentGrid(static::getExpenseCardContentGrid())
+            ->filters(static::getExpenseTableFilters())
             ->recordClasses('expense-record')
             ->defaultGroup(
                 TableGroup::make('date')
                     ->getTitleFromRecordUsing(function (Expense $record): string {
-
                         $filters = session('tableFilters', []);
 
                         $filteredQuery = Expense::query();
 
-                        if (!empty($filters['user'])) {
+                        if (! empty($filters['user'])) {
                             $filteredQuery->whereIn('expenses.user_id', $filters['user']);
                         }
 
-                        if (!empty($filters['category'])) {
+                        if (! empty($filters['category'])) {
                             $filteredQuery->whereIn('expenses.category_id', $filters['category']);
                         }
 
-                        if (!empty($filters['supplier'])) {
+                        if (! empty($filters['supplier'])) {
                             $filteredQuery->whereIn('expenses.supplier_id', $filters['supplier']);
                         }
 
-                        if (!empty($filters['date']['date_from'])) {
+                        if (! empty($filters['date']['date_from'])) {
                             $filteredQuery->whereDate('expenses.date', '>=', $filters['date']['date_from']);
                         }
 
-                        if (!empty($filters['date']['date_until'])) {
+                        if (! empty($filters['date']['date_until'])) {
                             $filteredQuery->whereDate('expenses.date', '<=', $filters['date']['date_until']);
                         }
 
-                        if (!empty($filters['sum']['sum_min'])) {
+                        if (! empty($filters['sum']['sum_min'])) {
                             $filteredQuery->where('expenses.sum', '>=', $filters['sum']['sum_min']);
                         }
 
-                        if (!empty($filters['sum']['sum_max'])) {
+                        if (! empty($filters['sum']['sum_max'])) {
                             $filteredQuery->where('expenses.sum', '<=', $filters['sum']['sum_max']);
                         }
 
-                        if (!empty($filters['search'])) {
+                        if (! empty($filters['search'])) {
                             $search = $filters['search'];
                             $filteredQuery
                                 ->leftJoin('suppliers', 'expenses.supplier_id', '=', 'suppliers.id')
@@ -256,7 +176,7 @@ class ExpenseResource extends BaseResource
                         }
 
                         $month = $record->date->format('Y');
-                        $year  = $record->date->format('m');
+                        $year = $record->date->format('m');
 
                         $filteredQuery->whereYear('expenses.date', $month)->whereMonth('expenses.date', $year);
 
@@ -268,15 +188,14 @@ class ExpenseResource extends BaseResource
                             'UTF-8'
                         );
 
-                        return "{$monthName} — " . number_format($sum, 2, ',', ' ') . " MDL";
+                        return "{$monthName} - " . number_format((float) $sum, 2, ',', ' ') . ' MDL';
                     })
                     ->orderQueryUsing(
-                        fn(Builder $query) => $query->orderBy('date', 'desc')
+                        fn (Builder $query) => $query->orderBy('date', 'desc')
                     )
                     ->titlePrefixedWithLabel(false)
                     ->collapsible()
             )
-
             ->bulkActions([]);
     }
 

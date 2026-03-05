@@ -393,7 +393,7 @@ class ExpenseChangeRequestResource extends BaseResource
                             ->circular()
                             ->height(40)
                             ->width(40)
-                            ->extraAttributes(['style' => 'margin-left:auto;']),
+                            ->extraAttributes(['class' => 'justify-end']),
                     ]),
 
                 Panel::make([
@@ -483,52 +483,7 @@ class ExpenseChangeRequestResource extends BaseResource
                 '2xl' => 3,
             ])
             ->recordClasses('expense-change-request-record')
-            ->filters([
-
-                \Filament\Tables\Filters\SelectFilter::make('user')
-                    ->label(__('resources.fields.user'))
-                    ->relationship('user', 'name')
-                    ->multiple()
-                    ->preload()
-                    ->placeholder(''),
-                Tables\Filters\SelectFilter::make('status')
-                    ->label(__('resources.fields.status'))
-                    ->options(__('resources.toggle_buttons.change_request_status'))
-                    ->multiple()
-                    ->placeholder(''),
-                Tables\Filters\SelectFilter::make('action_type')
-                    ->label('Тип операции')
-                    ->options(__('resources.fields.action_type.notification_options'))
-                    ->multiple()
-                    ->placeholder(''),
-                \Filament\Tables\Filters\Filter::make('created_at')
-                    ->form([
-                        \Filament\Forms\Components\DatePicker::make("date_from")->label(__('resources.filters.date_from')),
-                        \Filament\Forms\Components\DatePicker::make("date_until")->label(__('resources.filters.date_until')),
-                    ])->columns(2)
-                    ->query(function (\Illuminate\Database\Eloquent\Builder $query, array $data): \Illuminate\Database\Eloquent\Builder {
-                        return $query
-                            ->when(
-                                $data['date_from'],
-                                fn(\Illuminate\Database\Eloquent\Builder $query, $date): \Illuminate\Database\Eloquent\Builder => $query->whereDate('created_at', '>=', $date),
-                            )
-                            ->when(
-                                $data['date_until'],
-                                fn(\Illuminate\Database\Eloquent\Builder $query, $date): \Illuminate\Database\Eloquent\Builder => $query->whereDate('created_at', '<=', $date),
-                            );
-                    })
-                    ->indicateUsing(function (array $data): ?string {
-                        if (! $data['date_from'] && ! $data['date_until']) {
-                            return null;
-                        } elseif ($data['date_from'] && ! $data['date_until']) {
-                            return 'С ' . \Carbon\Carbon::parse($data['date_from'])->translatedFormat('d F Y');
-                        } elseif (! $data['date_from'] && $data['date_until']) {
-                            return 'До ' . \Carbon\Carbon::parse($data['date_until'])->translatedFormat('d F Y');
-                        } else {
-                            return 'Период: ' . \Carbon\Carbon::parse($data['date_from'])->translatedFormat('d F Y') . ' – ' . \Carbon\Carbon::parse($data['date_until'])->translatedFormat('d F Y');
-                        }
-                    }),
-            ])
+            ->filters(static::getExpenseChangeRequestTableFilters())->filtersFormWidth(Width::Small)
             ->actions([
                 \Filament\Actions\ViewAction::make()
                     ->extraAttributes(['class' => 'mr-auto']),
@@ -588,6 +543,28 @@ class ExpenseChangeRequestResource extends BaseResource
             ]);
     }
 
+    protected static function getExpenseChangeRequestTableFilters(): array
+    {
+        return array_merge(
+            [
+                static::makeRelationshipFilter('user', __('resources.fields.user'), 'user'),
+            ],
+            [
+                static::makeSelectOptionsFilter(
+                    'status',
+                    __('resources.fields.status'),
+                    __('resources.toggle_buttons.change_request_status'),
+                ),
+                static::makeSelectOptionsFilter(
+                    'action_type',
+                    'Тип операции',
+                    __('resources.fields.action_type.notification_options'),
+                ),
+                static::makeDateRangeFilter('created_at', 'resources.fields.date', 'created_at'),
+            ],
+        );
+    }
+
     public static function getRelations(): array
     {
         return [
@@ -605,3 +582,4 @@ class ExpenseChangeRequestResource extends BaseResource
         ];
     }
 }
+

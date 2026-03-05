@@ -63,3 +63,7 @@ div[x-data*="tableSortColumn"][x-data*="tableSortDirection"] {
 .fi-no-notification[x-data*="notificationComponent"]:not(.fi-inline) {
     margin-top: 80px !important;
 }
+
+.fi-ta-filters-actions-ctn > button {
+    flex-grow: 1;
+}

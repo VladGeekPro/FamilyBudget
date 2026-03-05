@@ -24,7 +24,7 @@ use Filament\Tables\Columns\Layout\Split;
 use Filament\Tables\Columns\Layout\Stack;
 
 use Filament\Support\Enums\FontWeight;
-
+use Filament\Support\Enums\Width;
 
 class UserResource extends BaseResource
 {
@@ -227,7 +227,7 @@ class UserResource extends BaseResource
 
             ->filters([
                 //
-            ])
+            ])->filtersFormWidth(Width::Small)
 
             ->bulkActions([]);
     }

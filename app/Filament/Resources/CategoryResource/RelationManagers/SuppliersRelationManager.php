@@ -27,6 +27,7 @@ use Filament\Tables\Columns\Layout\Stack;
 use Illuminate\Support\Str;
 
 use Filament\Support\Enums\FontWeight;
+use Filament\Support\Enums\Width;
 
 class SuppliersRelationManager extends BaseRelationManager
 {
@@ -185,6 +186,6 @@ class SuppliersRelationManager extends BaseRelationManager
 
             ->filters([
                 //
-            ]);
+            ])->filtersFormWidth(Width::Small);
     }
 }
