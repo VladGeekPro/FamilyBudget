@@ -25,7 +25,6 @@ use Illuminate\Database\Eloquent\Builder;
 use Filament\Support\Enums\Width;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
-use Filament\Actions\StaticAction;
 use Illuminate\Support\HtmlString;
 
 class ExpenseChangeRequestResource extends BaseResource
@@ -484,7 +483,7 @@ class ExpenseChangeRequestResource extends BaseResource
             ])
             ->recordClasses('expense-change-request-record')
             ->filters(static::getExpenseChangeRequestTableFilters())->filtersFormWidth(Width::Small)
-            ->actions([
+            ->recordActions([
                 \Filament\Actions\ViewAction::make()
                     ->extraAttributes(['class' => 'mr-auto']),
 
@@ -492,7 +491,7 @@ class ExpenseChangeRequestResource extends BaseResource
                     ->label(__('resources.buttons.votes'))
                     ->icon('heroicon-o-users')
                     ->color('info')
-                    ->form(fn(ExpenseChangeRequest $record): array => [
+                    ->schema(fn(ExpenseChangeRequest $record): array => [
 
                         Section::make(__('resources.sections.user_votes'))
                             ->schema([
@@ -527,7 +526,7 @@ class ExpenseChangeRequestResource extends BaseResource
                         $action->getModalCancelAction(),
                         $action->getModalSubmitAction(),
                     ])
-                    ->modalSubmitAction(function (StaticAction $action, ExpenseChangeRequest $record) {
+                    ->modalSubmitAction(function (Action $action, ExpenseChangeRequest $record) {
                         return $action
                             ->label(__('resources.buttons.vote'))
                             ->icon('heroicon-o-hand-thumb-up')
@@ -582,4 +581,3 @@ class ExpenseChangeRequestResource extends BaseResource
         ];
     }
 }
-

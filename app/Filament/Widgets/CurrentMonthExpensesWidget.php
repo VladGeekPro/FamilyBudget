@@ -83,7 +83,7 @@ class CurrentMonthExpensesWidget extends BaseWidget
                     ->color($this->resolveColor($index))
                     ->chart($chart)
                     ->extraAttributes([
-                        'class' => 'min-h-[152px] rounded-2xl ring-1 ring-gray-200/70 dark:ring-white/10 bg-gradient-to-br from-white to-gray-50 dark:from-gray-900 dark:to-gray-800',
+                        'class' => 'min-h-[150px] rounded-2xl ring-1 ring-gray-200/70 dark:ring-white/10 bg-gradient-to-br from-white to-gray-50 dark:from-gray-900 dark:to-gray-800',
                         'aria-label' => "{$user->name}: {$this->formatMoney($userSum)}",
                     ]);
             })

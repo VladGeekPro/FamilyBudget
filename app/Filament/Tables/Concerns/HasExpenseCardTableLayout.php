@@ -56,6 +56,7 @@ trait HasExpenseCardTableLayout
                             ->numeric(decimalPlaces: 2)
                             ->color('warning')
                             ->money('MDL')
+                            ->columnSpan(1)
                             ->extraAttributes(['class' => 'justify-end']),
                     ])->grow(),
 

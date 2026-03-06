@@ -42,7 +42,7 @@ trait InteractsWithExpenseFilters
         if ($includeDateRange) {
             [$start, $end] = $this->resolveDateRangeFromFilters();
 
-            $query->whereBetween('date', [$start->toDateString(), $end->toDateString()]);
+            $query->whereBetween('expenses.date', [$start->toDateString(), $end->toDateString()]);
         }
 
         $userIds = $this->normalizeIdFilter($filters['user_ids'] ?? null);
@@ -50,23 +50,23 @@ trait InteractsWithExpenseFilters
         $supplierIds = $this->normalizeIdFilter($filters['supplier_ids'] ?? null);
 
         if ($userIds !== []) {
-            $query->whereIn('user_id', $userIds);
+            $query->whereIn('expenses.user_id', $userIds);
         }
 
         if ($categoryIds !== []) {
-            $query->whereIn('category_id', $categoryIds);
+            $query->whereIn('expenses.category_id', $categoryIds);
         }
 
         if ($supplierIds !== []) {
-            $query->whereIn('supplier_id', $supplierIds);
+            $query->whereIn('expenses.supplier_id', $supplierIds);
         }
 
         if (filled($filters['sum_min'] ?? null)) {
-            $query->where('sum', '>=', (float) $filters['sum_min']);
+            $query->where('expenses.sum', '>=', (float) $filters['sum_min']);
         }
 
         if (filled($filters['sum_max'] ?? null)) {
-            $query->where('sum', '<=', (float) $filters['sum_max']);
+            $query->where('expenses.sum', '<=', (float) $filters['sum_max']);
         }
 
         return $query;
