@@ -4,7 +4,7 @@ namespace App\Filament\Resources\ExpenseChangeRequestResource\Pages;
 
 use App\Filament\Resources\ExpenseChangeRequestResource;
 use Filament\Actions;
-use Filament\Resources\Pages\ListRecords;
+use App\Filament\Resources\Pages\ListRecords;
 
 class ListExpenseChangeRequests extends ListRecords
 {

@@ -64,6 +64,6 @@ div[x-data*="tableSortColumn"][x-data*="tableSortDirection"] {
     margin-top: 80px !important;
 }
 
-.fi-ta-filters-actions-ctn > button {
+:is(.fi-ta-filters-actions-ctn, .fi-ta-col-manager-actions-ctn) > button {
     flex-grow: 1;
 }

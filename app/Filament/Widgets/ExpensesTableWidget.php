@@ -3,6 +3,7 @@
 namespace App\Filament\Widgets;
 
 use App\Filament\Tables\Concerns\HasExpenseCardTableLayout;
+use App\Filament\Support\Tables\Concerns\HasLayoutColumnManager;
 use App\Filament\Widgets\Concerns\InteractsWithExpenseFilters;
 use App\Models\Expense;
 use Filament\Tables\Grouping\Group as TableGroup;
@@ -13,6 +14,7 @@ use Illuminate\Database\Eloquent\Builder;
 
 class ExpensesTableWidget extends BaseWidget
 {
+    use HasLayoutColumnManager;
     use HasExpenseCardTableLayout;
     use InteractsWithExpenseFilters;
     use InteractsWithPageFilters;
@@ -30,6 +32,7 @@ class ExpensesTableWidget extends BaseWidget
                 $this->expenseQuery()
                     ->with(['user:id,name,image', 'category:id,name', 'supplier:id,name,image'])
             )
+            ->searchPlaceHolder(__('resources.search_placeholder.resource.expense'))
             ->defaultSort('date', 'desc')
             ->columns(static::getExpenseCardColumns())
             ->contentGrid(static::getExpenseCardContentGrid())
@@ -57,6 +60,6 @@ class ExpensesTableWidget extends BaseWidget
                     ->collapsible()
             )
             ->paginated([10, 25, 50, 100])
-            ->defaultPaginationPageOption(10);
+            ->defaultPaginationPageOption(25);
     }
 }

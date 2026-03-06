@@ -34,12 +34,16 @@
 @foreach ($components as $layoutComponent)
     @php
         $layoutComponent->record($record);
+        $layoutComponent->recordKey($recordKey);
         $layoutComponent->rowLoop($rowLoop);
 
         $isColumn = $layoutComponent instanceof \Filament\Tables\Columns\Column;
+        $isToggledHidden = method_exists($layoutComponent, 'isToggledHidden')
+            ? $layoutComponent->isToggledHidden()
+            : false;
     @endphp
 
-     @if (! $layoutComponent->isHidden() && ! $layoutComponent->isToggledHidden())
+     @if (! $layoutComponent->isHidden() && ! $isToggledHidden)
         <x-filament::grid.column
             :default="$layoutComponent->getColumnSpan('default')"
             :sm="$layoutComponent->getColumnSpan('sm')"

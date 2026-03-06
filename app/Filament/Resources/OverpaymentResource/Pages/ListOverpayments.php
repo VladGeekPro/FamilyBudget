@@ -4,7 +4,7 @@ namespace App\Filament\Resources\OverpaymentResource\Pages;
 
 use App\Filament\Resources\OverpaymentResource;
 use Filament\Actions;
-use Filament\Resources\Pages\ListRecords;
+use App\Filament\Resources\Pages\ListRecords;
 
 class ListOverpayments extends ListRecords
 {

@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\ExpenseChangeRequestResource\Widgets;
 
 use App\Filament\Tables\Concerns\HasExpenseCardTableLayout;
+use App\Filament\Support\Tables\Concerns\HasLayoutColumnManager;
 use App\Models\Expense;
 use Filament\Tables\Grouping\Group as TableGroup;
 use Filament\Tables\Table;
@@ -11,6 +12,7 @@ use Illuminate\Database\Eloquent\Builder;
 
 class SelectExpenseTableWidget extends BaseWidget
 {
+    use HasLayoutColumnManager;
     use HasExpenseCardTableLayout;
 
     protected static ?string $heading = 'Выберите расход';

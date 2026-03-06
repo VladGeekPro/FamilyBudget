@@ -1,14 +1,18 @@
+@php
+    $gradientId = 'fbBrandGradient-' . uniqid();
+@endphp
+
 <div class="fi-logo fb-brand" aria-label="FamilyBudget">
-    <svg class="fb-brand__icon" width="40" height="40" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+    <svg class="fb-brand__icon" viewBox="0 0 48 48" fill="none" aria-hidden="true">
         <defs>
-            <linearGradient id="fbBrandGradient" x1="6" y1="6" x2="42" y2="42" gradientUnits="userSpaceOnUse">
+            <linearGradient id="{{ $gradientId }}" x1="6" y1="6" x2="42" y2="42" gradientUnits="userSpaceOnUse">
                 <stop offset="0" stop-color="#ff8a00" />
                 <stop offset="0.55" stop-color="#ff4d6d" />
                 <stop offset="1" stop-color="#7b61ff" />
             </linearGradient>
         </defs>
 
-        <rect x="4" y="4" width="40" height="40" rx="12" fill="url(#fbBrandGradient)" />
+        <rect x="4" y="4" width="40" height="40" rx="12" fill="url(#{{ $gradientId }})" />
         <path d="M14 23L24 14L34 23V34H14V23Z" fill="white" />
         <rect x="22" y="27" width="4" height="7" rx="1.2" fill="#ff4d6d" />
         <circle cx="34.4" cy="34.4" r="6.2" fill="white" />
@@ -21,50 +25,66 @@
 </div>
 
 <style>
-    .fb-brand {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.62rem;
-        min-height: 2.5rem;
-        white-space: nowrap;
-        font-family: Manrope, "Segoe UI", sans-serif;
+    .fi-sidebar-header-logo-ctn,
+    .fi-sidebar-header-logo-ctn > a {
+        background: transparent !important;
+        border: 0 !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+        border-radius: 0 !important;
+        max-width: none !important;
+    }
+
+    .fi-logo.fb-brand {
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: clamp(.36rem, 1.8vw, .62rem) !important;
+        white-space: nowrap !important;
         line-height: 1;
-        user-select: none;
+        max-width: max-content !important;
+        background: transparent !important;
+        border: 0 !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+        border-radius: 0 !important;
+        font-family: Manrope, "Segoe UI", sans-serif;
     }
 
-    .fb-brand__icon {
-        display: block;
-        flex: 0 0 auto;
-        min-width: 2.5rem;
-        filter: drop-shadow(0 8px 16px rgb(0 0 0 / 18%));
+    .fi-logo.fb-brand .fb-brand__icon {
+        display: block !important;
+        flex: 0 0 auto !important;
+        width: clamp(32px, 8vw, 40px) !important;
+        height: clamp(32px, 8vw, 40px) !important;
+        min-width: clamp(32px, 8vw, 40px) !important;
+        max-width: none !important;
     }
 
-    .fb-brand__text {
-        display: inline-flex;
-        font-size: 1.2rem;
-        font-weight: 800;
-        letter-spacing: 0.14px;
+    .fi-logo.fb-brand .fb-brand__text {
+        display: inline-flex !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        font-size: clamp(.9rem, 3.8vw, 1.2rem) !important;
+        font-weight: 800 !important;
+        letter-spacing: 0 !important;
     }
 
-    .fb-brand__family {
-        color: rgb(15 23 42);
+    .fi-logo.fb-brand .fb-brand__family {
+        color: rgb(15 23 42) !important;
     }
 
-    .fb-brand__budget {
-        color: #ff4d6d;
+    .fi-logo.fb-brand .fb-brand__budget {
+        color: #ff4d6d !important;
     }
 
-    html.dark .fb-brand__family {
-        color: rgb(241 245 249);
-    }
-
-    @media (max-width: 640px) {
-        .fb-brand {
-            gap: 0.5rem;
+    @media (max-width: 400px) {
+        .fi-logo.fb-brand .fb-brand__icon {
+            width: 32px !important;
+            height: 32px !important;
+            min-width: 32px !important;
         }
 
-        .fb-brand__text {
-            font-size: 1rem;
+        .fi-logo.fb-brand .fb-brand__text {
+            font-size: .9rem !important;
         }
     }
 </style>
