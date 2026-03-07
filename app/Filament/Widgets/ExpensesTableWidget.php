@@ -3,7 +3,6 @@
 namespace App\Filament\Widgets;
 
 use App\Filament\Tables\Concerns\HasExpenseCardTableLayout;
-use App\Filament\Support\Tables\Concerns\HasLayoutColumnManager;
 use App\Filament\Widgets\Concerns\InteractsWithExpenseFilters;
 use App\Models\Expense;
 use Filament\Tables\Grouping\Group as TableGroup;
@@ -14,7 +13,6 @@ use Illuminate\Database\Eloquent\Builder;
 
 class ExpensesTableWidget extends BaseWidget
 {
-    use HasLayoutColumnManager;
     use HasExpenseCardTableLayout;
     use InteractsWithExpenseFilters;
     use InteractsWithPageFilters;

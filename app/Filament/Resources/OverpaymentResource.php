@@ -98,8 +98,6 @@ class OverpaymentResource extends BaseResource
                             ->searchable()
                             ->preload()
                             ->selectablePlaceholder(false)
-                            ->loadingMessage(__('resources.notifications.load.users'))
-                            ->noSearchResultsMessage(__('resources.notifications.skip.users'))
                             ->default(auth()->user()->id)
                             ->columnSpanFull(),
 
@@ -140,8 +138,8 @@ class OverpaymentResource extends BaseResource
                         ->schema([
                             ImageColumn::make('user.image')
                                 ->circular()
-                                ->height(100)
-                                ->width(100)
+                                ->imageHeight(80)
+                                ->imageWidth(80)
                         ])->grow(false),
 
                     Stack::make([
@@ -167,8 +165,7 @@ class OverpaymentResource extends BaseResource
                             ->formatStateUsing(fn($state) => Str::markdown($state))
                             ->searchable()
                             ->color("gray")
-                            ->limit(100)
-                            ->toggleable(),
+                            ->limit(100),
                     ]),
                 ])->extraAttributes(['class' => 'py-2'])
             ])->contentGrid([

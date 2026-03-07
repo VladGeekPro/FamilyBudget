@@ -289,8 +289,8 @@ class DebtResource extends BaseResource
                 Split::make([
                     ImageColumn::make('user.image')
                         ->circular()
-                        ->height(100)
-                        ->width(100)
+                        ->imageHeight(80)
+                        ->imageWidth(80)
                         ->grow(false),
                     Stack::make([
                         TableGrid::make([
@@ -343,8 +343,7 @@ class DebtResource extends BaseResource
                         TextColumn::make('notes')
                             ->label(__('resources.fields.notes'))
                             ->color('gray')
-                            ->searchable()
-                            ->toggleable(isToggledHiddenByDefault: false),
+                            ->searchable(),
 
                     ])
                 ])->extraAttributes(fn($record) => $record->user_id

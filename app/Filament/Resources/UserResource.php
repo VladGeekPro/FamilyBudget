@@ -190,8 +190,8 @@ class UserResource extends BaseResource
                                 ->schema([
                                     ImageColumn::make('image')
                                         ->circular()
-                                        ->height(100)
-                                        ->width(100)
+                                        ->imageHeight(80)
+                                        ->imageWidth(80)
                                 ])->grow(false),
                             Stack::make([
                                 TextColumn::make('name')
@@ -204,16 +204,10 @@ class UserResource extends BaseResource
                                     ->searchable(),
                                 TextColumn::make('created_at')
                                     ->label(__('resources.fields.created_at'))
-                                    ->dateTime('d M. Y H:i:s')
-                                    ->toggleable(isToggledHiddenByDefault: true),
+                                    ->dateTime('d M. Y H:i:s'),
                                 TextColumn::make('updated_at')
                                     ->label(__('resources.fields.updated_at'))
-                                    ->dateTime('d M. Y H:i:s')
-                                    ->toggleable(),
-                                TextColumn::make('email_verified_at')
-                                    ->label(__('resources.fields.email_verified_at'))
-                                    ->dateTime('d M. Y H:i:s')
-                                    ->toggleable(isToggledHiddenByDefault: true),
+                                    ->dateTime('d M. Y H:i:s'),
                             ])->grow(),
                         ])
                     ])

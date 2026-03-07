@@ -5,22 +5,13 @@ namespace App\Filament\Pages;
 use App\Models\Category;
 use App\Models\Supplier;
 use App\Models\User;
-use Filament\Actions\Action;
-use Filament\Actions\ActionGroup;
 use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TagsInput;
 use Filament\Forms\Components\TextInput;
-use Filament\Infolists\Components\TextEntry;
 use Filament\Pages\Dashboard as BaseDashboard;
 use Filament\Pages\Dashboard\Actions\FilterAction;
 use Filament\Pages\Dashboard\Concerns\HasFiltersAction;
-use Filament\Schemas\Components\Section;
-use Filament\Schemas\Schema;
 use Filament\Schemas\Components\Group;
-use Filament\Support\Enums\IconPosition;
-use Illuminate\Support\Arr;
 
 class Dashboard extends BaseDashboard
 {
@@ -29,6 +20,21 @@ class Dashboard extends BaseDashboard
     protected static string $routePath = '/familyBudget';
 
     protected static ?string $title = 'Главная';
+
+    public function mount(): void
+    {
+        if (!$this->filters || empty(array_filter($this->filters))) {
+            $this->filters = [
+                'user_ids' => null,
+                'category_ids' => null,
+                'supplier_ids' => null,
+                'date_from' => now()->startOfMonth(),
+                'date_to' => now()->endOfMonth(),
+                'sum_min' => null,
+                'sum_max' => null,
+            ];
+        }
+    }
 
     public function getColumns(): int | array
     {
@@ -42,7 +48,7 @@ class Dashboard extends BaseDashboard
                 ->badge(function () {
                     $filters = $this->filters ?? [];
                     $count = count(array_filter($filters, fn($value) => filled($value)));
-                    return $count ?? null;
+                    return $count ?: null;
                 })
                 ->badgeColor('primary')
                 ->schema([
@@ -82,6 +88,8 @@ class Dashboard extends BaseDashboard
                                 }
                             }
                         })
+                        ->optionsLimit(10)
+                        ->noOptionsMessage('Нет вариантов, соответствующих вашему запросу.')
                         ->columnSpanFull(),
 
                     Select::make('supplier_ids')
@@ -100,19 +108,19 @@ class Dashboard extends BaseDashboard
 
                             return $query->pluck('name', 'id')->all();
                         })
+                        ->optionsLimit(10)
+                        ->noOptionsMessage('Нет вариантов, соответствующих вашему запросу.')
                         ->columnSpanFull(),
 
                     Group::make([
                         DatePicker::make('date_from')
                             ->label(__('resources.filters.date_from'))
                             ->native(false)
-                            ->default(now()->startOfMonth())
                             ->closeOnDateSelection(),
 
                         DatePicker::make('date_to')
                             ->label(__('resources.filters.date_until'))
                             ->native(false)
-                            ->default(now()->endOfMonth())
                             ->closeOnDateSelection(),
                     ])->columns(2)
                         ->columnSpanFull(),

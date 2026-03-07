@@ -390,8 +390,8 @@ class ExpenseChangeRequestResource extends BaseResource
                             ->color('info'),
                         Tables\Columns\ImageColumn::make('user.image')
                             ->circular()
-                            ->height(40)
-                            ->width(40)
+                            ->imageHeight(40)
+                            ->imageWidth(40)
                             ->extraAttributes(['class' => 'justify-end']),
                     ]),
 

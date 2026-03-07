@@ -155,9 +155,7 @@ abstract class BaseResource extends Resource
             ->optionsLimit(10)
             ->searchable()
             ->preload()
-            ->selectablePlaceholder(false)
-            ->loadingMessage(__('resources.notifications.load.users'))
-            ->noSearchResultsMessage(__('resources.notifications.skip.users'));
+            ->selectablePlaceholder(false);
 
         static::applyFieldConditions($userField, $forExpense, $isCurrentField);
 
@@ -215,9 +213,7 @@ abstract class BaseResource extends Resource
             })
             ->optionsLimit(10)
             ->searchable()
-            ->preload()
-            ->loadingMessage(__('resources.notifications.load.categories'))
-            ->noSearchResultsMessage(__('resources.notifications.skip.categories'));
+            ->preload();
 
         static::applyFieldConditions($categoryField, $forExpense, $isCurrentField);
 
@@ -261,9 +257,7 @@ abstract class BaseResource extends Resource
             ->optionsLimit(10)
             ->searchable()
             ->preload()
-            ->selectablePlaceholder(false)
-            ->loadingMessage(__('resources.notifications.load.suppliers'))
-            ->noSearchResultsMessage(__('resources.notifications.skip.suppliers'));
+            ->selectablePlaceholder(false);
 
         static::applyFieldConditions($supplierField, $forExpense, $isCurrentField);
 

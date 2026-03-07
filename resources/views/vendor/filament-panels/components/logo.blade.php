@@ -69,7 +69,11 @@
     }
 
     .fi-logo.fb-brand .fb-brand__family {
-        color: rgb(15 23 42) !important;
+        color: rgb(15 23 42);
+    }
+
+    .dark .fi-logo.fb-brand .fb-brand__family {
+        color: white !important;
     }
 
     .fi-logo.fb-brand .fb-brand__budget {

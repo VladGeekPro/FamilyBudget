@@ -3,9 +3,7 @@
 namespace App\Filament\Resources\DebtResource\Pages;
 
 use App\Filament\Resources\DebtResource;
-use Filament\Actions;
-use App\Filament\Resources\Pages\ListRecords;
-use Filament\Tables;
+use Filament\Resources\Pages\ListRecords;
 
 class ListDebts extends ListRecords
 {

@@ -4,7 +4,7 @@ namespace App\Filament\Resources\ExpenseResource\Pages;
 
 use App\Filament\Resources\ExpenseResource;
 use Filament\Actions;
-use App\Filament\Resources\Pages\ListRecords;
+use Filament\Resources\Pages\ListRecords;
 
 class ListExpenses extends ListRecords
 {

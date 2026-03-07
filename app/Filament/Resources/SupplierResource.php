@@ -145,8 +145,6 @@ class SupplierResource extends BaseResource
                                         ->optionsLimit(10)
                                         ->preload()
                                         ->searchable()
-                                        ->loadingMessage(__('resources.notifications.load.categories'))
-                                        ->noSearchResultsMessage(__('resources.notifications.skip.categories'))
                                         ->columnSpanFull(),
                                 ])
                                     ->columnSpan([
@@ -174,8 +172,8 @@ class SupplierResource extends BaseResource
                                 ->schema([
                                     ImageColumn::make('image')
                                         ->circular()
-                                        ->height(100)
-                                        ->width(100)
+                                        ->imageHeight(80)
+                                        ->imageWidth(80)
                                 ])->grow(false),
                             Stack::make([
                                 TextColumn::make('name')
@@ -188,14 +186,12 @@ class SupplierResource extends BaseResource
                                 TextColumn::make('created_at')
                                     ->label(__('resources.fields.created_at'))
                                     ->dateTime('d M. Y H:i:s')
-                                    ->sortable()
-                                    ->toggleable(isToggledHiddenByDefault: true),
+                                    ->sortable(),
 
                                 TextColumn::make('updated_at')
                                     ->label(__('resources.fields.updated_at'))
                                     ->dateTime('d M. Y H:i:s')
-                                    ->sortable()
-                                    ->toggleable(isToggledHiddenByDefault: true),
+                                    ->sortable(),
                             ])->grow(),
                         ])
                     ])

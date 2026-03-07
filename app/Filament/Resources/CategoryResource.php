@@ -141,8 +141,8 @@ class CategoryResource extends BaseResource
                                 ->schema([
                                     ImageColumn::make('image')
                                         ->circular()
-                                        ->height(100)
-                                        ->width(100)
+                                        ->imageHeight(80)
+                                        ->imageWidth(80)
                                 ])->grow(false),
                             Stack::make([
                                 TextColumn::make('name')
@@ -162,21 +162,18 @@ class CategoryResource extends BaseResource
                                 TextColumn::make('created_at')
                                     ->label(__('resources.fields.created_at'))
                                     ->dateTime('d M. Y H:i:s')
-                                    ->sortable()
-                                    ->toggleable(isToggledHiddenByDefault: true),
+                                    ->sortable(),
                                 TextColumn::make('updated_at')
                                     ->label(__('resources.fields.updated_at'))
                                     ->dateTime('d M. Y H:i:s')
-                                    ->sortable()
-                                    ->toggleable(isToggledHiddenByDefault: true),
+                                    ->sortable(),
                                 TextColumn::make('notes')
                                     ->label(__('resources.fields.notes'))
                                     ->html()
                                     ->formatStateUsing(fn($state) => Str::markdown($state))
                                     ->color("gray")
                                     ->limit(100)
-                                    ->searchable()
-                                    ->toggleable(),
+                                    ->searchable(),
                             ])->grow(),
                         ])
                     ])

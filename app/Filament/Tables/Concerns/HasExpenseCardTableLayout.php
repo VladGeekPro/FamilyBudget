@@ -26,8 +26,8 @@ trait HasExpenseCardTableLayout
 
                 ImageColumn::make('user.image')
                     ->circular()
-                    ->height(40)
-                    ->width(40)
+                    ->imageHeight(40)
+                    ->imageWidth(40)
                     ->extraAttributes(['class' => 'justify-end']),
             ]),
 
@@ -37,8 +37,8 @@ trait HasExpenseCardTableLayout
                     ->schema([
                         ImageColumn::make('supplier.image')
                             ->circular()
-                            ->height(100)
-                            ->width(100),
+                            ->imageHeight(80)
+                            ->imageWidth(80),
                     ])->grow(false),
 
                 Stack::make([
@@ -66,8 +66,7 @@ trait HasExpenseCardTableLayout
                         ->formatStateUsing(fn ($state) => Str::markdown((string) $state))
                         ->searchable()
                         ->color('gray')
-                        ->limit(100)
-                        ->toggleable(),
+                        ->limit(100),
                 ]),
             ])->extraAttributes(['class' => 'py-2']),
         ];

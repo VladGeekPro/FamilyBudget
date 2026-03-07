@@ -2,7 +2,6 @@
 
 namespace App\Filament\Resources\BaseRelationManager;
 
-use App\Filament\Support\Tables\Concerns\HasLayoutColumnManager;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables\Table;
 use Filament\Tables;
@@ -15,8 +14,6 @@ use Illuminate\Database\Eloquent\Collection;
 
 abstract class BaseRelationManager extends RelationManager
 {
-    use HasLayoutColumnManager;
-
     protected static ?string $modelLabel = 'поставщика';
 
     /** Можно переопределять в дочерних ресурсах */

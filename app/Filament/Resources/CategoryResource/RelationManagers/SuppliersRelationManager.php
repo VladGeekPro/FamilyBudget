@@ -130,8 +130,6 @@ class SuppliersRelationManager extends BaseRelationManager
                                         ->searchable()
                                         ->preload()
                                         ->selectablePlaceholder(false)
-                                        ->loadingMessage(__('resources.notifications.load.categories'))
-                                        ->noSearchResultsMessage(__('resources.notifications.skip.categories'))
                                         ->columnSpanFull(),
                                 ])
                                     ->columnSpan([
@@ -163,8 +161,8 @@ class SuppliersRelationManager extends BaseRelationManager
                                 ->schema([
                                     ImageColumn::make('image')
                                         ->circular()
-                                        ->height(100)
-                                        ->width(100)
+                                        ->imageHeight(80)
+                                        ->imageWidth(80)
                                 ])->grow(false),
                             Stack::make([
                                 TextColumn::make('name')
