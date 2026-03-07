@@ -21,18 +21,26 @@ class Dashboard extends BaseDashboard
 
     protected static ?string $title = 'Главная';
 
-    public function mount(): void
+    public function mountHasFilters(): void
     {
-        if (!$this->filters || empty(array_filter($this->filters))) {
+        $filtersSessionKey = $this->getFiltersSessionKey();
+
+        if (session()->has($filtersSessionKey)) {
+            $this->filters = session()->get($filtersSessionKey);
+        }
+
+        if (!$this->filters || empty(array_filter($this->filters, fn($v) => filled($v)))) {
             $this->filters = [
                 'user_ids' => null,
                 'category_ids' => null,
                 'supplier_ids' => null,
-                'date_from' => now()->startOfMonth(),
-                'date_to' => now()->endOfMonth(),
+                'date_from' => now()->startOfMonth()->toDateString(),
+                'date_to' => now()->endOfMonth()->toDateString(),
                 'sum_min' => null,
                 'sum_max' => null,
             ];
+        } else {
+            $this->normalizeTableFilterValuesFromQueryString($this->filters);
         }
     }
 
@@ -51,6 +59,10 @@ class Dashboard extends BaseDashboard
                     return $count ?: null;
                 })
                 ->badgeColor('primary')
+                ->action(function (array $data): void {
+                    $this->filters = $data;
+                    session()->put($this->getFiltersSessionKey(), $this->filters);
+                })
                 ->schema([
                     Select::make('user_ids')
                         ->label(__('resources.fields.user'))

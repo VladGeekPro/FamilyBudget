@@ -5,6 +5,7 @@ namespace App\Filament\Widgets;
 use App\Filament\Tables\Concerns\HasExpenseCardTableLayout;
 use App\Filament\Widgets\Concerns\InteractsWithExpenseFilters;
 use App\Models\Expense;
+use App\Models\User;
 use Filament\Tables\Grouping\Group as TableGroup;
 use Filament\Tables\Table;
 use Filament\Widgets\Concerns\InteractsWithPageFilters;
@@ -17,15 +18,78 @@ class ExpensesTableWidget extends BaseWidget
     use InteractsWithExpenseFilters;
     use InteractsWithPageFilters;
 
-    protected static ?int $sort = 2;
+    protected string $view = 'filament.widgets.expenses-table-widget';
 
-    protected int | string | array $columnSpan = 'full';
+    protected static ?int $sort = 3;
+
+    protected int|string|array $columnSpan = 'full';
+
+    public function getViewData(): array
+    {
+        $today = now();
+        $daysInMonth = (int) $today->daysInMonth;
+        $daysElapsed = (int) $today->day;
+        $daysRemaining = $daysInMonth - $daysElapsed;
+        $monthProgress = $daysInMonth > 0 ? round(($daysElapsed / $daysInMonth) * 100) : 0;
+
+        $baseQuery = $this->expenseQuery();
+
+        $totalExpenses = (float) (clone $baseQuery)->sum('sum');
+        $totalCount = (int) (clone $baseQuery)->count();
+
+        // Per-user stats
+        $allUsers = User::orderBy('name')->get();
+        $userStats = $this->expenseQuery()
+            ->selectRaw('user_id, COALESCE(SUM(sum),0) as total, COUNT(*) as cnt')
+            ->groupBy('user_id')
+            ->get()
+            ->keyBy('user_id');
+
+        $userBreakdown = $allUsers->map(fn(User $u) => (object) [
+            'user'  => $u,
+            'total' => (float) ($userStats->get($u->id)?->total ?? 0),
+            'count' => (int) ($userStats->get($u->id)?->cnt ?? 0),
+        ])->values();
+
+        // Top 3 categories
+        $topCategories = $this->expenseQuery()
+            ->selectRaw('category_id, COALESCE(SUM(sum),0) as total, COUNT(*) as cnt')
+            ->groupBy('category_id')
+            ->orderByDesc('total')
+            ->limit(3)
+            ->with('category:id,name')
+            ->get()
+            ->map(fn($row) => (object) [
+                'name'  => $row->category?->name ?? 'Без категории',
+                'total' => (float) $row->total,
+                'count' => (int) $row->cnt,
+            ]);
+
+        // Average per transaction
+        $avgPerTx = $totalCount > 0 ? $totalExpenses / $totalCount : 0;
+
+        // Average per day
+        $avgPerDay = $daysElapsed > 0 ? $totalExpenses / $daysElapsed : 0;
+
+        return [
+            'totalExpenses'   => $totalExpenses,
+            'totalCount'      => $totalCount,
+            'userBreakdown'   => $userBreakdown,
+            'topCategories'   => $topCategories,
+            'avgPerTx'        => $avgPerTx,
+            'avgPerDay'       => $avgPerDay,
+            'daysElapsed'     => $daysElapsed,
+            'daysInMonth'     => $daysInMonth,
+            'daysRemaining'   => $daysRemaining,
+            'monthProgress'   => $monthProgress,
+            'monthLabel'      => now()->translatedFormat('F Y'),
+        ];
+    }
 
     public function table(Table $table): Table
     {
         return $table
-            ->heading('Затраты по выбранным фильтрам')
-            ->description('Карточки расходов с группировкой по месяцам.')
+            ->heading(null)
             ->query(
                 $this->expenseQuery()
                     ->with(['user:id,name,image', 'category:id,name', 'supplier:id,name,image'])
@@ -42,7 +106,8 @@ class ExpensesTableWidget extends BaseWidget
                         $monthEnd = $record->date->copy()->endOfMonth()->toDateString();
 
                         $sum = $this->expenseQuery()
-                            ->whereBetween('date', [$monthStart, $monthEnd])
+                            ->whereDate('date', '>=', $monthStart)
+                            ->whereDate('date', '<=', $monthEnd)
                             ->sum('sum');
 
                         $monthName = mb_convert_case(
@@ -53,7 +118,7 @@ class ExpensesTableWidget extends BaseWidget
 
                         return "{$monthName} - " . number_format((float) $sum, 2, ',', ' ') . ' MDL';
                     })
-                    ->orderQueryUsing(fn (Builder $query) => $query->orderBy('date', 'desc'))
+                    ->orderQueryUsing(fn(Builder $query) => $query->orderBy('date', 'desc'))
                     ->titlePrefixedWithLabel(false)
                     ->collapsible()
             )

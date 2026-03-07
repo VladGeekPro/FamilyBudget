@@ -39,7 +39,7 @@ class CategoryResource extends BaseResource
 
     protected static ?int $navigationSort = 2;
 
-    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-tag';
 
     protected static ?string $navigationLabel = 'Категории';
 

@@ -60,10 +60,15 @@ trait HasExpenseCardTableLayout
                             ->extraAttributes(['class' => 'text-end']),
                     ])->grow(),
 
+                    TextColumn::make('category.name')
+                        ->label(__('resources.fields.name.inanimate'))
+                        ->size('xs')
+                        ->searchable(),
+
                     TextColumn::make('notes')
                         ->label(__('resources.fields.notes'))
                         ->html()
-                        ->formatStateUsing(fn ($state) => Str::markdown((string) $state))
+                        ->formatStateUsing(fn($state) => Str::markdown((string) $state))
                         ->searchable()
                         ->color('gray')
                         ->limit(100),

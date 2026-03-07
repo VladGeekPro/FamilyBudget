@@ -42,7 +42,8 @@ trait InteractsWithExpenseFilters
         if ($includeDateRange) {
             [$start, $end] = $this->resolveDateRangeFromFilters();
 
-            $query->whereBetween('expenses.date', [$start->toDateString(), $end->toDateString()]);
+            $query->whereDate('expenses.date', '>=', $start->toDateString())
+                  ->whereDate('expenses.date', '<=', $end->toDateString());
         }
 
         $userIds = $this->normalizeIdFilter($filters['user_ids'] ?? null);
