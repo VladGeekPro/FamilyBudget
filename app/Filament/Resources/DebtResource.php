@@ -264,7 +264,7 @@ class DebtResource extends BaseResource
                             ->label(__('resources.fields.date'))
                             ->dateTime('d M. Y')
                             ->color('info')
-                            ->columnSpan(1),
+                            ->columnSpan(['default' => 1]),
 
                         Stack::make([
                             TextColumn::make('overpayment_status_label')
@@ -281,10 +281,10 @@ class DebtResource extends BaseResource
                                 ->money('MDL')
                                 ->color('gray')
                                 ->alignment('right'),
-                        ])->columnSpan(2)
+                        ])->columnSpan(['default' => 2])
 
                     ])->extraAttributes([
-                        'class' => 'min-h-[56px] justify-end px-3 py-1 rounded-t-xl bg-gray-100 dark:bg-white/5',
+                        'class' => 'items-center min-h-[56px] justify-end px-3 py-1 rounded-t-xl bg-gray-100 dark:bg-white/5',
                     ]),
                 Split::make([
                     ImageColumn::make('user.image')
@@ -302,7 +302,7 @@ class DebtResource extends BaseResource
                                     ->size('md')
                                     ->weight(FontWeight::Bold)
                                     ->getStateUsing(fn($record) => $record->user?->name ?? 'Null')
-                                    ->columnSpan(1),
+                                    ->columnSpan(['default' => 1]),
 
                                 TextColumn::make('date_paid')
                                     ->label(__('resources.fields.date_paid'))
@@ -325,7 +325,7 @@ class DebtResource extends BaseResource
                                     ->numeric()
                                     ->color('warning')
                                     ->money('MDL')
-                                    ->columnSpan(1),
+                                    ->columnSpan(['default' => 1]),
 
                                 TextColumn::make('payment_status')
                                     ->badge()
@@ -336,7 +336,7 @@ class DebtResource extends BaseResource
                                     })
                                     ->formatStateUsing(fn($state) => __('resources.toggle_buttons.options.' . $state))
                                     ->alignment('right')
-                                    ->columnSpan(2),
+                                    ->columnSpan(['default' => 2]),
                             ])->grow()
                             ->extraAttributes(fn($record) => $record->user_id ? ['class' => 'py-2'] : ['class' => 'py-2 invisible']),
 

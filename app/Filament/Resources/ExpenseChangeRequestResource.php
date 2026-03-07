@@ -393,7 +393,7 @@ class ExpenseChangeRequestResource extends BaseResource
                             ->imageHeight(40)
                             ->imageWidth(40)
                             ->extraAttributes(['class' => 'justify-end']),
-                    ]),
+                    ])->extraAttributes(['class' => 'items-center']),
 
                 Panel::make([
 
@@ -471,7 +471,7 @@ class ExpenseChangeRequestResource extends BaseResource
                             $pending = $total - $approved - $rejected;
 
                             return "✅ {$approved} | ❌ {$rejected} | ⏳ {$pending}";
-                        })->extraAttributes(['class' => 'justify-end']),
+                        })->extraAttributes(['class' => 'text-end']),
                 ]),
 
             ])

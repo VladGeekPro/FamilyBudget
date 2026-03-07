@@ -29,7 +29,7 @@ trait HasExpenseCardTableLayout
                     ->imageHeight(40)
                     ->imageWidth(40)
                     ->extraAttributes(['class' => 'justify-end']),
-            ]),
+            ])->extraAttributes(['class' => 'items-center']),
 
             Split::make([
                 TableGrid::make()
@@ -50,14 +50,14 @@ trait HasExpenseCardTableLayout
                             ->size('md')
                             ->weight(FontWeight::Bold)
                             ->searchable()
-                            ->columnSpan(2),
+                            ->columnSpan(['default' => 2]),
 
                         TextColumn::make('sum')
                             ->numeric(decimalPlaces: 2)
                             ->color('warning')
                             ->money('MDL')
-                            ->columnSpan(1)
-                            ->extraAttributes(['class' => 'justify-end']),
+                            ->columnSpan(['default' => 1])
+                            ->extraAttributes(['class' => 'text-end']),
                     ])->grow(),
 
                     TextColumn::make('notes')
