@@ -98,7 +98,7 @@
 
         {{-- ═══════════ TABLE ═══════════ --}}
         <div>
-            {{ $this->table }}
+            {{ $this->table ?? null }}
         </div>
     </div>
 </x-filament-widgets::widget>

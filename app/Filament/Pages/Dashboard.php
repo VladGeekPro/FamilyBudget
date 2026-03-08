@@ -8,6 +8,7 @@ use App\Models\User;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Illuminate\Support\HtmlString;
 use Filament\Pages\Dashboard as BaseDashboard;
 use Filament\Pages\Dashboard\Actions\FilterAction;
 use Filament\Pages\Dashboard\Concerns\HasFiltersAction;
@@ -44,6 +45,21 @@ class Dashboard extends BaseDashboard
         }
     }
 
+    public function resetDashboardFilters(): void
+    {
+        $this->filters = [
+            'user_ids' => null,
+            'category_ids' => null,
+            'supplier_ids' => null,
+            'date_from' => now()->startOfMonth()->toDateString(),
+            'date_to' => now()->endOfMonth()->toDateString(),
+            'sum_min' => null,
+            'sum_max' => null,
+        ];
+        session()->put($this->getFiltersSessionKey(), $this->filters);
+        $this->dispatch('close-modal', id: 'fi-' . $this->getId() . '-action-0');
+    }
+
     public function getColumns(): int | array
     {
         return 2;
@@ -63,6 +79,16 @@ class Dashboard extends BaseDashboard
                     $this->filters = $data;
                     session()->put($this->getFiltersSessionKey(), $this->filters);
                 })
+                ->modalHeading(new HtmlString('
+                    <div class="flex items-center justify-between w-full">
+                        <span>Фильтры</span>
+                        <button type="button"
+                            wire:click="resetDashboardFilters"
+                            class="fi-link fi-link-size-sm text-sm font-semibold text-danger-600 hover:text-danger-500 dark:text-danger-400 dark:hover:text-danger-300 transition">
+                            Сбросить
+                        </button>
+                    </div>
+                '))
                 ->schema([
                     Select::make('user_ids')
                         ->label(__('resources.fields.user'))

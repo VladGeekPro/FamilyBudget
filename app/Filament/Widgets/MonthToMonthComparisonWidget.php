@@ -96,12 +96,6 @@ class MonthToMonthComparisonWidget extends Widget
         $sum = 0;
         foreach ($dailyPrevious as $v) { $sum += $v; $cumulativePrevious[] = round($sum, 2); }
 
-        // ── Averages & Forecast ──
-        $avgPerDay      = $daysElapsed > 0 ? $currentTotal / $daysElapsed : 0.0;
-        $avgPerDayPrev  = $previousDaysInMonth > 0 ? $previousTotal / $previousDaysInMonth : 0.0;
-        $forecast       = round($avgPerDay * $daysInMonth, 2);
-        $forecastDelta  = $previousTotal > 0 ? round(($forecast - $previousTotal) / $previousTotal * 100, 1) : 0;
-
         // ── Per-user breakdown ──
         $allUsers = User::orderBy('name')->get();
 
@@ -156,18 +150,6 @@ class MonthToMonthComparisonWidget extends Widget
 
         $maxCategoryTotal = $categoryComparison->max(fn($c) => max($c->current, $c->previous)) ?: 1;
 
-        // ── Best/worst day ──
-        $bestDay  = null;
-        $worstDay = null;
-        if (count($dailyCurrent) > 0) {
-            $minVal = INF;
-            $maxVal = -INF;
-            foreach ($dailyCurrent as $i => $v) {
-                if ($v <= $minVal) { $minVal = $v; $bestDay = $currentStart->copy()->addDays($i); }
-                if ($v >= $maxVal) { $maxVal = $v; $worstDay = $currentStart->copy()->addDays($i); }
-            }
-        }
-
         return [
             'currentStart'        => $currentStart,
             'currentEnd'          => $currentEnd,
@@ -184,10 +166,6 @@ class MonthToMonthComparisonWidget extends Widget
             'delta'               => $delta,
             'deltaAbs'            => $deltaAbs,
             'deltaPercent'        => $deltaPercent,
-            'avgPerDay'           => $avgPerDay,
-            'avgPerDayPrev'       => $avgPerDayPrev,
-            'forecast'            => $forecast,
-            'forecastDelta'       => $forecastDelta,
             'dailyCurrent'        => $dailyCurrent,
             'dailyPrevious'       => $dailyPrevious,
             'cumulativeCurrent'   => $cumulativeCurrent,
@@ -195,10 +173,6 @@ class MonthToMonthComparisonWidget extends Widget
             'userBreakdown'       => $userBreakdown,
             'categoryComparison'  => $categoryComparison,
             'maxCategoryTotal'    => $maxCategoryTotal,
-            'bestDay'             => $bestDay,
-            'bestDayAmount'       => $minVal ?? 0,
-            'worstDay'            => $worstDay,
-            'worstDayAmount'      => $maxVal ?? 0,
         ];
     }
 }

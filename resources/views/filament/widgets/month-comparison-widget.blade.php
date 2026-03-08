@@ -25,7 +25,7 @@ return '<span class="inline-flex ' . $size . ' items-center justify-center round
                 </div>
                 <div>
                     <h2 class="text-white font-bold text-lg leading-tight">Сравнение с прошлым месяцем</h2>
-                    <p class="text-blue-200 text-sm">{{ $monthLabel }} vs {{ $prevMonthLabel }}</p>
+                    <p class="text-blue-200 text-sm">{{ $prevMonthLabel }} vs {{ $monthLabel }}</p>
                 </div>
             </div>
 
@@ -88,11 +88,6 @@ return '<span class="inline-flex ' . $size . ' items-center justify-center round
                         <span>{{ count($dailyPrevious) }}</span>
                     </div>
                     @endif
-
-                    <div class="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 border-t border-gray-200 dark:border-gray-700 pt-2">
-                        <x-heroicon-m-clock class="w-3.5 h-3.5" />
-                        <span>В среднем <strong class="text-gray-700 dark:text-gray-200">{{ $fmt($avgPerDayPrev) }}</strong> /день</span>
-                    </div>
                 </div>
 
                 {{-- Delta indicator (center) --}}
@@ -155,11 +150,6 @@ return '<span class="inline-flex ' . $size . ' items-center justify-center round
                     <span>{{ count($dailyCurrent) }}</span>
                 </div>
                 @endif
-
-                <div class="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 border-t border-blue-100 dark:border-blue-800/40 pt-2">
-                    <x-heroicon-m-clock class="w-3.5 h-3.5" />
-                    <span>В среднем <strong class="text-gray-700 dark:text-gray-200">{{ $fmt($avgPerDay) }}</strong> /день</span>
-                </div>
             </div>
         </div>
 
@@ -222,12 +212,12 @@ return '<span class="inline-flex ' . $size . ' items-center justify-center round
                         </div>
                         <div class="flex items-center gap-3 text-xs">
                             <span class="flex items-center gap-1">
-                                <span class="w-3 h-0.5 bg-blue-500 rounded-full inline-block"></span>
-                                <span class="text-gray-500 dark:text-gray-400 capitalize">{{ $monthLabel }}</span>
-                            </span>
-                            <span class="flex items-center gap-1">
                                 <span class="w-3 h-0.5 bg-gray-400 rounded-full inline-block" style="border-bottom: 1px dashed"></span>
                                 <span class="text-gray-500 dark:text-gray-400 capitalize">{{ $prevMonthLabel }}</span>
+                            </span>
+                            <span class="flex items-center gap-1">
+                                <span class="w-3 h-0.5 bg-blue-500 rounded-full inline-block"></span>
+                                <span class="text-gray-500 dark:text-gray-400 capitalize">{{ $monthLabel }}</span>
                             </span>
                         </div>
                     </div>
@@ -301,20 +291,8 @@ return '<span class="inline-flex ' . $size . ' items-center justify-center round
                                         </span>
                                     </div>
 
-                                    {{-- Current --}}
-                                    <div class="mb-2">
-                                        <div class="flex justify-between text-xs mb-0.5">
-                                            <span class="text-gray-500 dark:text-gray-400 capitalize">{{ $monthLabel }}</span>
-                                            <span class="font-bold text-gray-800 dark:text-gray-200">{{ $fmt($ub->current) }}</span>
-                                        </div>
-                                        <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                                            <div class="h-2 rounded-full bg-blue-500 transition-all duration-700"
-                                                style="width: {{ round($ub->current / $userMaxBar * 100) }}%"></div>
-                                        </div>
-                                    </div>
-
                                     {{-- Previous --}}
-                                    <div>
+                                    <div class="mb-2">
                                         <div class="flex justify-between text-xs mb-0.5">
                                             <span class="text-gray-500 dark:text-gray-400 capitalize">{{ $prevMonthLabel }}</span>
                                             <span class="font-bold text-gray-800 dark:text-gray-200">{{ $fmt($ub->previous) }}</span>
@@ -322,6 +300,18 @@ return '<span class="inline-flex ' . $size . ' items-center justify-center round
                                         <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                                             <div class="h-2 rounded-full bg-gray-400 dark:bg-gray-500 transition-all duration-700"
                                                 style="width: {{ round($ub->previous / $userMaxBar * 100) }}%"></div>
+                                        </div>
+                                    </div>
+
+                                    {{-- Current --}}
+                                    <div>
+                                        <div class="flex justify-between text-xs mb-0.5">
+                                            <span class="text-gray-500 dark:text-gray-400 capitalize">{{ $monthLabel }}</span>
+                                            <span class="font-bold text-gray-800 dark:text-gray-200">{{ $fmt($ub->current) }}</span>
+                                        </div>
+                                        <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                                            <div class="h-2 rounded-full bg-blue-500 transition-all duration-700"
+                                                style="width: {{ round($ub->current / $userMaxBar * 100) }}%"></div>
                                         </div>
                                     </div>
 
@@ -367,17 +357,6 @@ return '<span class="inline-flex ' . $size . ' items-center justify-center round
                                 </span>
                             </div>
                             <div class="flex gap-1 items-center">
-                                {{-- Current --}}
-                                <div class="flex-1">
-                                    <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3 relative overflow-hidden">
-                                        <div class="h-3 rounded-full bg-blue-500 transition-all duration-700 flex items-center justify-end pr-1"
-                                            style="width: {{ max(2, round($cat->current / $maxCategoryTotal * 100)) }}%">
-                                            @if($cat->current / $maxCategoryTotal > 0.2)
-                                            <span class="text-[9px] text-white font-bold">{{ number_format($cat->current, 0, ',', ' ') }}</span>
-                                            @endif
-                                        </div>
-                                    </div>
-                                </div>
                                 {{-- Previous --}}
                                 <div class="flex-1">
                                     <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3 relative overflow-hidden">
@@ -389,72 +368,27 @@ return '<span class="inline-flex ' . $size . ' items-center justify-center round
                                         </div>
                                     </div>
                                 </div>
+                                {{-- Current --}}
+                                <div class="flex-1">
+                                    <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3 relative overflow-hidden">
+                                        <div class="h-3 rounded-full bg-blue-500 transition-all duration-700 flex items-center justify-end pr-1"
+                                            style="width: {{ max(2, round($cat->current / $maxCategoryTotal * 100)) }}%">
+                                            @if($cat->current / $maxCategoryTotal > 0.2)
+                                            <span class="text-[9px] text-white font-bold">{{ number_format($cat->current, 0, ',', ' ') }}</span>
+                                            @endif
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                             <div class="flex gap-1 text-[9px] text-gray-400 dark:text-gray-500 mt-0.5">
-                                <div class="flex-1 capitalize">{{ $monthLabel }}</div>
                                 <div class="flex-1 capitalize">{{ $prevMonthLabel }}</div>
+                                <div class="flex-1 capitalize">{{ $monthLabel }}</div>
                             </div>
                     </div>
                     @endforeach
                 </div>
     </div>
     @endif
-
-    {{-- ── STATS ROW: Forecast + Best/Worst day ── --}}
-    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        {{-- Forecast --}}
-        <div class="rounded-xl border {{ $forecastDelta > 0 ? 'border-amber-200 dark:border-amber-700/50 bg-amber-50/60 dark:bg-amber-900/10' : 'border-green-200 dark:border-green-700/50 bg-green-50/60 dark:bg-green-900/10' }} p-4">
-            <div class="flex items-center gap-2 mb-2">
-                <div class="w-8 h-8 rounded-lg {{ $forecastDelta > 0 ? 'bg-amber-500' : 'bg-green-500' }} flex items-center justify-center">
-                    <x-heroicon-m-arrow-trending-up class="w-4 h-4 text-white" />
-                </div>
-                <div class="text-xs text-gray-500 dark:text-gray-400 font-semibold uppercase tracking-wide">Прогноз</div>
-            </div>
-            <div class="text-xl font-extrabold text-gray-900 dark:text-white">{{ $fmt($forecast) }}</div>
-            <div class="text-xs mt-1 {{ $forecastDelta > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-green-600 dark:text-green-400' }}">
-                @if($previousTotal > 0)
-                {{ $forecastDelta > 0 ? '+' : '' }}{{ $forecastDelta }}% от прошлого месяца
-                @else
-                на основе {{ $fmt($avgPerDay) }}/день
-                @endif
-            </div>
-            <div class="text-[10px] text-gray-400 dark:text-gray-500 mt-1">
-                {{ $fmt($avgPerDay) }} × {{ $daysInMonth }} дн.
-            </div>
-        </div>
-
-        {{-- Best day --}}
-        @if($bestDay)
-        <div class="rounded-xl border border-green-200 dark:border-green-700/50 bg-green-50/60 dark:bg-green-900/10 p-4">
-            <div class="flex items-center gap-2 mb-2">
-                <div class="w-8 h-8 rounded-lg bg-green-500 flex items-center justify-center">
-                    <x-heroicon-m-arrow-down class="w-4 h-4 text-white" />
-                </div>
-                <div class="text-xs text-gray-500 dark:text-gray-400 font-semibold uppercase tracking-wide">Мин. расход</div>
-            </div>
-            <div class="text-xl font-extrabold text-green-700 dark:text-green-400">{{ $fmt($bestDayAmount) }}</div>
-            <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                {{ $bestDay->translatedFormat('j F (l)') }}
-            </div>
-        </div>
-        @endif
-
-        {{-- Worst day --}}
-        @if($worstDay)
-        <div class="rounded-xl border border-red-200 dark:border-red-700/50 bg-red-50/60 dark:bg-red-900/10 p-4">
-            <div class="flex items-center gap-2 mb-2">
-                <div class="w-8 h-8 rounded-lg bg-red-500 flex items-center justify-center">
-                    <x-heroicon-m-arrow-up class="w-4 h-4 text-white" />
-                </div>
-                <div class="text-xs text-gray-500 dark:text-gray-400 font-semibold uppercase tracking-wide">Макс. расход</div>
-            </div>
-            <div class="text-xl font-extrabold text-red-700 dark:text-red-400">{{ $fmt($worstDayAmount) }}</div>
-            <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                {{ $worstDay->translatedFormat('j F (l)') }}
-            </div>
-        </div>
-        @endif
-    </div>
 
     {{-- ═══════════ RESULT BANNER ═══════════ --}}
     <div class="rounded-xl {{ $delta <= 0 ? 'bg-gradient-to-r from-green-500 to-emerald-600' : 'bg-gradient-to-r from-red-500 to-rose-600' }} p-4 text-white flex items-center gap-4">

@@ -69,3 +69,8 @@ div[x-data*="tableSortColumn"][x-data*="tableSortDirection"] {
 :root {
     font-size: 14px;
 }
+
+.fi-modal-slide-over .fi-modal-header > div:has(.fi-modal-heading) {
+    flex: 1;
+    padding-right: 5px;
+}
