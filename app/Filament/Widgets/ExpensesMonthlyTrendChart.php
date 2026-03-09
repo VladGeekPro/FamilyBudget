@@ -84,13 +84,6 @@ class ExpensesMonthlyTrendChart extends ChartWidget
     {
         $end    = now()->endOfMonth();
         $start  = now()->startOfMonth()->subMonths(5);
-        $driver = DB::connection()->getDriverName();
-
-        $monthExpression = match ($driver) {
-            'sqlite' => "strftime('%Y-%m-01', date)",
-            'pgsql'  => "to_char(date_trunc('month', date), 'YYYY-MM-01')",
-            default  => "DATE_FORMAT(date, '%Y-%m-01')",
-        };
 
         $labels  = [];
         $months  = [];
@@ -106,7 +99,7 @@ class ExpensesMonthlyTrendChart extends ChartWidget
         $totalRows = $this->expenseQuery(includeDateRange: false)
             ->whereDate('date', '>=', $start->toDateString())
             ->whereDate('date', '<=', $end->toDateString())
-            ->selectRaw("{$monthExpression} as month_key, COALESCE(SUM(sum), 0) as total")
+            ->selectRaw("strftime('%Y-%m-01', date) as month_key, COALESCE(SUM(sum), 0) as total")
             ->groupBy('month_key')
             ->orderBy('month_key')
             ->get()
@@ -152,7 +145,7 @@ class ExpensesMonthlyTrendChart extends ChartWidget
                 ->where('expenses.user_id', $user->id)
                 ->whereDate('date', '>=', $start->toDateString())
                 ->whereDate('date', '<=', $end->toDateString())
-                ->selectRaw("{$monthExpression} as month_key, COALESCE(SUM(sum), 0) as total")
+                ->selectRaw("strftime('%Y-%m-01', date) as month_key, COALESCE(SUM(sum), 0) as total")
                 ->groupBy('month_key')
                 ->orderBy('month_key')
                 ->get()
@@ -191,6 +184,11 @@ class ExpensesMonthlyTrendChart extends ChartWidget
     protected function getType(): string
     {
         return 'line';
+    }
+
+    protected function getMaxHeight(): ?string
+    {
+        return '350px';
     }
 
     protected function getOptions(): array|RawJs|null

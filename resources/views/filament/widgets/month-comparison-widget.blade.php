@@ -92,18 +92,18 @@ return '<span class="inline-flex ' . $size . ' items-center justify-center round
 
                 {{-- Delta indicator (center) --}}
                 <div class="hidden lg:flex flex-col items-center justify-center gap-2 px-2">
-                    @if(abs($deltaPercent) < 0.1)
+                    @if((float) $delta === 0.0)
                         <div class="w-14 h-14 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center shadow-md">
                         <x-heroicon-m-equals class="w-8 h-8 text-gray-400" />
                 </div>
                 <span class="text-xs font-semibold text-gray-500 dark:text-gray-400 text-center">Без<br>изменений</span>
                 @else
-                <div class="text-3xl font-extrabold {{ $delta <= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">
+                <div class="text-3xl font-extrabold {{ $delta < 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">
                     {{ $delta > 0 ? '+' : '' }}{{ $deltaPercent }}%
                 </div>
-                <div class="w-14 h-14 rounded-full {{ $delta <= 0 ? 'bg-gradient-to-br from-green-500 to-emerald-500' : 'bg-gradient-to-br from-red-500 to-orange-500' }} shadow-lg flex items-center justify-center">
+                <div class="w-14 h-14 rounded-full {{ $delta < 0 ? 'bg-gradient-to-br from-green-500 to-emerald-500' : 'bg-gradient-to-br from-red-500 to-orange-500' }} shadow-lg flex items-center justify-center">
                     @if($delta
-                    <= 0)
+                    < 0)
                         <x-heroicon-m-arrow-trending-down class="w-7 h-7 text-white" />
                     @else
                     <x-heroicon-m-arrow-trending-up class="w-7 h-7 text-white" />
@@ -111,7 +111,7 @@ return '<span class="inline-flex ' . $size . ' items-center justify-center round
                 </div>
                 <div class="text-center">
                     <div class="text-sm font-bold text-gray-900 dark:text-white">{{ $fmt($deltaAbs) }}</div>
-                    <div class="text-xs text-gray-500 dark:text-gray-400">{{ $delta <= 0 ? 'экономия' : 'перерасход' }}</div>
+                    <div class="text-xs text-gray-500 dark:text-gray-400">{{ $delta < 0 ? 'экономия' : 'перерасход' }}</div>
                 </div>
                 @endif
             </div>
@@ -154,11 +154,16 @@ return '<span class="inline-flex ' . $size . ' items-center justify-center round
         </div>
 
         {{-- Mobile delta --}}
-        <div class="lg:hidden rounded-xl {{ $delta <= 0 ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-700' : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-700' }} border p-4 text-center">
-            <div class="text-2xl font-extrabold {{ $delta <= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">
-                {{ $delta > 0 ? '+' : '' }}{{ $deltaPercent }}%
+        @php
+            $mobileIsEqual = (float) $delta === 0.0;
+        @endphp
+        <div class="lg:hidden rounded-xl {{ $mobileIsEqual ? 'bg-gray-50 dark:bg-gray-800/40 border-gray-200 dark:border-gray-700' : ($delta < 0 ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-700' : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-700') }} border p-4 text-center">
+            <div class="text-2xl font-extrabold {{ $mobileIsEqual ? 'text-gray-600 dark:text-gray-300' : ($delta < 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400') }}">
+                {{ $mobileIsEqual ? '0' : ($delta > 0 ? '+' : '') . $deltaPercent }}%
             </div>
-            <div class="text-sm text-gray-600 dark:text-gray-300 mt-1">{{ $delta <= 0 ? 'Экономия' : 'Перерасход' }}: {{ $fmt($deltaAbs) }}</div>
+            <div class="text-sm text-gray-600 dark:text-gray-300 mt-1">
+                {{ $mobileIsEqual ? 'Без изменений' : ($delta < 0 ? 'Экономия' : 'Перерасход') }}: {{ $fmt($deltaAbs) }}
+            </div>
         </div>
 
         {{-- ── CUMULATIVE CHART ── --}}
@@ -276,8 +281,9 @@ return '<span class="inline-flex ' . $size . ' items-center justify-center round
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         @foreach($userBreakdown as $ub)
                         @php
-                        $userDeltaColor = $ub->delta <= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' ;
-                            $userDeltaBg=$ub->delta <= 0 ? 'bg-green-100 dark:bg-green-800/40' : 'bg-red-100 dark:bg-red-800/40' ;
+                        $userIsEqual = (float) ($ub->delta ?? 0) === 0.0;
+                            $userDeltaColor = $userIsEqual ? 'text-gray-600 dark:text-gray-300' : ($ub->delta < 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400');
+                            $userDeltaBg = $userIsEqual ? 'bg-gray-100 dark:bg-gray-700/60' : ($ub->delta < 0 ? 'bg-green-100 dark:bg-green-800/40' : 'bg-red-100 dark:bg-red-800/40');
                                 $userMaxBar=max($ub->current, $ub->previous, 1);
                                 @endphp
                                 <div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4">
@@ -287,7 +293,7 @@ return '<span class="inline-flex ' . $size . ' items-center justify-center round
                                             <div class="font-semibold text-gray-900 dark:text-white text-sm">{{ $ub->user->name }}</div>
                                         </div>
                                         <span class="text-xs font-bold {{ $userDeltaColor }} {{ $userDeltaBg }} rounded-full px-2 py-0.5">
-                                            {{ $ub->delta > 0 ? '+' : '' }}{{ $ub->deltaPercent }}%
+                                            {{ $userIsEqual ? '0%' : (($ub->delta > 0 ? '+' : '') . $ub->deltaPercent . '%') }}
                                         </span>
                                     </div>
 
@@ -317,13 +323,17 @@ return '<span class="inline-flex ' . $size . ' items-center justify-center round
 
                                     {{-- Delta value --}}
                                     <div class="flex items-center gap-1 mt-2 text-xs {{ $userDeltaColor }}">
-                                        @if($ub->delta
-                                        <= 0)
+                                        @if($userIsEqual)
+                                            <x-heroicon-m-equals class="w-3.5 h-3.5" />
+                                        @elseif($ub->delta
+                                        < 0)
                                             <x-heroicon-m-arrow-trending-down class="w-3.5 h-3.5" />
                                         @else
                                         <x-heroicon-m-arrow-trending-up class="w-3.5 h-3.5" />
                                         @endif
-                                        <span>{{ $ub->delta <= 0 ? 'Меньше' : 'Больше' }} на {{ $fmt(abs($ub->delta)) }}</span>
+                                        <span>
+                                            {{ $userIsEqual ? 'Без изменений' : (($ub->delta < 0 ? 'Меньше' : 'Больше') . ' на ' . $fmt(abs($ub->delta))) }}
+                                        </span>
                                     </div>
                                 </div>
                                 @endforeach
@@ -343,16 +353,17 @@ return '<span class="inline-flex ' . $size . ' items-center justify-center round
                         @foreach($categoryComparison as $cat)
                         @php
                         $catDelta = $cat->delta;
-                        $catDeltaColor = $catDelta <= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' ;
+                        $catIsEqual = (float) $catDelta === 0.0;
+                        $catDeltaColor = $catIsEqual ? 'text-gray-500 dark:text-gray-400' : ($catDelta < 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400');
                             @endphp
                             <div>
                             <div class="flex items-center justify-between mb-1">
                                 <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ $cat->name }}</span>
                                 <span class="text-xs font-semibold {{ $catDeltaColor }}">
-                                    @if($catDelta != 0)
+                                    @if(! $catIsEqual)
                                     {{ $catDelta > 0 ? '+' : '' }}{{ $fmt($catDelta) }}
                                     @else
-                                    —
+                                    без изменений
                                     @endif
                                 </span>
                             </div>
@@ -391,28 +402,46 @@ return '<span class="inline-flex ' . $size . ' items-center justify-center round
     @endif
 
     {{-- ═══════════ RESULT BANNER ═══════════ --}}
-    <div class="rounded-xl {{ $delta <= 0 ? 'bg-gradient-to-r from-green-500 to-emerald-600' : 'bg-gradient-to-r from-red-500 to-rose-600' }} p-4 text-white flex items-center gap-4">
-        @if($delta <= 0)
+    @php
+        $isEqual = (float) $delta === 0.0;
+    @endphp
+    <div class="rounded-xl {{ $isEqual ? 'bg-gradient-to-r from-slate-500 to-gray-600' : ($delta < 0 ? 'bg-gradient-to-r from-green-500 to-emerald-600' : 'bg-gradient-to-r from-red-500 to-rose-600') }} p-4 text-white flex items-center gap-4">
+        @if($isEqual)
             <div class="flex-shrink-0 w-12 h-12 rounded-full bg-white/20 flex items-center justify-center">
-            <x-heroicon-m-arrow-trending-down class="w-7 h-7" />
-    </div>
-    <div class="flex-1 min-w-0">
-        <div class="font-bold text-lg leading-tight">Расходы снизились!</div>
-        <div class="text-green-100 text-sm">{{ $monthLabel }}: экономия {{ $fmt($deltaAbs) }} ({{ abs($deltaPercent) }}%) по сравнению с {{ $prevMonthLabel }}</div>
-    </div>
-    @else
-    <div class="flex-shrink-0 w-12 h-12 rounded-full bg-white/20 flex items-center justify-center">
-        <x-heroicon-m-arrow-trending-up class="w-7 h-7" />
-    </div>
-    <div class="flex-1 min-w-0">
-        <div class="font-bold text-lg leading-tight">Расходы выросли</div>
-        <div class="text-red-100 text-sm">{{ $monthLabel }}: перерасход {{ $fmt($deltaAbs) }} (+{{ $deltaPercent }}%) по сравнению с {{ $prevMonthLabel }}</div>
-    </div>
-    <div class="flex-shrink-0 text-right">
-        <div class="text-2xl font-extrabold">+{{ $deltaPercent }}%</div>
-        <div class="text-red-200 text-xs">рост расходов</div>
-    </div>
-    @endif
+                <x-heroicon-m-equals class="w-7 h-7" />
+            </div>
+            <div class="flex-1 min-w-0">
+                <div class="font-bold text-lg leading-tight">Расходы одинаковые</div>
+                <div class="text-slate-100 text-sm">{{ $monthLabel }}: без изменений по сравнению с {{ $prevMonthLabel }}</div>
+                <div class="text-slate-200 text-xs mt-1.5 opacity-85">💡 Отличная стабильность! Теперь попробуй снизить расходы в следующем месяце — это будет новой целью.</div>
+            </div>
+            <div class="flex-shrink-0 text-right">
+                <div class="text-2xl font-extrabold">0%</div>
+                <div class="text-slate-200 text-xs">без изменений</div>
+            </div>
+        @elseif($delta < 0)
+            <div class="flex-shrink-0 w-12 h-12 rounded-full bg-white/20 flex items-center justify-center">
+                <x-heroicon-m-arrow-trending-down class="w-7 h-7" />
+            </div>
+            <div class="flex-1 min-w-0">
+                <div class="font-bold text-lg leading-tight">Расходы снизились!</div>
+                <div class="text-green-100 text-sm">{{ $monthLabel }}: экономия {{ $fmt($deltaAbs) }} ({{ abs($deltaPercent) }}%) по сравнению с {{ $prevMonthLabel }}</div>
+                <div class="text-green-200 text-xs mt-1.5 opacity-85">🎉 Отличная работа! Продолжай в том же темпе — ты на правильном пути к финансовой дисциплине.</div>
+            </div>
+        @else
+            <div class="flex-shrink-0 w-12 h-12 rounded-full bg-white/20 flex items-center justify-center">
+                <x-heroicon-m-arrow-trending-up class="w-7 h-7" />
+            </div>
+            <div class="flex-1 min-w-0">
+                <div class="font-bold text-lg leading-tight">Расходы выросли</div>
+                <div class="text-red-100 text-sm">{{ $monthLabel }}: перерасход {{ $fmt($deltaAbs) }} (+{{ $deltaPercent }}%) по сравнению с {{ $prevMonthLabel }}</div>
+                <div class="text-red-200 text-xs mt-1.5 opacity-85">⚠️ Обрати внимание на расходы! В следующем месяце попробуй вернуться к предыдущему уровню или ещё ниже.</div>
+            </div>
+            <div class="flex-shrink-0 text-right">
+                <div class="text-2xl font-extrabold">+{{ $deltaPercent }}%</div>
+                <div class="text-red-200 text-xs">рост расходов</div>
+            </div>
+        @endif
     </div>
 
     </div>

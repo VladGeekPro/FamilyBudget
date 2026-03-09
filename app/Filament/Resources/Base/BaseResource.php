@@ -213,7 +213,8 @@ abstract class BaseResource extends Resource
             })
             ->optionsLimit(10)
             ->searchable()
-            ->preload();
+            ->preload()
+            ;
 
         static::applyFieldConditions($categoryField, $forExpense, $isCurrentField);
 
@@ -405,11 +406,11 @@ abstract class BaseResource extends Resource
                 if (! ($data['date_from'] ?? null) && ! ($data['date_until'] ?? null)) {
                     return null;
                 } elseif (($data['date_from'] ?? null) && ! ($data['date_until'] ?? null)) {
-                    return 'С ' . \Carbon\Carbon::parse($data['date_from'])->translatedFormat('d F Y');
+                    return __('resources.filters.date_from') . \Carbon\Carbon::parse($data['date_from'])->translatedFormat('d F Y');
                 } elseif (! ($data['date_from'] ?? null) && ($data['date_until'] ?? null)) {
-                    return 'До ' . \Carbon\Carbon::parse($data['date_until'])->translatedFormat('d F Y');
+                    return __('resources.filters.date_until') . \Carbon\Carbon::parse($data['date_until'])->translatedFormat('d F Y');
                 } else {
-                    return 'Период: ' . \Carbon\Carbon::parse($data['date_from'])->translatedFormat('d F Y') . ' - ' . \Carbon\Carbon::parse($data['date_until'])->translatedFormat('d F Y');
+                    return __('resources.filters.date_range') . \Carbon\Carbon::parse($data['date_from'])->translatedFormat('d F Y') . ' - ' . \Carbon\Carbon::parse($data['date_until'])->translatedFormat('d F Y');
                 }
             });
     }
@@ -443,11 +444,11 @@ abstract class BaseResource extends Resource
                 if (! $min && ! $max) {
                     return null;
                 } elseif ($min && ! $max) {
-                    return 'С ' . number_format($min, 2, ',', ' ') . ' MDL';
+                    return __('resources.filters.sum_min') . number_format($min, 2, ',', ' ') . ' MDL';
                 } elseif (! $min && $max) {
-                    return 'До ' . number_format($max, 2, ',', ' ') . ' MDL';
+                    return __('resources.filters.sum_max') . number_format($max, 2, ',', ' ') . ' MDL';
                 } else {
-                    return 'Интервал суммы: ' . number_format($min, 2, ',', ' ') . ' - ' . number_format($max, 2, ',', ' ') . ' MDL';
+                    return __('resources.filters.sum_range') . number_format($min, 2, ',', ' ') . ' - ' . number_format($max, 2, ',', ' ') . ' MDL';
                 }
             });
     }

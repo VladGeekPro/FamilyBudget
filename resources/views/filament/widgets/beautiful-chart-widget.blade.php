@@ -100,7 +100,7 @@
                             ->color(ChartWidgetComponent::class, $color)
                             ->class([
                                 'fi-wi-chart-canvas-ctn w-full',
-                                'fi-wi-chart-canvas-ctn-no-aspect-ratio' => true,
+                                'fi-wi-chart-canvas-ctn-no-aspect-ratio' => filled($maxHeight),
                             ])
                     }}
                 >
