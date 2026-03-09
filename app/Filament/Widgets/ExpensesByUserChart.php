@@ -38,7 +38,7 @@ class ExpensesByUserChart extends ExpensesGroupedChartWidget
 
     protected function getHeaderTitle(): string
     {
-        return 'Доля затрат по пользователям';
+        return __('resources.widgets.charts.by_user_title');
     }
 
     protected function getHeaderPill(): ?string
@@ -91,7 +91,7 @@ class ExpensesByUserChart extends ExpensesGroupedChartWidget
         return [
             'datasets' => [
                 [
-                    'label' => 'Расходы, MDL',
+                    'label' => __('resources.widgets.charts.dataset_expenses_mdl'),
                     'data' => $values,
                     'backgroundColor' => $colors,
                     'hoverBackgroundColor' => $hoverColors,
@@ -224,7 +224,7 @@ class ExpensesByUserChart extends ExpensesGroupedChartWidget
 
     protected function getDatasetLabel(): string
     {
-        return 'Доля расходов';
+        return __('resources.widgets.charts.dataset_expense_share');
     }
 }
 

@@ -38,7 +38,7 @@ class ExpensesBySupplierChart extends ExpensesGroupedChartWidget
 
     protected function getHeaderTitle(): string
     {
-        return 'Затраты по поставщикам';
+        return __('resources.widgets.charts.by_supplier_title');
     }
 
     protected function getHeaderPill(): ?string
@@ -91,7 +91,7 @@ class ExpensesBySupplierChart extends ExpensesGroupedChartWidget
         return [
             'datasets' => [
                 [
-                    'label' => 'Сумма расходов, MDL',
+                    'label' => __('resources.widgets.charts.dataset_expense_sum_mdl'),
                     'data' => $values,
                     'backgroundColor' => $colors,
                     'borderColor' => $borderColors,
@@ -209,7 +209,7 @@ class ExpensesBySupplierChart extends ExpensesGroupedChartWidget
 
     protected function getDatasetLabel(): string
     {
-        return 'Сумма расходов, MDL';
+        return __('resources.widgets.charts.dataset_expense_sum_mdl');
     }
 }
 

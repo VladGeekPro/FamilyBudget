@@ -40,7 +40,7 @@ class ExpensesByDayOfWeekChart extends ChartWidget
 
     protected function getHeaderTitle(): string
     {
-        return 'Расходы по дням недели';
+        return __('resources.widgets.charts.by_day_title');
     }
 
     protected function getHeaderPill(): ?string

@@ -3,11 +3,6 @@
 @source '../../../../app/Filament/**/*';
 @source '../../../../resources/views/filament/**/*';
 
-.filepond--drop-label,
-.filepond--root.filepond--hopper {
-    min-height: 128px !important;
-}
-
 .fi-ta-image img {
     width: 100%;
     height: auto !important;

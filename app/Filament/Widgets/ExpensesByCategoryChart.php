@@ -38,7 +38,7 @@ class ExpensesByCategoryChart extends ExpensesGroupedChartWidget
 
     protected function getHeaderTitle(): string
     {
-        return 'Затраты по категориям';
+        return __('resources.widgets.charts.by_category_title');
     }
 
     protected function getHeaderPill(): ?string
@@ -98,7 +98,7 @@ class ExpensesByCategoryChart extends ExpensesGroupedChartWidget
         return [
             'datasets' => [
                 [
-                    'label' => 'Расходы, MDL',
+                    'label' => __('resources.widgets.charts.dataset_expenses_mdl'),
                     'data' => $values,
                     'backgroundColor' => $colors,
                     'borderColor' => $borderColors,
@@ -213,7 +213,7 @@ class ExpensesByCategoryChart extends ExpensesGroupedChartWidget
 
     protected function getDatasetLabel(): string
     {
-        return 'Сумма расходов, MDL';
+        return __('resources.widgets.charts.dataset_expense_sum_mdl');
     }
 }
 

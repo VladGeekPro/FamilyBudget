@@ -270,7 +270,7 @@ class DebtResource extends BaseResource
                             TextColumn::make('overpayment_status_label')
                                 ->state(
                                     fn($record) => $record->overpayment
-                                        ? __('resources.fields.overpayment', ['user' => $record->overpayment->user->name])
+                                        ? __('resources.fields.user_overpayment', ['user' => $record->overpayment->user->name])
                                         : __('resources.fields.no_overpayment')
                                 )
                                 ->color('primary')

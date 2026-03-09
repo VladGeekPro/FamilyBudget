@@ -2,12 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-
-.filepond--drop-label,
-.filepond--root.filepond--hopper {
-    min-height: 128px !important;
-}
-
 .fi-ta-image img {
     width: 100%;
     height: auto !important;

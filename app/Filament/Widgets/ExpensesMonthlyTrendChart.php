@@ -42,7 +42,7 @@ class ExpensesMonthlyTrendChart extends ChartWidget
 
     protected function getHeaderTitle(): string
     {
-        return 'Динамика расходов';
+        return __('resources.widgets.charts.monthly_trend_title');
     }
 
     protected function getHeaderPill(): ?string

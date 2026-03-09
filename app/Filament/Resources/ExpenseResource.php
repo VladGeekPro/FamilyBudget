@@ -169,9 +169,11 @@ class ExpenseResource extends BaseResource
                             $search = $filters['search'];
                             $filteredQuery
                                 ->leftJoin('suppliers', 'expenses.supplier_id', '=', 'suppliers.id')
+                                ->leftJoin('categories', 'expenses.category_id', '=', 'categories.id')
                                 ->where(function ($query) use ($search) {
                                     $query->where('expenses.notes', 'like', "%{$search}%")
-                                        ->orWhere('suppliers.name', 'like', "%{$search}%");
+                                        ->orWhere('suppliers.name', 'like', "%{$search}%")
+                                        ->orWhere('categories.name', 'like', "%{$search}%");
                                 });
                         }
 

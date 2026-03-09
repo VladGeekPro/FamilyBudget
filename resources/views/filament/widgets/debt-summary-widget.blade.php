@@ -94,13 +94,13 @@
                                 <div class="text-2xl font-extrabold {{ $isDebtor ? 'text-red-600 dark:text-red-400' : ($isCreditor ? 'text-green-600 dark:text-green-400' : 'text-gray-800 dark:text-white') }}">
                                     {{ $fmt($ut->total_sum) }}
                                 </div>
-                                <div class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{{ $ut->tx_count }} транзакций</div>
+                                <div class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{{ $ut->tx_count }} {{ trans_choice('resources.terms.expense_count', $ut->tx_count) }}</div>
                             </div>
 
                             {{-- Share progress bar --}}
                             <div>
                                 <div class="flex justify-between text-xs text-gray-500 dark:text-gray-400 mb-1">
-                                    <span>Доля расходов</span>
+                                    <span>{{ __('resources.widgets.debt_summary.expense_share') }}</span>
                                     <span class="font-semibold text-gray-700 dark:text-gray-200">{{ $share }}%</span>
                                 </div>
                                 <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
@@ -108,14 +108,6 @@
                                          style="width: {{ $share }}%"></div>
                                 </div>
                             </div>
-
-                            {{-- Daily average --}}
-                            @if($daysElapsed > 0)
-                                <div class="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 border-t border-gray-100 dark:border-gray-700 pt-2">
-                                    <x-heroicon-m-clock class="w-3.5 h-3.5" />
-                                    <span>В среднем <strong class="text-gray-700 dark:text-gray-200">{{ $fmt($ut->total_sum / $daysElapsed) }}</strong> /день</span>
-                                </div>
-                            @endif
                         </div>
 
                         {{-- Arrow in the middle (desktop) --}}

@@ -30,6 +30,7 @@ return [
         'password' => 'Пароль',
         'slug' => 'Символьный код',
         'sum' => 'Сумма',
+        'debt' => 'Задолженность',
         'debt_sum' => 'Сумма долга',
         'partial_sum' => 'Сумма частичной оплаты',
         'status' => 'Статус',
@@ -43,8 +44,10 @@ return [
         'change_password' => 'Изменить пароль',
         'notes' => 'Описание',
         'payer' => 'Плательщик',
-        'overpayment' => ':user переплачивает на:',
+        'overpayment' => 'Переплата',
+        'user_overpayment' => ':user переплачивает на:',
         'no_overpayment' => 'Без переплаты',
+        'expense' => 'Затрата',
         'expense_change_request' => 'Запрос на изменение',
         'action_type' => 'Тип операции',
         'change_data' => 'Данные изменения',
@@ -161,7 +164,7 @@ return [
     ],
     'search_placeholder' => [
         'resource' => [
-            'expense' => '(Поставщик, Описание)',
+            'expense' => '(Поставщик, Категория, Описание)',
             'supplier' => '(Поставщик)',
             'category' => '(Категория, Описание)',
             'user' => '(Пользователь, Почта)',
@@ -222,5 +225,37 @@ return [
         'sum_min' => 'Минимальная сумма: ',
         'sum_max' => 'Максимальная сумма: ',
         'sum_range' => 'Интервал суммы: ',
+    ],
+    'terms' => [
+        'expense_count' => 'затрата|затраты|затрат',
+    ],
+    'widgets' => [
+        'expenses_table' => [
+            'title' => 'Журнал затрат',
+            'subtitle' => 'Все затраты • группировка по месяцам',
+            'filtered_total' => 'Итого по фильтру',
+        ],
+        'debt_summary' => [
+            'expense_share' => 'Доля затрат',
+        ],
+        'month_comparison' => [
+            'title_equal' => 'Затраты одинаковые',
+            'title_down' => 'Затраты снизились!',
+            'title_up' => 'Затраты выросли',
+            'trend_up' => 'рост затрат',
+            'overspending' => 'перерасход',
+            'per_user' => 'Затраты по пользователям',
+            'cumulative' => 'Накопительные затраты',
+        ],
+        'charts' => [
+            'by_user_title' => 'Доля затрат по пользователям',
+            'by_supplier_title' => 'Затраты по поставщикам',
+            'by_category_title' => 'Затраты по категориям',
+            'by_day_title' => 'Затраты по дням недели',
+            'monthly_trend_title' => 'Динамика затрат',
+            'dataset_expenses_mdl' => 'Затраты, MDL',
+            'dataset_expense_sum_mdl' => 'Сумма затрат, MDL',
+            'dataset_expense_share' => 'Доля затрат',
+        ],
     ],
 ];
