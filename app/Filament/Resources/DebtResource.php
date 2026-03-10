@@ -101,7 +101,7 @@ class DebtResource extends BaseResource
         $badgeMessage = "";
         foreach ($unpaidRecords as $record) {
             $icon = User::getIcon($record->email);
-            $badgeMessage .= "{$record->unpaid_count} {$icon}";
+            $badgeMessage .= "{$record->unpaid_count} {$icon} ";
         }
 
         return trim($badgeMessage);

@@ -3,7 +3,7 @@
 @endphp
 
 <x-filament-widgets::widget class="fi-wi-table">
-    <div class="rounded-2xl overflow-hidden shadow-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
+    <div x-data="{ isCollapsed: false }" class="rounded-2xl overflow-hidden shadow-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
 
         {{-- ═══════════ HEADER ═══════════ --}}
         <div class="px-6 py-4 bg-gradient-to-br from-slate-600 via-slate-700 to-gray-800">
@@ -22,23 +22,47 @@
                 </div>
 
                 {{-- Summary Stat: stay with icon on first line when wrapped --}}
-                <div class="bg-white/10 backdrop-blur-md rounded-xl px-4 py-2 border border-white/15 shadow-md flex-shrink-0 order-2 sm:order-3 ml-auto sm:ml-0 min-w-[220px]">
-                    <div class="text-center text-gray-200 text-[11px] font-semibold uppercase tracking-wider opacity-90">
-                        {{ __('resources.widgets.expenses_table.filtered_total') }}
+                <div class="flex items-stretch rounded-xl border border-white/15 bg-white/10 backdrop-blur-md shadow-md flex-shrink-0 order-2 sm:order-3 ml-auto sm:ml-0 overflow-hidden">
+                    <div class="px-4 py-2 min-w-[220px]">
+                        <div class="text-center text-gray-200 text-[11px] font-semibold uppercase tracking-wider opacity-90">
+                            {{ __('resources.widgets.expenses_table.filtered_total') }}
+                        </div>
+
+                        <div class="mt-1.5 flex items-center justify-center">
+                            <div class="text-white text-sm font-bold px-3">
+                                {{ $totalCount }} {{ trans_choice('resources.terms.expense_count', $totalCount) }}
+                            </div>
+                            <div class="h-5 w-px bg-white/25"></div>
+                            <div class="text-white font-extrabold text-lg px-3 whitespace-nowrap">
+                                {{ $fmt($totalExpenses) }}
+                            </div>
+                        </div>
                     </div>
 
-                    <div class="mt-1.5 flex items-center justify-center">
-                        <div class="text-white text-sm font-bold px-3">
-                            {{ $totalCount }} {{ trans_choice('resources.terms.expense_count', $totalCount) }}
-                        </div>
-                        <div class="h-5 w-px bg-white/25"></div>
-                        <div class="text-white font-extrabold text-lg px-3 whitespace-nowrap">
-                            {{ $fmt($totalExpenses) }}
-                        </div>
-                    </div>
+                    <button
+                        type="button"
+                        x-on:click.stop="isCollapsed = !isCollapsed"
+                        class="inline-flex items-center justify-center px-3 text-white border-l border-white/20 hover:bg-white/20 hover:border-white/30 transition-all duration-200"
+                        aria-label="Свернуть виджет"
+                    >
+                        <svg class="w-5 h-5 transition-transform duration-300" :class="isCollapsed && 'rotate-180'" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
+                        </svg>
+                    </button>
                 </div>
             </div>
         </div>
+
+        <div
+            x-show="!isCollapsed"
+            x-transition:enter="transition-all ease-out duration-300"
+            x-transition:enter-start="opacity-0"
+            x-transition:enter-end="opacity-100"
+            x-transition:leave="transition-all ease-in duration-200"
+            x-transition:leave-start="opacity-100"
+            x-transition:leave-end="opacity-0"
+            class="overflow-hidden"
+        >
 
         {{-- ═══════════ STATS ROW ═══════════ --}}
         <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/30">
@@ -63,6 +87,7 @@
         {{-- ═══════════ TABLE ═══════════ --}}
         <div>
             {{ $this->table ?? null }}
+        </div>
         </div>
     </div>
 </x-filament-widgets::widget>

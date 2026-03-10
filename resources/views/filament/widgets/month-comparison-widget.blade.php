@@ -15,7 +15,7 @@ return '<span class="inline-flex ' . $size . ' items-center justify-center round
 @endphp
 
 <x-filament-widgets::widget>
-    <div class="rounded-2xl overflow-hidden shadow-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
+    <div x-data="{ isCollapsed: false }" class="rounded-2xl overflow-hidden shadow-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
 
         {{-- ═══════════ HEADER ═══════════ --}}
         <div class="px-6 py-4 bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-700">
@@ -62,12 +62,32 @@ return '<span class="inline-flex ' . $size . ' items-center justify-center round
                     >
                         <x-heroicon-o-cog-6-tooth class="w-5 h-5 group-hover:rotate-90 transition-transform" />
                     </button>
+
+                    <button
+                        type="button"
+                        x-on:click.stop="isCollapsed = !isCollapsed"
+                        class="inline-flex items-center justify-center px-3 text-white border-l border-white/20 hover:bg-white/20 hover:border-white/30 transition-all duration-200"
+                        aria-label="Свернуть виджет"
+                    >
+                        <svg class="w-5 h-5 transition-transform duration-300" :class="isCollapsed && 'rotate-180'" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
+                        </svg>
+                    </button>
                 </div>
             </div>
         </div>
 
         {{-- ═══════════ MAIN CONTENT ═══════════ --}}
-        <div class="px-6 py-5 space-y-5">
+        <div
+            x-show="!isCollapsed"
+            x-transition:enter="transition-all ease-out duration-300"
+            x-transition:enter-start="opacity-0"
+            x-transition:enter-end="opacity-100"
+            x-transition:leave="transition-all ease-in duration-200"
+            x-transition:leave-start="opacity-100"
+            x-transition:leave-end="opacity-0"
+            class="px-6 py-5 space-y-5 overflow-hidden"
+        >
 
             @if($sections['month_comparison'] ?? true)
             {{-- ── MONTH TOTALS COMPARISON ── --}}

@@ -22,21 +22,18 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // Создаём админ пользователя для входа в панель
         $admin = User::factory()->create([
             'name' => 'Admin User',
             'email' => 'admin@example.com',
             'password' => bcrypt('password'),
         ]);
 
-        // Создаём 1 тестового пользователя
         $demoUser = User::factory()->create([
             'name' => 'Тестовый Пользователь',
             'email' => 'demo@example.com',
             'password' => bcrypt('password'),
         ]);
 
-        // Реалистичные категории и поставщики для аналитики
         $categoriesData = [
             [
                 'name' => 'Продукты',
@@ -126,7 +123,6 @@ class DatabaseSeeder extends Seeder
             }
         }
 
-        // Создаём плотную историю затрат: каждые 2 дня по 3-4 записи
         $users = collect([$admin, $demoUser]);
         $sumRanges = [
             'Продукты' => [120, 1200],
@@ -154,10 +150,10 @@ class DatabaseSeeder extends Seeder
             'Развлечения и отдых' => ['Кино', 'Семейный отдых', 'Билеты', 'Поездка выходного дня'],
         ];
 
-        $startDate = Carbon::now()->subMonths(6)->startOfDay();
+        $startDate = Carbon::now()->subMonths(120)->startOfDay();
         $endDate = Carbon::now()->startOfDay();
 
-        for ($date = $startDate->copy(); $date->lte($endDate); $date->addDays(2)) {
+        for ($date = $startDate->copy(); $date->lte($endDate); $date->addDays(1)) {
             $entriesCount = random_int(3, 4);
 
             for ($i = 0; $i < $entriesCount; $i++) {
@@ -177,17 +173,12 @@ class DatabaseSeeder extends Seeder
             }
         }
 
-        // Создаём 10 переплат
-        Overpayment::factory(10)->create();
+        Overpayment::factory(20)->create();
 
-        // Создаём 20 задолженностей
-        Debt::factory(20)->create();
+        Debt::factory(12)->create();
 
-        // Создаём 10 запросов на изменение затрат
-        $changeRequests = ExpenseChangeRequest::factory(10)->create();
+        $changeRequests = ExpenseChangeRequest::factory(100)->create();
 
-        // Создаём голоса для запросов на изменение затрат
-        // Каждый запрос получает по одному голосу от случайного пользователя
         foreach ($changeRequests as $changeRequest) {
             $randomUser = User::inRandomOrder()->first();
             ExpenseChangeRequestVote::factory()->create([
@@ -196,7 +187,6 @@ class DatabaseSeeder extends Seeder
             ]);
         }
 
-        // Создаём 10 оплаченных долгов
         PaidDebts::factory(10)->create();
     }
 }

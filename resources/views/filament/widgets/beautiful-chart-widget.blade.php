@@ -19,12 +19,13 @@
     <div
         @if ($isCollapsible)
             x-data="{ isCollapsed: false }"
+            x-bind:class="isCollapsed ? 'self-start' : 'h-full'"
         @endif
-        class="rounded-2xl overflow-hidden shadow-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 h-full flex flex-col"
+        class="rounded-2xl overflow-hidden shadow-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 flex flex-col {{ $isCollapsible ? '' : 'h-full' }}"
     >
         {{-- ═══════════ GRADIENT HEADER ═══════════ --}}
         <div
-            class="px-6 py-4 bg-gradient-to-br {{ $gradient }} flex-shrink-0"
+            class="min-h-[95px] px-6 py-4 bg-gradient-to-br {{ $gradient }} flex-shrink-0"
             @if ($isCollapsible)
                 x-on:click="isCollapsed = !isCollapsed"
                 role="button"
@@ -41,23 +42,46 @@
                 @endif
 
                 {{-- Title & Description: on mobile goes to new line, on desktop between icon and actions --}}
-                <div class="w-full sm:w-auto sm:flex-1 order-3 sm:order-2">
-                    <h2 class="text-white font-bold text-xl leading-tight">{{ $title }}</h2>
+                <div class="w-full sm:w-auto sm:flex-1 order-3 sm:order-2 min-w-0">
+                    <h2 class="text-white font-bold text-xl leading-tight truncate" title="{{ $title }}">{{ $title }}</h2>
                     @if ($description)
-                        <p class="text-white/70 text-sm leading-snug mt-1">{!! $description !!}</p>
+                        <p class="text-white/70 text-sm leading-snug mt-1 truncate" title="{{ strip_tags($description) }}">{!! $description !!}</p>
                     @endif
                 </div>
 
                 {{-- Right section: stay with icon on first line when wrapped --}}
                 <div class="flex items-center gap-3 flex-shrink-0 order-2 sm:order-3 ml-auto sm:ml-0">
-                    @if ($pill)
-                        <div class="flex items-center gap-2 bg-white/10 backdrop-blur-md rounded-xl px-4 py-2 border border-white/15 shadow-md">
-                            <span class="text-white font-semibold text-sm whitespace-nowrap">{{ $pill }}</span>
+                    @if ($pill && $isCollapsible)
+                        <div class="flex items-stretch rounded-xl border border-white/15 bg-white/10 backdrop-blur-md shadow-md overflow-hidden max-w-[290px]">
+                            <div class="px-4 py-2 min-w-0 flex items-center">
+                                <span class="text-white font-semibold text-sm whitespace-nowrap truncate" title="{{ $pill }}">{{ $pill }}</span>
+                            </div>
+                            <button
+                                type="button"
+                                x-on:click.stop="isCollapsed = !isCollapsed"
+                                class="inline-flex items-center justify-center px-3 text-white border-l border-white/20 hover:bg-white/20 hover:border-white/30 transition-colors"
+                                aria-label="Свернуть виджет"
+                            >
+                                <svg
+                                    class="w-5 h-5 transition-transform duration-300"
+                                    :class="isCollapsed && 'rotate-180'"
+                                    fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"
+                                >
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
+                                </svg>
+                            </button>
                         </div>
-                    @endif
-
-                    @if ($isCollapsible)
-                        <div class="flex-shrink-0 w-10 h-10 rounded-lg bg-white/15 backdrop-blur-md flex items-center justify-center border border-white/20 hover:bg-white/20 transition-colors">
+                    @elseif ($pill)
+                        <div class="flex items-center gap-2 bg-white/10 backdrop-blur-md rounded-xl px-4 py-2 border border-white/15 shadow-md max-w-[240px]">
+                            <span class="text-white font-semibold text-sm whitespace-nowrap truncate" title="{{ $pill }}">{{ $pill }}</span>
+                        </div>
+                    @elseif ($isCollapsible)
+                        <button
+                            type="button"
+                            x-on:click.stop="isCollapsed = !isCollapsed"
+                            class="flex-shrink-0 w-10 h-10 rounded-lg bg-white/15 backdrop-blur-md flex items-center justify-center border border-white/20 hover:bg-white/20 transition-colors"
+                            aria-label="Свернуть виджет"
+                        >
                             <svg
                                 class="w-5 h-5 text-white transition-transform duration-300"
                                 :class="isCollapsed && 'rotate-180'"
@@ -65,7 +89,7 @@
                             >
                                 <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
                             </svg>
-                        </div>
+                        </button>
                     @endif
                 </div>
             </div>

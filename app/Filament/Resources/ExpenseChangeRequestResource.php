@@ -62,7 +62,7 @@ class ExpenseChangeRequestResource extends BaseResource
         $badgeMessage = "";
         foreach ($unansweredRecords as $record) {
             $icon = User::getIcon($record->email);
-            $badgeMessage .= "{$record->unanswered_count} {$icon}";
+            $badgeMessage .= "{$record->unanswered_count} {$icon} ";
         }
 
         return trim($badgeMessage);

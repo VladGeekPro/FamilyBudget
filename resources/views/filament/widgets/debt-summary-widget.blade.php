@@ -16,7 +16,7 @@
 @endphp
 
 <x-filament-widgets::widget>
-    <div class="rounded-2xl overflow-hidden shadow-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
+    <div x-data="{ isCollapsed: false }" class="rounded-2xl overflow-hidden shadow-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
 
         {{-- ═══════════ HEADER ═══════════ --}}
         <div class="px-6 py-4 bg-gradient-to-br from-violet-500 via-violet-600 to-purple-700">
@@ -35,25 +35,49 @@
                 </div>
 
                 {{-- Progress Indicator: stay with icon on first line when wrapped --}}
-                <div class="flex items-center gap-2 bg-white/10 backdrop-blur-md rounded-xl px-4 py-2 border border-white/15 shadow-md flex-shrink-0 order-2 sm:order-3 ml-auto sm:ml-0">
-                    <div class="text-right">
-                        <div class="text-white text-[11px] font-semibold uppercase tracking-wider opacity-90">Прогресс</div>
-                        <div class="text-violet-100 text-sm font-bold">{{ $daysElapsed }}/{{ $daysInMonth }}</div>
+                <div class="flex items-stretch rounded-xl border border-white/15 bg-white/10 backdrop-blur-md shadow-md flex-shrink-0 order-2 sm:order-3 ml-auto sm:ml-0 overflow-hidden">
+                    <div class="flex items-center gap-2 px-4 py-2">
+                        <div class="text-right">
+                            <div class="text-white text-[11px] font-semibold uppercase tracking-wider opacity-90">Прогресс</div>
+                            <div class="text-violet-100 text-sm font-bold">{{ $daysElapsed }}/{{ $daysInMonth }}</div>
+                        </div>
+                        <div class="relative w-10 h-10">
+                            <svg class="w-10 h-10 -rotate-90 drop-shadow" viewBox="0 0 36 36">
+                                <circle cx="18" cy="18" r="15.5" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="2" />
+                                <circle cx="18" cy="18" r="15.5" fill="none"
+                                    stroke="white" stroke-width="2.5"
+                                    stroke-dasharray="{{ round($monthProgress * 97.4 / 100, 1) }}, 97.4"
+                                    stroke-linecap="round" 
+                                    class="transition-all duration-500" />
+                            </svg>
+                            <span class="absolute inset-0 flex items-center justify-center text-white text-[10px] font-extrabold">{{ $monthProgress }}%</span>
+                        </div>
                     </div>
-                    <div class="relative w-10 h-10">
-                        <svg class="w-10 h-10 -rotate-90 drop-shadow" viewBox="0 0 36 36">
-                            <circle cx="18" cy="18" r="15.5" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="2" />
-                            <circle cx="18" cy="18" r="15.5" fill="none"
-                                stroke="white" stroke-width="2.5"
-                                stroke-dasharray="{{ round($monthProgress * 97.4 / 100, 1) }}, 97.4"
-                                stroke-linecap="round" 
-                                class="transition-all duration-500" />
+
+                    <button
+                        type="button"
+                        x-on:click.stop="isCollapsed = !isCollapsed"
+                        class="inline-flex items-center justify-center px-3 text-white border-l border-white/20 hover:bg-white/20 hover:border-white/30 transition-all duration-200"
+                        aria-label="Свернуть виджет"
+                    >
+                        <svg class="w-5 h-5 transition-transform duration-300" :class="isCollapsed && 'rotate-180'" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
                         </svg>
-                        <span class="absolute inset-0 flex items-center justify-center text-white text-[10px] font-extrabold">{{ $monthProgress }}%</span>
-                    </div>
+                    </button>
                 </div>
             </div>
         </div>
+
+        <div
+            x-show="!isCollapsed"
+            x-transition:enter="transition-all ease-out duration-300"
+            x-transition:enter-start="opacity-0"
+            x-transition:enter-end="opacity-100"
+            x-transition:leave="transition-all ease-in duration-200"
+            x-transition:leave-start="opacity-100"
+            x-transition:leave-end="opacity-0"
+            class="overflow-hidden"
+        >
 
         @if($noData)
             <div class="px-6 py-12 text-center text-gray-400 dark:text-gray-500">
@@ -232,5 +256,6 @@
 
             </div>
         @endif
+        </div>
     </div>
 </x-filament-widgets::widget>
