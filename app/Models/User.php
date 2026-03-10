@@ -38,6 +38,7 @@ class User extends Authenticatable implements FilamentUser
         'email',
         'email_verified_at',
         'password',
+        'widget_preferences',
     ];
 
     /**
@@ -60,6 +61,7 @@ class User extends Authenticatable implements FilamentUser
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'widget_preferences' => 'array',
         ];
     }
 
@@ -83,5 +85,24 @@ class User extends Authenticatable implements FilamentUser
         return $this->morphMany(DatabaseNotification::class, 'notifiable')
             ->orderByDesc('created_at')
             ->orderByDesc('id');
+    }
+
+    public function getWidgetPreferences(string $widgetClass): array
+    {
+        $preferences = $this->widget_preferences ?? [];
+        return $preferences[$widgetClass] ?? [];
+    }
+
+    public function getWidgetPreference(string $widgetClass, string $section): bool
+    {
+        $preferences = $this->widget_preferences ?? [];
+        return $preferences[$widgetClass][$section] ?? true;
+    }
+
+    public function setWidgetPreferences(string $widgetClass, array $sections): void
+    {
+        $preferences = $this->widget_preferences ?? [];
+        $preferences[$widgetClass] = $sections;
+        $this->update(['widget_preferences' => $preferences]);
     }
 }

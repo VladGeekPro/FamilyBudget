@@ -29,19 +29,7 @@ return [
 
     'compiled' => env(
         'VIEW_COMPILED_PATH',
-        DIRECTORY_SEPARATOR === '\\'
-            ? (
-                rtrim(
-                    (string) (getenv('LOCALAPPDATA')
-                        ? getenv('LOCALAPPDATA').DIRECTORY_SEPARATOR.'Temp'
-                        : sys_get_temp_dir()
-                    ),
-                    '\\\\/'
-                )
-                .DIRECTORY_SEPARATOR.basename(base_path())
-                .DIRECTORY_SEPARATOR.'views'
-            )
-            : storage_path('framework/views')
+        storage_path('framework/views')
     ),
 
 ];

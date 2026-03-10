@@ -2,8 +2,8 @@
 
 namespace App\Filament\Widgets;
 
-use App\Filament\Tables\Concerns\HasExpenseCardTableLayout;
-use App\Filament\Widgets\Concerns\InteractsWithExpenseFilters;
+use App\Filament\Traits\HasExpenseCardTableLayout;
+use App\Filament\Traits\InteractsWithExpenseFilters;
 use App\Models\Expense;
 use Filament\Tables\Grouping\Group as TableGroup;
 use Filament\Tables\Table;

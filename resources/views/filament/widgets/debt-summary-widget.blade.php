@@ -19,32 +19,38 @@
     <div class="rounded-2xl overflow-hidden shadow-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
 
         {{-- ═══════════ HEADER ═══════════ --}}
-        <div class="px-6 py-4 bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600 flex flex-wrap items-center gap-3">
-            <div class="flex items-center gap-3 flex-1 min-w-0">
-                <div class="flex-shrink-0 w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center backdrop-blur-sm">
-                    <x-heroicon-o-scale class="w-5 h-5 text-white" />
+        <div class="px-6 py-4 bg-gradient-to-br from-violet-500 via-violet-600 to-purple-700">
+            <div class="flex flex-wrap items-center gap-x-4 gap-y-3">
+                {{-- Icon: always first --}}
+                <div class="flex-shrink-0 order-1">
+                    <div class="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center shadow-lg">
+                        <x-heroicon-o-scale class="w-6 h-6 text-white" />
+                    </div>
                 </div>
-                <div>
-                    <h2 class="text-white font-bold text-lg leading-tight">Баланс долгов</h2>
-                    <p class="text-violet-200 text-sm capitalize">{{ $monthLabel }}</p>
-                </div>
-            </div>
 
-            {{-- Month progress pill --}}
-            <div class="flex-shrink-0 flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-xl px-4 py-2">
-                <div class="text-right">
-                    <div class="text-white text-xs font-medium">Прогресс месяца</div>
-                    <div class="text-violet-200 text-xs">{{ $daysElapsed }} / {{ $daysInMonth }} дн. • ещё {{ $daysRemaining }} дн.</div>
+                {{-- Title & Subtitle: on mobile goes to new line, on desktop between icon and actions --}}
+                <div class="w-full sm:w-auto sm:flex-1 order-3 sm:order-2">
+                    <h2 class="text-white font-bold text-xl leading-tight">Баланс долгов</h2>
+                    <p class="text-violet-100 text-sm mt-1 capitalize">{{ $monthLabel }}</p>
                 </div>
-                <div class="relative w-12 h-12 flex-shrink-0">
-                    <svg class="w-12 h-12 -rotate-90" viewBox="0 0 36 36">
-                        <circle cx="18" cy="18" r="15.5" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="3"/>
-                        <circle cx="18" cy="18" r="15.5" fill="none"
-                                stroke="white" stroke-width="3"
+
+                {{-- Progress Indicator: stay with icon on first line when wrapped --}}
+                <div class="flex items-center gap-2 bg-white/10 backdrop-blur-md rounded-xl px-4 py-2 border border-white/15 shadow-md flex-shrink-0 order-2 sm:order-3 ml-auto sm:ml-0">
+                    <div class="text-right">
+                        <div class="text-white text-[11px] font-semibold uppercase tracking-wider opacity-90">Прогресс</div>
+                        <div class="text-violet-100 text-sm font-bold">{{ $daysElapsed }}/{{ $daysInMonth }}</div>
+                    </div>
+                    <div class="relative w-10 h-10">
+                        <svg class="w-10 h-10 -rotate-90 drop-shadow" viewBox="0 0 36 36">
+                            <circle cx="18" cy="18" r="15.5" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="2" />
+                            <circle cx="18" cy="18" r="15.5" fill="none"
+                                stroke="white" stroke-width="2.5"
                                 stroke-dasharray="{{ round($monthProgress * 97.4 / 100, 1) }}, 97.4"
-                                stroke-linecap="round"/>
-                    </svg>
-                    <span class="absolute inset-0 flex items-center justify-center text-white text-[10px] font-bold">{{ $monthProgress }}%</span>
+                                stroke-linecap="round" 
+                                class="transition-all duration-500" />
+                        </svg>
+                        <span class="absolute inset-0 flex items-center justify-center text-white text-[10px] font-extrabold">{{ $monthProgress }}%</span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -187,32 +193,39 @@
                 </div>
 
                 {{-- ═══════════ RESULT BANNER ═══════════ --}}
-                <div class="mt-4 rounded-xl {{ $isSettled ? 'bg-gradient-to-r from-green-500 to-emerald-600' : 'bg-gradient-to-r from-red-500 to-rose-600' }} p-4 text-white flex items-center gap-4">
+                <div class="mt-4 rounded-xl {{ $isSettled ? 'bg-gradient-to-r from-green-500 to-emerald-600' : 'bg-gradient-to-r from-red-500 to-rose-600' }} p-4 text-white">
                     @if($isSettled)
-                        <div class="flex-shrink-0 w-12 h-12 rounded-full bg-white/20 flex items-center justify-center">
-                            <x-heroicon-m-check-badge class="w-7 h-7" />
-                        </div>
-                        <div>
-                            <div class="font-bold text-lg leading-tight">Счёт выровнен!</div>
-                            <div class="text-green-100 text-sm">Никто никому не должен в {{ $monthLabel }}</div>
+                        <div class="flex items-center gap-4">
+                            <div class="flex-shrink-0 w-12 h-12 rounded-full bg-white/20 flex items-center justify-center">
+                                <x-heroicon-m-check-badge class="w-7 h-7" />
+                            </div>
+                            <div>
+                                <div class="font-bold text-lg leading-tight">Счёт выровнен!</div>
+                                <div class="text-green-100 text-sm">Никто никому не должен в {{ $monthLabel }}</div>
+                            </div>
                         </div>
                     @else
-                        <div class="flex-shrink-0 w-12 h-12 rounded-full bg-white/20 flex items-center justify-center">
-                            <x-heroicon-m-arrow-right class="w-7 h-7" />
-                        </div>
-                        <div class="flex-1 min-w-0">
-                            <div class="font-bold text-lg leading-tight">
-                                {{ $finalDebtor?->user->name }}
-                                <span class="font-normal text-red-100 mx-1">должен</span>
-                                {{ $finalCreditor?->user->name }}
+                        <div class="flex flex-wrap items-center gap-x-4 gap-y-3">
+                            {{-- Row 1: Icon + Amount --}}
+                            <div class="flex-shrink-0 w-12 h-12 rounded-full bg-white/20 flex items-center justify-center order-1">
+                                <x-heroicon-m-arrow-right class="w-7 h-7" />
                             </div>
-                            <div class="text-red-100 text-sm mt-0.5">
-                                По итогам {{ $monthLabel }} • осталось {{ $daysRemaining }} дн. в месяце
+                            <div class="flex-shrink-0 text-right order-2 ml-auto">
+                                <div class="text-2xl font-extrabold">{{ $fmt($finalDifference) }}</div>
+                                <div class="text-red-200 text-xs">к переводу</div>
                             </div>
-                        </div>
-                        <div class="flex-shrink-0 text-right">
-                            <div class="text-2xl font-extrabold">{{ $fmt($finalDifference) }}</div>
-                            <div class="text-red-200 text-xs">к переводу</div>
+
+                            {{-- Row 2: Full width debt info --}}
+                            <div class="w-full order-3">
+                                <div class="font-bold text-lg leading-tight">
+                                    {{ $finalDebtor?->user->name }}
+                                    <span class="font-normal text-red-100 mx-1">должен</span>
+                                    {{ $finalCreditor?->user->name }}
+                                </div>
+                                <div class="text-red-100 text-sm mt-0.5">
+                                    По итогам {{ $monthLabel }} • осталось {{ $daysRemaining }} дн. в месяце
+                                </div>
+                            </div>
                         </div>
                     @endif
                 </div>

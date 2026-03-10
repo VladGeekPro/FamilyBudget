@@ -224,7 +224,7 @@ class ExpenseChangeRequestResource extends BaseResource
                             ->icon('heroicon-o-hand-thumb-up')
                             ->color(fn(?ExpenseChangeRequest $record): string => !$record || $record->hasUserVoted(auth()->user()) ? 'gray' : 'primary')
                             ->disabled(fn(?ExpenseChangeRequest $record): bool => !$record || $record->hasUserVoted(auth()->user()))
-                            ->form(static::getVoteForm())
+                            ->schema(static::getVoteForm())
                             ->modalFooterActions(fn(FormAction $action): array => [
                                 $action->getModalCancelAction(),
                                 $action->getModalSubmitAction()

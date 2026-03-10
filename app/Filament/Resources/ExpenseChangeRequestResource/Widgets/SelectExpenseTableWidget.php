@@ -2,7 +2,7 @@
 
 namespace App\Filament\Resources\ExpenseChangeRequestResource\Widgets;
 
-use App\Filament\Tables\Concerns\HasExpenseCardTableLayout;
+use App\Filament\Traits\HasExpenseCardTableLayout;
 use App\Models\Expense;
 use Filament\Tables\Grouping\Group as TableGroup;
 use Filament\Tables\Table;

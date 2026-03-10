@@ -3,6 +3,11 @@
 @source '../../../../app/Filament/**/*';
 @source '../../../../resources/views/filament/**/*';
 
+.filepond--item {
+    height: 100% !important;
+    width: 100% !important;
+}
+
 .fi-ta-image img {
     width: 100%;
     height: auto !important;
@@ -47,10 +52,6 @@ div[x-data*="tableSortColumn"][x-data*="tableSortDirection"] {
 
 .choices__list.choices__list--single {
     width: 100%;
-}
-
-.fi-no-notification[x-data*="notificationComponent"]:not(.fi-inline) {
-    margin-top: 80px !important;
 }
 
 :is(.fi-ta-filters-actions-ctn, .fi-ta-col-manager-actions-ctn)>button {

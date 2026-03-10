@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Filament\Widgets\Concerns;
+namespace App\Filament\Traits;
 
 use App\Models\Expense;
 use Carbon\Carbon;
@@ -43,7 +43,7 @@ trait InteractsWithExpenseFilters
             [$start, $end] = $this->resolveDateRangeFromFilters();
 
             $query->whereDate('expenses.date', '>=', $start->toDateString())
-                  ->whereDate('expenses.date', '<=', $end->toDateString());
+                ->whereDate('expenses.date', '<=', $end->toDateString());
         }
 
         $userIds = $this->normalizeIdFilter($filters['user_ids'] ?? null);

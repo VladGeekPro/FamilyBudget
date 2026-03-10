@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Filament\Widgets\Concerns;
+namespace App\Filament\Traits;
 
 trait HasBeautifulHeading
 {

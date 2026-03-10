@@ -2,10 +2,12 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class PaidDebts extends Model
 {
+    use HasFactory;
     protected $fillable = ["debt_id", "changed_debt_date", "paid_by_user_id", "payment_status", "paid_sum"];
 
     protected $casts = [

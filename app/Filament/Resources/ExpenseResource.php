@@ -4,7 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\Base\BaseResource;
 use App\Filament\Resources\ExpenseResource\Pages;
-use App\Filament\Tables\Concerns\HasExpenseCardTableLayout;
+use App\Filament\Traits\HasExpenseCardTableLayout;
 use App\Models\Expense;
 use Carbon\Carbon;
 use Filament\Actions\Action;

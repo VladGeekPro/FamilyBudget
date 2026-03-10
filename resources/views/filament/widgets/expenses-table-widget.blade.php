@@ -6,24 +6,37 @@
     <div class="rounded-2xl overflow-hidden shadow-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
 
         {{-- ═══════════ HEADER ═══════════ --}}
-        <div class="px-6 py-4 bg-gradient-to-r from-slate-600 via-gray-700 to-zinc-700 flex flex-wrap items-center gap-3">
-            <div class="flex items-center gap-3 flex-1 min-w-0">
-                <div class="flex-shrink-0 w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center backdrop-blur-sm">
-                    <x-heroicon-o-table-cells class="w-5 h-5 text-white" />
+        <div class="px-6 py-4 bg-gradient-to-br from-slate-600 via-slate-700 to-gray-800">
+            <div class="flex flex-wrap items-center gap-x-4 gap-y-3">
+                {{-- Icon: always first --}}
+                <div class="flex-shrink-0 order-1">
+                    <div class="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center shadow-lg">
+                        <x-heroicon-o-table-cells class="w-6 h-6 text-white" />
+                    </div>
                 </div>
-                <div>
-                    <h2 class="text-white font-bold text-lg leading-tight">{{ __('resources.widgets.expenses_table.title') }}</h2>
-                    <p class="text-gray-300 text-sm">{{ __('resources.widgets.expenses_table.subtitle') }}</p>
-                </div>
-            </div>
 
-            {{-- Summary pill --}}
-            <div class="flex-shrink-0 flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-xl px-4 py-2">
-                <div class="text-right">
-                    <div class="text-white text-xs font-medium">{{ __('resources.widgets.expenses_table.filtered_total') }}</div>
-                    <div class="text-gray-300 text-xs">{{ $totalCount }} {{ trans_choice('resources.terms.expense_count', $totalCount) }}</div>
+                {{-- Title & Subtitle: on mobile goes to new line, on desktop between icon and actions --}}
+                <div class="w-full sm:w-auto sm:flex-1 order-3 sm:order-2">
+                    <h2 class="text-white font-bold text-xl leading-tight">{{ __('resources.widgets.expenses_table.title') }}</h2>
+                    <p class="text-gray-300 text-sm mt-1">{{ __('resources.widgets.expenses_table.subtitle') }}</p>
                 </div>
-                <div class="text-white font-extrabold text-lg">{{ $fmt($totalExpenses) }}</div>
+
+                {{-- Summary Stat: stay with icon on first line when wrapped --}}
+                <div class="bg-white/10 backdrop-blur-md rounded-xl px-4 py-2 border border-white/15 shadow-md flex-shrink-0 order-2 sm:order-3 ml-auto sm:ml-0 min-w-[220px]">
+                    <div class="text-center text-gray-200 text-[11px] font-semibold uppercase tracking-wider opacity-90">
+                        {{ __('resources.widgets.expenses_table.filtered_total') }}
+                    </div>
+
+                    <div class="mt-1.5 flex items-center justify-center">
+                        <div class="text-white text-sm font-bold px-3">
+                            {{ $totalCount }} {{ trans_choice('resources.terms.expense_count', $totalCount) }}
+                        </div>
+                        <div class="h-5 w-px bg-white/25"></div>
+                        <div class="text-white font-extrabold text-lg px-3 whitespace-nowrap">
+                            {{ $fmt($totalExpenses) }}
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 

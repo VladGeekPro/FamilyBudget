@@ -2,23 +2,55 @@
 
 namespace App\Filament\Widgets;
 
-use App\Filament\Widgets\Concerns\InteractsWithExpenseFilters;
+use App\Filament\Traits\ConfigurableWidget;
+use App\Filament\Traits\InteractsWithExpenseFilters;
 use App\Models\Category;
 use App\Models\Expense;
 use App\Models\User;
-use Filament\Widgets\Concerns\InteractsWithPageFilters;
+use Filament\Actions\Concerns\InteractsWithActions;
+use Filament\Actions\Contracts\HasActions;
+use Filament\Pages\Concerns\InteractsWithHeaderActions;
+use Filament\Schemas\Concerns\InteractsWithSchemas;
+use Filament\Schemas\Contracts\HasSchemas;
 use Filament\Widgets\Widget;
+use Livewire\Attributes\Reactive;
 
-class MonthToMonthComparisonWidget extends Widget
+class MonthToMonthComparisonWidget extends Widget implements HasActions, HasSchemas
 {
+    use InteractsWithActions;
+    use InteractsWithSchemas;
+    use InteractsWithHeaderActions;
     use InteractsWithExpenseFilters;
-    use InteractsWithPageFilters;
+    use ConfigurableWidget;
 
     protected string $view = 'filament.widgets.month-comparison-widget';
 
     protected static ?int $sort = 0;
 
     protected int|string|array $columnSpan = 'full';
+
+    #[Reactive]
+    public array $pageFilters = [];
+
+    public bool $showConfigureModal = false;
+
+    public array $configureFormData = [];
+
+    public function mount(): void
+    {
+        $this->configureFormData = $this->getFormData();
+    }
+
+    protected function getConfigurableSections(): array
+    {
+        return [
+            'month_comparison' => 'Сравнение месяцев (карточки с итогами)',
+            'cumulative_chart' => 'График накопительных итогов',
+            'per_user' => 'Разбивка по пользователям',
+            'categories' => 'Топ категорий',
+            'result_banner' => 'Итоговый баннер (экономия/перерасход)',
+        ];
+    }
 
     public function getViewData(): array
     {
@@ -173,6 +205,7 @@ class MonthToMonthComparisonWidget extends Widget
             'userBreakdown'       => $userBreakdown,
             'categoryComparison'  => $categoryComparison,
             'maxCategoryTotal'    => $maxCategoryTotal,
+            'sections'            => $this->getSectionSettings(),
         ];
     }
 }

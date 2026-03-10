@@ -2,8 +2,8 @@
 
 namespace App\Filament\Widgets;
 
-use App\Filament\Widgets\Concerns\HasBeautifulHeading;
-use App\Filament\Widgets\Concerns\InteractsWithExpenseFilters;
+use App\Filament\Traits\HasBeautifulHeading;
+use App\Filament\Traits\InteractsWithExpenseFilters;
 use App\Models\User;
 use Filament\Support\RawJs;
 use Filament\Widgets\ChartWidget;

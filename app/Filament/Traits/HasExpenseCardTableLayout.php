@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Filament\Tables\Concerns;
+namespace App\Filament\Traits;
 
 use Filament\Support\Enums\FontWeight;
 use Filament\Tables\Columns\ImageColumn;
@@ -68,7 +68,7 @@ trait HasExpenseCardTableLayout
                     TextColumn::make('notes')
                         ->label(__('resources.fields.notes'))
                         ->html()
-                        ->formatStateUsing(fn($state) => Str::markdown((string) $state))
+                        ->formatStateUsing(fn ($state) => Str::markdown((string) $state))
                         ->searchable()
                         ->color('gray')
                         ->limit(100),

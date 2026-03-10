@@ -386,7 +386,7 @@ abstract class BaseResource extends Resource
     ): \Filament\Tables\Filters\Filter {
         return \Filament\Tables\Filters\Filter::make($filterName)
             ->label(__($label))
-            ->form([
+            ->schema([
                 \Filament\Forms\Components\DatePicker::make("date_from")->label(__('resources.filters.date_from')),
                 \Filament\Forms\Components\DatePicker::make("date_until")->label(__('resources.filters.date_until')),
             ])
@@ -421,7 +421,7 @@ abstract class BaseResource extends Resource
     ): \Filament\Tables\Filters\Filter {
         return \Filament\Tables\Filters\Filter::make('sum')
             ->label(__($label))
-            ->form([
+            ->schema([
                 \Filament\Forms\Components\TextInput::make('sum_min')
                     ->numeric()
                     ->prefix('MDL')

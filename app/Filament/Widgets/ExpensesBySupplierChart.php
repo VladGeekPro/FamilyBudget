@@ -3,7 +3,7 @@
 namespace App\Filament\Widgets;
 
 use App\Filament\Widgets\Base\ExpensesGroupedChartWidget;
-use App\Filament\Widgets\Concerns\HasBeautifulHeading;
+use App\Filament\Traits\HasBeautifulHeading;
 use Filament\Support\RawJs;
 
 class ExpensesBySupplierChart extends ExpensesGroupedChartWidget

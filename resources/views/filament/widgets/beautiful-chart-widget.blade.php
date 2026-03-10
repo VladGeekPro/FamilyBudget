@@ -24,43 +24,51 @@
     >
         {{-- ═══════════ GRADIENT HEADER ═══════════ --}}
         <div
-            class="px-5 py-3.5 bg-gradient-to-r {{ $gradient }} flex items-center gap-3 flex-shrink-0"
+            class="px-6 py-4 bg-gradient-to-br {{ $gradient }} flex-shrink-0"
             @if ($isCollapsible)
                 x-on:click="isCollapsed = !isCollapsed"
                 role="button"
             @endif
         >
-            <div class="flex items-center gap-3 flex-1 min-w-0">
+            <div class="flex flex-wrap items-center gap-x-4 gap-y-3">
+                {{-- Icon: always first --}}
                 @if ($icon)
-                    <div class="flex-shrink-0 w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center backdrop-blur-sm">
-                        <x-dynamic-component :component="$icon" class="w-5 h-5 text-white" />
+                    <div class="flex-shrink-0 order-1">
+                        <div class="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center shadow-lg">
+                            <x-dynamic-component :component="$icon" class="w-6 h-6 text-white" />
+                        </div>
                     </div>
                 @endif
-                <div class="min-w-0">
-                    <h2 class="text-white font-bold text-base sm:text-lg leading-tight truncate">{{ $title }}</h2>
+
+                {{-- Title & Description: on mobile goes to new line, on desktop between icon and actions --}}
+                <div class="w-full sm:w-auto sm:flex-1 order-3 sm:order-2">
+                    <h2 class="text-white font-bold text-xl leading-tight">{{ $title }}</h2>
                     @if ($description)
-                        <p class="text-white/70 text-xs sm:text-sm leading-snug truncate mt-0.5">{!! $description !!}</p>
+                        <p class="text-white/70 text-sm leading-snug mt-1">{!! $description !!}</p>
+                    @endif
+                </div>
+
+                {{-- Right section: stay with icon on first line when wrapped --}}
+                <div class="flex items-center gap-3 flex-shrink-0 order-2 sm:order-3 ml-auto sm:ml-0">
+                    @if ($pill)
+                        <div class="flex items-center gap-2 bg-white/10 backdrop-blur-md rounded-xl px-4 py-2 border border-white/15 shadow-md">
+                            <span class="text-white font-semibold text-sm whitespace-nowrap">{{ $pill }}</span>
+                        </div>
+                    @endif
+
+                    @if ($isCollapsible)
+                        <div class="flex-shrink-0 w-10 h-10 rounded-lg bg-white/15 backdrop-blur-md flex items-center justify-center border border-white/20 hover:bg-white/20 transition-colors">
+                            <svg
+                                class="w-5 h-5 text-white transition-transform duration-300"
+                                :class="isCollapsed && 'rotate-180'"
+                                fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"
+                            >
+                                <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
+                            </svg>
+                        </div>
                     @endif
                 </div>
             </div>
-
-            @if ($pill)
-                <div class="hidden sm:flex flex-shrink-0 items-center gap-2 bg-white/15 backdrop-blur-sm rounded-xl px-3.5 py-1.5">
-                    <span class="text-white/90 text-xs sm:text-sm font-semibold whitespace-nowrap">{{ $pill }}</span>
-                </div>
-            @endif
-
-            @if ($isCollapsible)
-                <div class="flex-shrink-0 w-7 h-7 rounded-full bg-white/15 flex items-center justify-center">
-                    <svg
-                        class="w-4 h-4 text-white transition-transform duration-300"
-                        :class="isCollapsed && 'rotate-180'"
-                        fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"
-                    >
-                        <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5"/>
-                    </svg>
-                </div>
-            @endif
         </div>
 
         {{-- ═══════════ CHART CONTENT ═══════════ --}}
