@@ -26,11 +26,11 @@ use Illuminate\Database\Eloquent\Model;
 abstract class BaseResource extends Resource
 {
     /** Можно переопределять в дочерних ресурсах */
-    protected static ?string $defaultSortColumn = 'name';
+protected static ?string $defaultSortColumn = 'name';
     protected static string  $defaultSortDirection = 'asc';
 
     /** Пагинация по умолчанию (можно переопределить в дочерних) */
-    protected static int    $defaultPerPage = 25;
+protected static int    $defaultPerPage = 25;
     protected static array  $defaultPerPageOptions = [10, 25, 50, 100, 'all'];
 
     protected static function getModelBase(): string

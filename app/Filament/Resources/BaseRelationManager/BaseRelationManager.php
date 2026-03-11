@@ -17,11 +17,11 @@ abstract class BaseRelationManager extends RelationManager
     protected static ?string $modelLabel = 'поставщика';
 
     /** Можно переопределять в дочерних ресурсах */
-    protected static ?string $defaultSortColumn = 'name';
+protected static ?string $defaultSortColumn = 'name';
     protected static string  $defaultSortDirection = 'asc';
 
     /** Пагинация по умолчанию (можно переопределить в дочерних) */
-    protected static int    $defaultPerPage = 25;
+protected static int    $defaultPerPage = 25;
     protected static array  $defaultPerPageOptions = [10, 25, 50, 100, 'all'];
 
     public function table(Table $table): Table

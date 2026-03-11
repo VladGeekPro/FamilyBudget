@@ -17,10 +17,7 @@ use Illuminate\Support\Facades\Cache;
 
 class AppServiceProvider extends ServiceProvider
 {
-    /**
-     * Register any application services.
-     */
-    public function register(): void
+public function register(): void
     {
         parent::register();
 
@@ -76,11 +73,7 @@ class AppServiceProvider extends ServiceProvider
             });
         });
     }
-
-    /**
-     * Bootstrap any application services.
-     */
-    public function boot(): void
+public function boot(): void
     {
         $clearBadgeCaches = static function (): void {
             Cache::forget('nav_badge:debts:unpaid');

@@ -14,8 +14,7 @@ use Illuminate\Notifications\Notifiable;
 
 class User extends Authenticatable implements FilamentUser
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable;
+use HasFactory, Notifiable;
 
     public function canAccessPanel(Panel $panel): bool
     {
@@ -26,13 +25,7 @@ class User extends Authenticatable implements FilamentUser
 
         return true;
     }
-
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
-    protected $fillable = [
+protected $fillable = [
         'image',
         'name',
         'email',
@@ -40,13 +33,7 @@ class User extends Authenticatable implements FilamentUser
         'password',
         'widget_preferences',
     ];
-
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var list<string>
-     */
-    protected $hidden = [
+protected $hidden = [
         'password',
         'remember_token',
     ];

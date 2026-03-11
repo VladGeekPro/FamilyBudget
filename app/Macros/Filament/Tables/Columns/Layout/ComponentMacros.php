@@ -9,8 +9,6 @@ class ComponentMacros
     public function isToggledHidden()
     {
         return function () {
-            /** @var \Filament\Tables\Columns\Layout\Component $this */
-
             $items = $this->getColumns();
             $itemsCount = count($items);
 
