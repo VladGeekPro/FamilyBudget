@@ -3,30 +3,27 @@
 namespace App\Filament\Widgets;
 
 use App\Filament\Traits\HasBeautifulHeading;
-use App\Filament\Traits\InteractsWithExpenseFilters;
+use App\Filament\Widgets\Base\ExpensesGroupedChartWidget;
 use App\Models\User;
 use Filament\Support\RawJs;
-use Filament\Widgets\ChartWidget;
-use Filament\Widgets\Concerns\InteractsWithPageFilters;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 
-class ExpensesByDayOfWeekChart extends ChartWidget
+class ExpensesByDayOfWeekChart extends ExpensesGroupedChartWidget
 {
     use HasBeautifulHeading;
-    use InteractsWithExpenseFilters;
-    use InteractsWithPageFilters;
 
     protected string $view = 'filament.widgets.beautiful-chart-widget';
 
     protected string $color = 'primary';
-
-    protected ?string $maxHeight = '350px';
 
     protected bool $isCollapsible = true;
 
     protected ?string $pollingInterval = '30s';
 
     protected static ?int $sort = 7;
+
+    protected ?array $cachedDayData = null;
 
     protected function getHeaderGradient(): string
     {
@@ -70,34 +67,22 @@ class ExpensesByDayOfWeekChart extends ChartWidget
 
     private function getDayData(): array
     {
+        if ($this->cachedDayData !== null) {
+            return $this->cachedDayData;
+        }
+
         $dayNames = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
-        $driver = DB::connection()->getDriverName();
+        $rows = $this->getDataQuery()->get()->keyBy('dow');
 
-        $dowExpression = match ($driver) {
-            'sqlite' => "CAST(strftime('%w', date) AS INTEGER)",
-            'pgsql'  => "EXTRACT(DOW FROM date)::integer",
-            default  => "DAYOFWEEK(date)",
-        };
-
-        $rows = $this->expenseQuery()
-            ->selectRaw("{$dowExpression} as dow, COALESCE(SUM(sum), 0) as total")
-            ->groupBy('dow')
-            ->get()
-            ->keyBy('dow');
-
-        $mapDow = function (int $dbDow) use ($driver): int {
-            return match ($driver) {
-                'sqlite' => $dbDow === 0 ? 6 : $dbDow - 1,
-                'pgsql'  => $dbDow === 0 ? 6 : $dbDow - 1,
-                default  => $dbDow === 1 ? 6 : $dbDow - 2,
-            };
+        $mapDow = function (int $dbDow): int {
+            return $dbDow === 0 ? 6 : $dbDow - 1;
         };
 
         $totalByDay = array_fill(0, 7, 0.0);
         foreach ($rows as $dbDow => $row) {
             $idx = $mapDow((int) $dbDow);
             if ($idx >= 0 && $idx < 7) {
-                $totalByDay[$idx] = round((float) $row->total, 2);
+                $totalByDay[$idx] = round($row->total, 2);
             }
         }
 
@@ -114,9 +99,16 @@ class ExpensesByDayOfWeekChart extends ChartWidget
         foreach ($users as $i => $user) {
             $color = $userColors[$i % count($userColors)];
 
+            $driver = DB::connection()->getDriverName();
+            $dowExpression = match ($driver) {
+                'sqlite' => "CAST(strftime('%w', date) AS INTEGER)",
+                'pgsql' => "EXTRACT(DOW FROM date)::integer",
+                default => "DAYOFWEEK(date)",
+            };
+
             $userRows = $this->expenseQuery()
                 ->where('expenses.user_id', $user->id)
-                ->selectRaw("{$dowExpression} as dow, COALESCE(SUM(sum), 0) as total")
+                ->selectRaw("{$dowExpression} as dow, SUM(sum) as total")
                 ->groupBy('dow')
                 ->get()
                 ->keyBy('dow');
@@ -125,7 +117,7 @@ class ExpensesByDayOfWeekChart extends ChartWidget
             foreach ($userRows as $dbDow => $row) {
                 $idx = $mapDow((int) $dbDow);
                 if ($idx >= 0 && $idx < 7) {
-                    $values[$idx] = round((float) $row->total, 2);
+                    $values[$idx] = round($row->total, 2);
                 }
             }
 
@@ -145,11 +137,25 @@ class ExpensesByDayOfWeekChart extends ChartWidget
             ];
         }
 
-        return [
+        return $this->cachedDayData = [
             'dayNames' => $dayNames,
             'totalByDay' => $totalByDay,
             'userDatasets' => $userDatasets,
         ];
+    }
+
+    protected function getDataQuery(): Builder
+    {
+        $driver = DB::connection()->getDriverName();
+        $dowExpression = match ($driver) {
+            'sqlite' => "CAST(strftime('%w', date) AS INTEGER)",
+            'pgsql' => "EXTRACT(DOW FROM date)::integer",
+            default => "DAYOFWEEK(date)",
+        };
+
+        return $this->expenseQuery()
+            ->selectRaw("{$dowExpression} as dow, SUM(sum) as total")
+            ->groupBy('dow');
     }
 
     protected function getData(): array

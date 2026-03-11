@@ -190,7 +190,7 @@ class ExpenseResource extends BaseResource
                             'UTF-8'
                         );
 
-                        return "{$monthName} - " . number_format((float) $sum, 2, ',', ' ') . ' MDL';
+                        return "{$monthName} - " . number_format($sum, 2, ',', ' ') . ' MDL';
                     })
                     ->orderQueryUsing(
                         fn (Builder $query) => $query->orderBy('date', 'desc')

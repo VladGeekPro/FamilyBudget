@@ -246,10 +246,10 @@ $overpayment = Overpayment::where('created_at', '<=', $date)
 
                                         @foreach($sortedPaidDebts as $paidDebt)
                                         @php
-                                        $beforeDifference = (float) $finalDifference;
+                                        $beforeDifference = $finalDifference;
                                         $beforeMinName = $finalMinUser->user->name ?? 'Unknown';
                                         $beforeMaxName = $finalMaxUser->user->name ?? 'Unknown';
-                                        $paidSum = (float) $paidDebt->paid_sum;
+                                        $paidSum = $paidDebt->paid_sum;
                                         $calculationSign = '−';
                                         $calculationAction = 'уменьшение долга';
 
@@ -268,7 +268,7 @@ $overpayment = Overpayment::where('created_at', '<=', $date)
                                             $swapOccurred = true;
                                         }
 
-                                        $afterDifference = (float) $finalDifference;
+                                        $afterDifference = $finalDifference;
                                         @endphp
 
                                             <div class="rounded-xl border border-emerald-200/80 dark:border-emerald-800/70 bg-white/90 dark:bg-slate-900/60 px-3 py-3 shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-[1px]">

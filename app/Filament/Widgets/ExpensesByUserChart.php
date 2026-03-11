@@ -14,11 +14,7 @@ class ExpensesByUserChart extends ExpensesGroupedChartWidget
 
     protected string $chartType = 'doughnut';
 
-    protected ?int $resultsLimit = null;
-
     protected string $color = 'success';
-
-    protected ?string $maxHeight = '350px';
 
     protected bool $isCollapsible = true;
 
@@ -43,41 +39,41 @@ class ExpensesByUserChart extends ExpensesGroupedChartWidget
 
     protected function getHeaderPill(): ?string
     {
-        $rows = $this->getDataQuery()->get();
+        $rows = $this->getGroupedRows();
         $total = $rows->sum('total');
         $count = $rows->count();
 
-        return number_format((float) $total, 0, ',', ' ') . ' MDL • ' . $count . ' уч.';
+        return number_format($total, 0, ',', ' ') . ' MDL • ' . $count . ' уч.';
     }
 
     protected function getHeaderDescription(): ?string
     {
-        $rows = $this->getDataQuery()->get();
-        $total = (float) $rows->sum('total');
+        $rows = $this->getGroupedRows();
+        $total = $rows->sum('total');
 
         if ($rows->isEmpty() || $total <= 0) {
             return 'Нет данных за выбранный период';
         }
 
         return $rows->map(function ($row) use ($total) {
-            $pct = round((float) $row->total / $total * 100, 1);
+            $pct = round($row->total / $total * 100, 1);
             return e($row->label) . ': ' . $pct . '%';
         })->implode(' • ');
     }
 
     protected function getData(): array
     {
-        $rows = $this->getDataQuery()->get();
-        $total = (float) $rows->sum('total');
+        $rows = $this->getGroupedRows();
+        $total = $rows->sum('total');
 
         $labels = $rows->map(function ($row) use ($total) {
-            $pct = $total > 0 ? round((float) $row->total / $total * 100, 1) : 0;
+            $pct = $total > 0 ? round($row->total / $total * 100, 1) : 0;
             return $row->label . ' (' . $pct . '%)';
         })->all();
 
         $values = $rows
             ->pluck('total')
-            ->map(static fn($v): float => round((float) $v, 2))
+            ->map(static fn($v) => round($v, 2))
             ->all();
 
         $colors = array_slice([

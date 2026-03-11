@@ -131,7 +131,7 @@ return '<span class="inline-flex ' . $size . ' items-center justify-center round
 
                 {{-- Delta indicator (center) --}}
                 <div class="hidden lg:flex flex-col items-center justify-center gap-2 px-2">
-                    @if((float) $delta === 0.0)
+                    @if($delta === 0.0)
                     <div class="w-14 h-14 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center shadow-md">
                         <x-heroicon-m-equals class="w-8 h-8 text-gray-400" />
                     </div>
@@ -194,7 +194,7 @@ return '<span class="inline-flex ' . $size . ' items-center justify-center round
 
             {{-- Mobile delta --}}
             @php
-            $mobileIsEqual = (float) $delta === 0.0;
+            $mobileIsEqual = $delta === 0.0;
             @endphp
             <div class="lg:hidden rounded-xl {{ $mobileIsEqual ? 'bg-gray-50 dark:bg-gray-800/40 border-gray-200 dark:border-gray-700' : ($delta < 0 ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-700' : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-700') }} border p-4 text-center">
                 <div class="text-2xl font-extrabold {{ $mobileIsEqual ? 'text-gray-600 dark:text-gray-300' : ($delta < 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400') }}">
@@ -324,7 +324,7 @@ return '<span class="inline-flex ' . $size . ' items-center justify-center round
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             @foreach($userBreakdown as $ub)
                             @php
-                            $userIsEqual = (float) ($ub->delta ?? 0) === 0.0;
+                            $userIsEqual = ($ub->delta ?? 0) === 0.0;
                             $userDeltaColor = $userIsEqual ? 'text-gray-600 dark:text-gray-300' : ($ub->delta < 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' );
                                 $userDeltaBg=$userIsEqual ? 'bg-gray-100 dark:bg-gray-700/60' : ($ub->delta < 0 ? 'bg-green-100 dark:bg-green-800/40' : 'bg-red-100 dark:bg-red-800/40' );
                                     $userMaxBar=max($ub->current, $ub->previous, 1);
@@ -398,7 +398,7 @@ return '<span class="inline-flex ' . $size . ' items-center justify-center round
                             @foreach($categoryComparison as $cat)
                             @php
                             $catDelta = $cat->delta;
-                            $catIsEqual = (float) $catDelta === 0.0;
+                            $catIsEqual = $catDelta === 0.0;
                             $catDeltaColor = $catIsEqual ? 'text-gray-500 dark:text-gray-400' : ($catDelta < 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' );
                                 @endphp
                                 <div>
@@ -450,7 +450,7 @@ return '<span class="inline-flex ' . $size . ' items-center justify-center round
         @if($sections['result_banner'] ?? true)
         {{-- ═══════════ RESULT BANNER ═══════════ --}}
         @php
-        $isEqual = (float) $delta === 0.0;
+        $isEqual = $delta === 0.0;
         @endphp
         <div class="rounded-xl {{ $isEqual ? 'bg-gradient-to-r from-slate-500 to-gray-600' : ($delta < 0 ? 'bg-gradient-to-r from-green-500 to-emerald-600' : 'bg-gradient-to-r from-red-500 to-rose-600') }} p-4 text-white flex items-center gap-4">
             @if($isEqual)

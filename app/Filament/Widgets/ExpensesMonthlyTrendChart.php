@@ -3,24 +3,18 @@
 namespace App\Filament\Widgets;
 
 use App\Filament\Traits\HasBeautifulHeading;
-use App\Filament\Traits\InteractsWithExpenseFilters;
+use App\Filament\Widgets\Base\ExpensesGroupedChartWidget;
 use App\Models\User;
 use Filament\Support\RawJs;
-use Filament\Widgets\ChartWidget;
-use Filament\Widgets\Concerns\InteractsWithPageFilters;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Database\Eloquent\Builder;
 
-class ExpensesMonthlyTrendChart extends ChartWidget
+class ExpensesMonthlyTrendChart extends ExpensesGroupedChartWidget
 {
     use HasBeautifulHeading;
-    use InteractsWithExpenseFilters;
-    use InteractsWithPageFilters;
 
     protected string $view = 'filament.widgets.beautiful-chart-widget';
 
     protected string $color = 'warning';
-
-    protected ?string $maxHeight = null;
 
     protected bool $isCollapsible = true;
 
@@ -29,6 +23,8 @@ class ExpensesMonthlyTrendChart extends ChartWidget
     protected static ?int $sort = 8;
 
     protected int|string|array $columnSpan = 'full';
+
+    protected ?array $cachedTrendMeta = null;
 
     protected function getHeaderGradient(): string
     {
@@ -47,37 +43,56 @@ class ExpensesMonthlyTrendChart extends ChartWidget
 
     protected function getHeaderPill(): ?string
     {
+        $meta = $this->getTrendMeta();
+
+        return $meta['from'] . ' — ' . $meta['to'] . ' • ' . number_format($meta['total'], 0, ',', ' ') . ' MDL';
+    }
+
+    protected function getHeaderDescription(): ?string
+    {
+        $meta = $this->getTrendMeta();
+
+        $delta = $meta['prev'] > 0 ? round(($meta['current'] - $meta['prev']) / $meta['prev'] * 100, 1) : 0;
+        $arrow = $delta >= 0 ? '↑' : '↓';
+        $deltaStr = ($delta >= 0 ? '+' : '') . $delta . '%';
+
+        return '6 месяцев, по пользователям + итого • Текущий vs прошлый: ' . $deltaStr . ' ' . $arrow;
+    }
+
+    private function getTrendMeta(): array
+    {
+        if ($this->cachedTrendMeta !== null) {
+            return $this->cachedTrendMeta;
+        }
+
         $from = now()->subMonths(5)->translatedFormat('M Y');
         $to   = now()->translatedFormat('M Y');
 
-        $end   = now()->endOfMonth();
+        $end = now()->endOfMonth();
         $start = now()->startOfMonth()->subMonths(5);
+
         $total = $this->expenseQuery(includeDateRange: false)
             ->whereDate('date', '>=', $start->toDateString())
             ->whereDate('date', '<=', $end->toDateString())
             ->sum('sum');
 
-        return $from . ' — ' . $to . ' • ' . number_format((float) $total, 0, ',', ' ') . ' MDL';
-    }
-
-    protected function getHeaderDescription(): ?string
-    {
-        $end = now()->endOfMonth();
-
-        $currentMonth = $this->expenseQuery(includeDateRange: false)
+        $current = $this->expenseQuery(includeDateRange: false)
             ->whereDate('date', '>=', now()->startOfMonth()->toDateString())
             ->whereDate('date', '<=', $end->toDateString())
             ->sum('sum');
-        $prevMonth = $this->expenseQuery(includeDateRange: false)
+
+        $prev = $this->expenseQuery(includeDateRange: false)
             ->whereDate('date', '>=', now()->subMonthNoOverflow()->startOfMonth()->toDateString())
             ->whereDate('date', '<=', now()->subMonthNoOverflow()->endOfMonth()->toDateString())
             ->sum('sum');
 
-        $delta = $prevMonth > 0 ? round(($currentMonth - $prevMonth) / $prevMonth * 100, 1) : 0;
-        $arrow = $delta >= 0 ? '↑' : '↓';
-        $deltaStr = ($delta >= 0 ? '+' : '') . $delta . '%';
-
-        return '6 месяцев, по пользователям + итого • Текущий vs прошлый: ' . $deltaStr . ' ' . $arrow;
+        return $this->cachedTrendMeta = [
+            'from' => $from,
+            'to' => $to,
+            'total' => $total,
+            'current' => $current,
+            'prev' => $prev,
+        ];
     }
 
     protected function getData(): array
@@ -89,24 +104,15 @@ class ExpensesMonthlyTrendChart extends ChartWidget
         $months  = [];
         $cursor  = $start->copy();
         while ($cursor->lte($end)) {
-            $key       = $cursor->format('Y-m-01');
             $labels[]  = $cursor->translatedFormat('M Y');
-            $months[]  = $key;
+            $months[]  = $cursor->format('Y-m');
             $cursor->addMonth();
         }
 
-        // Total line
-        $totalRows = $this->expenseQuery(includeDateRange: false)
-            ->whereDate('date', '>=', $start->toDateString())
-            ->whereDate('date', '<=', $end->toDateString())
-            ->selectRaw("strftime('%Y-%m-01', date) as month_key, COALESCE(SUM(sum), 0) as total")
-            ->groupBy('month_key')
-            ->orderBy('month_key')
-            ->get()
-            ->keyBy('month_key');
+        $totalRows = $this->getDataQuery()->get()->keyBy('month_key');
 
         $totalValues = array_map(
-            fn($mk) => round((float) ($totalRows->get($mk)?->total ?? 0), 2),
+            fn($mk) => round(($totalRows->get($mk)?->total ?? 0), 2),
             $months
         );
 
@@ -130,7 +136,7 @@ class ExpensesMonthlyTrendChart extends ChartWidget
                 'pointBorderWidth'     => 2,
                 'pointRadius'          => 4,
                 'pointHoverRadius'     => 7,
-                'pointHoverBorderWidth'=> 3,
+                'pointHoverBorderWidth' => 3,
                 'fill'                 => true,
                 'tension'              => 0.4,
                 'order'                => 99,
@@ -145,14 +151,14 @@ class ExpensesMonthlyTrendChart extends ChartWidget
                 ->where('expenses.user_id', $user->id)
                 ->whereDate('date', '>=', $start->toDateString())
                 ->whereDate('date', '<=', $end->toDateString())
-                ->selectRaw("strftime('%Y-%m-01', date) as month_key, COALESCE(SUM(sum), 0) as total")
+                ->selectRaw("strftime('%Y-%m', date) as month_key, SUM(sum) as total")
                 ->groupBy('month_key')
                 ->orderBy('month_key')
                 ->get()
                 ->keyBy('month_key');
 
             $values = array_map(
-                fn($mk) => round((float) ($rows->get($mk)?->total ?? 0), 2),
+                fn($mk) => round(($rows->get($mk)?->total ?? 0), 2),
                 $months
             );
 
@@ -181,14 +187,22 @@ class ExpensesMonthlyTrendChart extends ChartWidget
         ];
     }
 
+    protected function getDataQuery(): Builder
+    {
+        $end = now()->endOfMonth();
+        $start = now()->startOfMonth()->subMonths(5);
+
+        return $this->expenseQuery(includeDateRange: false)
+            ->whereDate('date', '>=', $start->toDateString())
+            ->whereDate('date', '<=', $end->toDateString())
+            ->selectRaw("strftime('%Y-%m', date) as month_key, SUM(sum) as total")
+            ->groupBy('month_key')
+            ->orderBy('month_key');
+    }
+
     protected function getType(): string
     {
         return 'line';
-    }
-
-    protected function getMaxHeight(): ?string
-    {
-        return '350px';
     }
 
     protected function getOptions(): array|RawJs|null
@@ -302,4 +316,3 @@ class ExpensesMonthlyTrendChart extends ChartWidget
         JS);
     }
 }
-

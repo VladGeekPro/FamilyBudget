@@ -16,15 +16,11 @@ class ExpensesByCategoryChart extends ExpensesGroupedChartWidget
 
     protected string $color = 'danger';
 
-    protected ?string $maxHeight = '380px';
-
     protected bool $isCollapsible = true;
 
     protected ?string $pollingInterval = '30s';
 
     protected static ?int $sort = 4;
-
-    protected ?int $resultsLimit = 8;
 
     protected function getHeaderGradient(): string
     {
@@ -43,8 +39,8 @@ class ExpensesByCategoryChart extends ExpensesGroupedChartWidget
 
     protected function getHeaderPill(): ?string
     {
-        $rows = $this->getDataQuery()->get();
-        $total = (float) $rows->sum('total');
+        $rows = $this->getGroupedRows();
+        $total = $rows->sum('total');
         $count = $rows->count();
 
         return number_format($total, 0, ',', ' ') . ' MDL • ' . $count . ' кат.';
@@ -52,31 +48,31 @@ class ExpensesByCategoryChart extends ExpensesGroupedChartWidget
 
     protected function getHeaderDescription(): ?string
     {
-        $rows = $this->getDataQuery()->get();
-        $total = (float) $rows->sum('total');
+        $rows = $this->getGroupedRows();
+        $total = $rows->sum('total');
 
         if ($rows->isEmpty() || $total <= 0) {
             return 'Нет данных за выбранный период';
         }
 
         $top = $rows->first();
-        $topPct = round((float) $top->total / $total * 100, 1);
+        $topPct = round($top->total / $total * 100, 1);
 
         return 'Лидер: ' . e($top->label) . ' (' . $topPct . '%) • Топ-' . $rows->count() . ' категорий';
     }
 
     protected function getData(): array
     {
-        $rows = $this->getDataQuery()->get();
-        $total = (float) $rows->sum('total');
+        $rows = $this->getGroupedRows();
+        $total = $rows->sum('total');
 
         $labels = $rows->map(function ($row) use ($total) {
-            $pct = $total > 0 ? round((float) $row->total / $total * 100, 1) : 0;
+            $pct = $total > 0 ? round($row->total / $total * 100, 1) : 0;
             return $row->label . ' — ' . $pct . '%';
         })->all();
 
         $values = $rows->pluck('total')
-            ->map(static fn($v): float => round((float) $v, 2))
+            ->map(static fn($v) => round($v, 2))
             ->all();
 
         $colors = array_slice([

@@ -147,10 +147,10 @@ class Dashboard extends BaseDashboard
 
         if (filled($sumMin) || filled($sumMax)) {
             $formattedMin = filled($sumMin)
-                ? number_format((float) $sumMin, 2, ',', ' ') . ' MDL'
+                ? number_format($sumMin, 2, ',', ' ') . ' MDL'
                 : null;
             $formattedMax = filled($sumMax)
-                ? number_format((float) $sumMax, 2, ',', ' ') . ' MDL'
+                ? number_format($sumMax, 2, ',', ' ') . ' MDL'
                 : null;
 
             if (filled($sumMin) && ! filled($sumMax)) {

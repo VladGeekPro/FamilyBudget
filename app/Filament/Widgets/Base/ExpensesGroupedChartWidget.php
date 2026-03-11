@@ -5,6 +5,7 @@ namespace App\Filament\Widgets\Base;
 use App\Filament\Traits\InteractsWithExpenseFilters;
 use Filament\Widgets\ChartWidget;
 use Filament\Widgets\Concerns\InteractsWithPageFilters;
+use Illuminate\Support\Collection;
 use Illuminate\Database\Eloquent\Builder;
 
 abstract class ExpensesGroupedChartWidget extends ChartWidget
@@ -14,22 +15,20 @@ abstract class ExpensesGroupedChartWidget extends ChartWidget
 
     protected string $chartType = 'bar';
 
-    protected ?int $resultsLimit = 12;
+    protected ?int $resultsLimit = 10;
 
-    protected ?string $maxHeight = '320px';
+    protected ?string $maxHeight = '350px';
 
-    abstract protected function getJoinTable(): string;
+    protected ?Collection $cachedGroupedRows = null;
 
-    abstract protected function getForeignKey(): string;
-
-    protected function getLabelColumn(): string
+    protected function getJoinTable(): string
     {
-        return 'name';
+        return 'categories';
     }
 
-    protected function getFallbackLabel(): string
+    protected function getForeignKey(): string
     {
-        return 'N/A';
+        return 'category_id';
     }
 
     protected function getDatasetLabel(): string
@@ -45,25 +44,25 @@ abstract class ExpensesGroupedChartWidget extends ChartWidget
     protected function getDataQuery(): Builder
     {
         $table = $this->getJoinTable();
-        $labelColumn = $this->getLabelColumn();
-        $fallbackLabel = addslashes($this->getFallbackLabel());
 
         $query = $this->expenseQuery()
             ->leftJoin($table, "{$table}.id", '=', "expenses.{$this->getForeignKey()}")
-            ->selectRaw("COALESCE({$table}.{$labelColumn}, '{$fallbackLabel}') as label, COALESCE(SUM(expenses.sum), 0) as total")
+            ->selectRaw("{$table}.name as label, SUM(expenses.sum) as total")
             ->groupBy('label')
-            ->orderByDesc('total');
-
-        if ($this->resultsLimit !== null) {
-            $query->limit($this->resultsLimit);
-        }
+            ->orderByDesc('total')
+            ->limit($this->resultsLimit);
 
         return $query;
     }
 
+    protected function getGroupedRows(): Collection
+    {
+        return $this->cachedGroupedRows ??= $this->getDataQuery()->get();
+    }
+
     protected function getData(): array
     {
-        $rows = $this->getDataQuery()->get();
+        $rows = $this->getGroupedRows();
 
         return [
             'labels' => $rows->pluck('label')->all(),
@@ -72,7 +71,7 @@ abstract class ExpensesGroupedChartWidget extends ChartWidget
                     'label' => $this->getDatasetLabel(),
                     'data' => $rows
                         ->pluck('total')
-                        ->map(static fn ($value): float => round((float) $value, 2))
+                        ->map(static fn($value) => round($value, 2))
                         ->all(),
                 ], $this->getDatasetStyle()),
             ],
@@ -84,4 +83,3 @@ abstract class ExpensesGroupedChartWidget extends ChartWidget
         return $this->chartType;
     }
 }
-

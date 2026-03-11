@@ -30,7 +30,7 @@ class DebtSummaryWidget extends Widget
         // ---------- expenses per user ----------
         $allUsers = User::orderBy('name')->get();
 
-        $rawExpenses = Expense::selectRaw('user_id, COALESCE(SUM(sum), 0) as total_sum, COUNT(*) as tx_count')
+        $rawExpenses = Expense::selectRaw('user_id, SUM(sum) as total_sum, COUNT(*) as tx_count')
             ->whereDate('date', '>=', $start->toDateString())
             ->whereDate('date', '<=', $end->toDateString())
             ->groupBy('user_id')
@@ -40,7 +40,7 @@ class DebtSummaryWidget extends Widget
         $userTotals = $allUsers->map(fn(User $u) => (object)[
             'user_id'   => $u->id,
             'user'      => $u,
-            'total_sum' => (float) ($rawExpenses->get($u->id)?->total_sum ?? 0),
+            'total_sum' => ($rawExpenses->get($u->id)?->total_sum ?? 0),
             'tx_count'  => (int) ($rawExpenses->get($u->id)?->tx_count ?? 0),
         ])->values();
 
@@ -78,7 +78,7 @@ class DebtSummaryWidget extends Widget
         $overpaymentNote  = null;
 
         if ($overpayment) {
-            $opSum = (float) $overpayment->sum;
+            $opSum = $overpayment->sum;
             if ($minUser->user_id === $overpayment->user_id) {
                 $finalDifference = $baseDifference + $opSum;
                 $overpaymentNote = '+' . number_format($opSum, 2, ',', ' ') . ' MDL (переплата добавлена к долгу)';

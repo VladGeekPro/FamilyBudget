@@ -63,11 +63,11 @@ trait InteractsWithExpenseFilters
         }
 
         if (filled($filters['sum_min'] ?? null)) {
-            $query->where('expenses.sum', '>=', (float) $filters['sum_min']);
+            $query->where('expenses.sum', '>=', $filters['sum_min']);
         }
 
         if (filled($filters['sum_max'] ?? null)) {
-            $query->where('expenses.sum', '<=', (float) $filters['sum_max']);
+            $query->where('expenses.sum', '<=', $filters['sum_max']);
         }
 
         return $query;

@@ -10,6 +10,7 @@ use Filament\Tables\Table;
 use Filament\Widgets\Concerns\InteractsWithPageFilters;
 use Filament\Widgets\TableWidget as BaseWidget;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\DB;
 
 class ExpensesTableWidget extends BaseWidget
 {
@@ -23,6 +24,8 @@ class ExpensesTableWidget extends BaseWidget
 
     protected int|string|array $columnSpan = 'full';
 
+    protected ?array $cachedMonthlySums = null;
+
     public function getViewData(): array
     {
         $today = now();
@@ -33,12 +36,12 @@ class ExpensesTableWidget extends BaseWidget
 
         $baseQuery = $this->expenseQuery();
 
-        $totalExpenses = (float) (clone $baseQuery)->sum('sum');
+        $totalExpenses = (clone $baseQuery)->sum('sum');
         $totalCount = (int) (clone $baseQuery)->count();
 
         // Top 3 categories
         $topCategories = $this->expenseQuery()
-            ->selectRaw('category_id, COALESCE(SUM(sum),0) as total, COUNT(*) as cnt')
+            ->selectRaw('category_id, SUM(sum) as total, COUNT(*) as cnt')
             ->groupBy('category_id')
             ->orderByDesc('total')
             ->limit(5)
@@ -46,7 +49,7 @@ class ExpensesTableWidget extends BaseWidget
             ->get()
             ->map(fn($row) => (object) [
                 'name'  => $row->category?->name ?? 'Без категории',
-                'total' => (float) $row->total,
+                'total' => $row->total,
                 'count' => (int) $row->cnt,
             ]);
 
@@ -79,13 +82,7 @@ class ExpensesTableWidget extends BaseWidget
             ->defaultGroup(
                 TableGroup::make('date')
                     ->getTitleFromRecordUsing(function (Expense $record): string {
-                        $monthStart = $record->date->copy()->startOfMonth()->toDateString();
-                        $monthEnd = $record->date->copy()->endOfMonth()->toDateString();
-
-                        $sum = $this->expenseQuery()
-                            ->whereDate('date', '>=', $monthStart)
-                            ->whereDate('date', '<=', $monthEnd)
-                            ->sum('sum');
+                        $sum = $this->getMonthlySums($record->date->format('Y-m'));
 
                         $monthName = mb_convert_case(
                             $record->date->locale('ru')->translatedFormat('F Y'),
@@ -93,7 +90,7 @@ class ExpensesTableWidget extends BaseWidget
                             'UTF-8',
                         );
 
-                        return "{$monthName} - " . number_format((float) $sum, 2, ',', ' ') . ' MDL';
+                        return "{$monthName} - " . number_format($sum, 2, ',', ' ') . ' MDL';
                     })
                     ->orderQueryUsing(fn(Builder $query) => $query->orderBy('date', 'desc'))
                     ->titlePrefixedWithLabel(false)
@@ -101,5 +98,21 @@ class ExpensesTableWidget extends BaseWidget
             )
             ->paginated([10, 25, 50, 100])
             ->defaultPaginationPageOption(25);
+    }
+
+    private function getMonthlySums(string $monthKey): array|float
+    {
+        $this->cachedMonthlySums ??= $this->loadMonthlySums();
+        return $this->cachedMonthlySums[$monthKey];
+    }
+
+    private function loadMonthlySums(): array
+    {
+        return $this->expenseQuery()
+            ->selectRaw("strftime('%Y-%m', date) as month_key, SUM(sum) as total")
+            ->groupBy('month_key')
+            ->get()
+            ->mapWithKeys(fn($row) => [(string) $row->month_key => $row->total])
+            ->all();
     }
 }

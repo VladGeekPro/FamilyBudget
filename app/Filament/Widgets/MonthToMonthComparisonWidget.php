@@ -68,12 +68,12 @@ class MonthToMonthComparisonWidget extends Widget implements HasActions, HasSche
         $baseQuery = $this->expenseQuery(includeDateRange: false);
 
         // ── Totals ──
-        $currentTotal = (float) (clone $baseQuery)
+        $currentTotal = (clone $baseQuery)
             ->whereDate('date', '>=', $currentStart->toDateString())
             ->whereDate('date', '<=', $currentEnd->toDateString())
             ->sum('sum');
 
-        $previousTotal = (float) (clone $baseQuery)
+        $previousTotal = (clone $baseQuery)
             ->whereDate('date', '>=', $previousStart->toDateString())
             ->whereDate('date', '<=', $previousEnd->toDateString())
             ->sum('sum');
@@ -87,7 +87,7 @@ class MonthToMonthComparisonWidget extends Widget implements HasActions, HasSche
 
         // ── Per-day current month ──
         $dailyRaw = $this->expenseQuery(includeDateRange: false)
-            ->selectRaw('DATE(date) as d, COALESCE(SUM(sum),0) as t')
+            ->selectRaw('DATE(date) as d, SUM(sum) as t')
             ->whereDate('date', '>=', $currentStart->toDateString())
             ->whereDate('date', '<=', $currentEnd->toDateString())
             ->groupBy('d')
@@ -98,13 +98,13 @@ class MonthToMonthComparisonWidget extends Widget implements HasActions, HasSche
         $dailyCurrent = [];
         $cursor = $currentStart->copy();
         while ($cursor->lte($currentEnd)) {
-            $dailyCurrent[] = (float) ($dailyRaw->get($cursor->toDateString())?->t ?? 0);
+            $dailyCurrent[] = ($dailyRaw->get($cursor->toDateString())?->t ?? 0);
             $cursor->addDay();
         }
 
         // ── Per-day previous month ──
         $dailyPrevRaw = $this->expenseQuery(includeDateRange: false)
-            ->selectRaw('DATE(date) as d, COALESCE(SUM(sum),0) as t')
+            ->selectRaw('DATE(date) as d, SUM(sum) as t')
             ->whereDate('date', '>=', $previousStart->toDateString())
             ->whereDate('date', '<=', $previousEnd->toDateString())
             ->groupBy('d')
@@ -116,7 +116,7 @@ class MonthToMonthComparisonWidget extends Widget implements HasActions, HasSche
         $dailyPrevious = [];
         $cursor = $previousStart->copy();
         while ($cursor->lte($previousEnd)) {
-            $dailyPrevious[] = (float) ($dailyPrevRaw->get($cursor->toDateString())?->t ?? 0);
+            $dailyPrevious[] = ($dailyPrevRaw->get($cursor->toDateString())?->t ?? 0);
             $cursor->addDay();
         }
 
@@ -132,14 +132,14 @@ class MonthToMonthComparisonWidget extends Widget implements HasActions, HasSche
         $allUsers = User::orderBy('name')->get();
 
         $currentByUser = $this->expenseQuery(includeDateRange: false)
-            ->selectRaw('user_id, COALESCE(SUM(sum),0) as total')
+            ->selectRaw('user_id, SUM(sum) as total')
             ->whereDate('date', '>=', $currentStart->toDateString())
             ->whereDate('date', '<=', $currentEnd->toDateString())
             ->groupBy('user_id')
             ->pluck('total', 'user_id');
 
         $previousByUser = $this->expenseQuery(includeDateRange: false)
-            ->selectRaw('user_id, COALESCE(SUM(sum),0) as total')
+            ->selectRaw('user_id, SUM(sum) as total')
             ->whereDate('date', '>=', $previousStart->toDateString())
             ->whereDate('date', '<=', $previousEnd->toDateString())
             ->groupBy('user_id')
@@ -147,9 +147,9 @@ class MonthToMonthComparisonWidget extends Widget implements HasActions, HasSche
 
         $userBreakdown = $allUsers->map(fn(User $u) => (object) [
             'user'         => $u,
-            'current'      => (float) ($currentByUser[$u->id] ?? 0),
-            'previous'     => (float) ($previousByUser[$u->id] ?? 0),
-            'delta'        => (float) ($currentByUser[$u->id] ?? 0) - (float) ($previousByUser[$u->id] ?? 0),
+            'current'      => ($currentByUser[$u->id] ?? 0),
+            'previous'     => ($previousByUser[$u->id] ?? 0),
+            'delta'        => ($currentByUser[$u->id] ?? 0) - ($previousByUser[$u->id] ?? 0),
             'deltaPercent' => ($previousByUser[$u->id] ?? 0) > 0
                 ? round(((($currentByUser[$u->id] ?? 0) - ($previousByUser[$u->id] ?? 0)) / ($previousByUser[$u->id])) * 100, 1)
                 : (($currentByUser[$u->id] ?? 0) > 0 ? 100.0 : 0.0),
@@ -157,14 +157,14 @@ class MonthToMonthComparisonWidget extends Widget implements HasActions, HasSche
 
         // ── Top categories comparison ──
         $currentByCat = $this->expenseQuery(includeDateRange: false)
-            ->selectRaw('category_id, COALESCE(SUM(sum),0) as total')
+            ->selectRaw('category_id, SUM(sum) as total')
             ->whereDate('date', '>=', $currentStart->toDateString())
             ->whereDate('date', '<=', $currentEnd->toDateString())
             ->groupBy('category_id')
             ->pluck('total', 'category_id');
 
         $previousByCat = $this->expenseQuery(includeDateRange: false)
-            ->selectRaw('category_id, COALESCE(SUM(sum),0) as total')
+            ->selectRaw('category_id, SUM(sum) as total')
             ->whereDate('date', '>=', $previousStart->toDateString())
             ->whereDate('date', '<=', $previousEnd->toDateString())
             ->groupBy('category_id')
@@ -175,9 +175,9 @@ class MonthToMonthComparisonWidget extends Widget implements HasActions, HasSche
 
         $categoryComparison = $allCatIds->map(fn($catId) => (object) [
             'name'     => $categories[$catId] ?? 'Без категории',
-            'current'  => (float) ($currentByCat[$catId] ?? 0),
-            'previous' => (float) ($previousByCat[$catId] ?? 0),
-            'delta'    => (float) ($currentByCat[$catId] ?? 0) - (float) ($previousByCat[$catId] ?? 0),
+            'current'  => ($currentByCat[$catId] ?? 0),
+            'previous' => ($previousByCat[$catId] ?? 0),
+            'delta'    => ($currentByCat[$catId] ?? 0) - ($previousByCat[$catId] ?? 0),
         ])->sortByDesc('current')->take(5)->values();
 
         $maxCategoryTotal = $categoryComparison->max(fn($c) => max($c->current, $c->previous)) ?: 1;

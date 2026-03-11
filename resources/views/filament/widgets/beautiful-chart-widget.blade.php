@@ -6,7 +6,7 @@
     $isCollapsible = $this->isCollapsible();
     $type = $this->getType();
 
-    $maxHeight = $this->getMaxHeight();
+    $maxHeight = $this->maxHeight;
 
     $gradient = $this->getHeaderGradient();
     $icon = $this->getHeaderIcon();
@@ -25,7 +25,7 @@
     >
         {{-- ═══════════ GRADIENT HEADER ═══════════ --}}
         <div
-            class="min-h-[95px] px-6 py-4 bg-gradient-to-br {{ $gradient }} flex-shrink-0"
+            class="px-6 py-4 bg-gradient-to-br {{ $gradient }} flex-shrink-0"
             @if ($isCollapsible)
                 x-on:click="isCollapsed = !isCollapsed"
                 role="button"

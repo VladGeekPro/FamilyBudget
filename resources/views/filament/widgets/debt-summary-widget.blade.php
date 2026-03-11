@@ -198,7 +198,7 @@
                         @if($overpayment)
                             <div class="flex flex-col gap-0.5">
                                 <span class="text-xs text-gray-400 dark:text-gray-500">Переплата ({{ $overpayment->user->name }})</span>
-                                <span class="font-bold {{ $isSettled ? 'text-green-600 dark:text-green-400' : 'text-orange-500 dark:text-orange-400' }}">{{ number_format((float)$overpayment->sum, 2, ',', ' ') }} MDL</span>
+                                <span class="font-bold {{ $isSettled ? 'text-green-600 dark:text-green-400' : 'text-orange-500 dark:text-orange-400' }}">{{ number_format($overpayment->sum, 2, ',', ' ') }} MDL</span>
                             </div>
                         @else
                             <div class="flex flex-col gap-0.5">

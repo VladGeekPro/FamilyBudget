@@ -16,15 +16,13 @@ class ExpensesBySupplierChart extends ExpensesGroupedChartWidget
 
     protected string $color = 'info';
 
-    protected ?string $maxHeight = '380px';
+    protected ?string $maxHeight = null;
 
     protected bool $isCollapsible = true;
 
     protected ?string $pollingInterval = '30s';
 
     protected static ?int $sort = 5;
-
-    protected ?int $resultsLimit = 10;
 
     protected function getHeaderGradient(): string
     {
@@ -43,8 +41,8 @@ class ExpensesBySupplierChart extends ExpensesGroupedChartWidget
 
     protected function getHeaderPill(): ?string
     {
-        $rows = $this->getDataQuery()->get();
-        $total = (float) $rows->sum('total');
+        $rows = $this->getGroupedRows();
+        $total = $rows->sum('total');
         $count = $rows->count();
 
         return number_format($total, 0, ',', ' ') . ' MDL • ' . $count . ' пост.';
@@ -52,28 +50,28 @@ class ExpensesBySupplierChart extends ExpensesGroupedChartWidget
 
     protected function getHeaderDescription(): ?string
     {
-        $rows = $this->getDataQuery()->get();
-        $total = (float) $rows->sum('total');
+        $rows = $this->getGroupedRows();
+        $total = $rows->sum('total');
 
         if ($rows->isEmpty() || $total <= 0) {
             return 'Нет данных за выбранный период';
         }
 
         $top = $rows->first();
-        $topPct = round((float) $top->total / $total * 100, 1);
+        $topPct = round($top->total / $total * 100, 1);
 
         return '#1 ' . e($top->label) . ' (' . $topPct . '%) • Рейтинг топ-' . $rows->count();
     }
 
     protected function getData(): array
     {
-        $rows = $this->getDataQuery()->get();
-        $total = (float) $rows->sum('total');
+        $rows = $this->getGroupedRows();
+        $total = $rows->sum('total');
 
-        $labels = $rows->pluck('label')->all();
+        $labels = $rows->map(fn($row) => $row->label)->all();
 
         $values = $rows->pluck('total')
-            ->map(static fn($v): float => round((float) $v, 2))
+            ->map(static fn($v) => round($v, 2))
             ->all();
 
         $n = count($values);
