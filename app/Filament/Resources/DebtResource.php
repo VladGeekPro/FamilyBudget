@@ -40,6 +40,7 @@ use Illuminate\Support\HtmlString;
 use Filament\Support\Enums\FontWeight;
 use Filament\Notifications\Notification;
 use Filament\Support\Enums\Width;
+use Illuminate\Support\Facades\Cache;
 
 class DebtResource extends BaseResource
 {
@@ -92,19 +93,21 @@ class DebtResource extends BaseResource
 
     public static function getNavigationBadge(): ?string
     {
-        $unpaidRecords = Debt::Unpaid()->get();
+        return Cache::remember('nav_badge:debts:unpaid', now()->addSeconds(120), function (): ?string {
+            $unpaidRecords = Debt::Unpaid()->toBase()->get();
 
-        if ($unpaidRecords->isEmpty()) {
-            return null;
-        }
+            if ($unpaidRecords->isEmpty()) {
+                return null;
+            }
 
-        $badgeMessage = "";
-        foreach ($unpaidRecords as $record) {
-            $icon = User::getIcon($record->email);
-            $badgeMessage .= "{$record->unpaid_count} {$icon} ";
-        }
+            $badgeMessage = '';
+            foreach ($unpaidRecords as $record) {
+                $icon = User::getIcon($record->email);
+                $badgeMessage .= "{$record->unpaid_count} {$icon} ";
+            }
 
-        return trim($badgeMessage);
+            return trim($badgeMessage);
+        });
     }
 
     public static function getNavigationBadgeColor(): ?string

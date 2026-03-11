@@ -13,9 +13,6 @@ trait InteractsWithExpenseFilters
         return $this->pageFilters ?? [];
     }
 
-    /**
-     * @return array{0: Carbon, 1: Carbon}
-     */
     protected function resolveDateRangeFromFilters(): array
     {
         $filters = $this->getNormalizedPageFilters();
@@ -42,8 +39,10 @@ trait InteractsWithExpenseFilters
         if ($includeDateRange) {
             [$start, $end] = $this->resolveDateRangeFromFilters();
 
-            $query->whereDate('expenses.date', '>=', $start->toDateString())
-                ->whereDate('expenses.date', '<=', $end->toDateString());
+            $query->whereBetween('expenses.date', [
+                $start->toDateString(),
+                $end->toDateString(),
+            ]);
         }
 
         $userIds = $this->normalizeIdFilter($filters['user_ids'] ?? null);
@@ -83,9 +82,6 @@ trait InteractsWithExpenseFilters
         return number_format($amount, 2, ',', ' ') . ' MDL';
     }
 
-    /**
-     * @return array<int, int>
-     */
     private function normalizeIdFilter(mixed $value): array
     {
         if (! is_array($value)) {

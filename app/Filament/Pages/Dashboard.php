@@ -48,9 +48,6 @@ class Dashboard extends BaseDashboard
         }
     }
 
-    /**
-     * @return array<int, array{key: string, label: string}>
-     */
     public function getActiveDashboardFilterIndicators(): array
     {
         $filters = $this->filters ?? [];
@@ -210,9 +207,6 @@ class Dashboard extends BaseDashboard
         session()->put($this->getFiltersSessionKey(), $this->filters);
     }
 
-    /**
-     * @return array<int, int>
-     */
     private function normalizeIdFilter(mixed $value): array
     {
         if (! is_array($value)) {

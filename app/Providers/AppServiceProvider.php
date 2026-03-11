@@ -2,6 +2,10 @@
 
 namespace App\Providers;
 
+use App\Models\Debt;
+use App\Models\ExpenseChangeRequest;
+use App\Models\ExpenseChangeRequestVote;
+use App\Models\User;
 use Filament\Forms\Components\Select;
 use Filament\Tables\Table;
 use Illuminate\Support\ServiceProvider;
@@ -9,6 +13,7 @@ use Filament\Facades\Filament;
 use Filament\Navigation\NavigationGroup;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Cache;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -77,6 +82,21 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        $clearBadgeCaches = static function (): void {
+            Cache::forget('nav_badge:debts:unpaid');
+            Cache::forget('nav_badge:ecr:unanswered');
+        };
+
+        Debt::saved($clearBadgeCaches);
+        Debt::deleted($clearBadgeCaches);
+
+        ExpenseChangeRequest::saved($clearBadgeCaches);
+        ExpenseChangeRequest::deleted($clearBadgeCaches);
+
+        ExpenseChangeRequestVote::saved($clearBadgeCaches);
+        ExpenseChangeRequestVote::deleted($clearBadgeCaches);
+
+        User::saved($clearBadgeCaches);
+        User::deleted($clearBadgeCaches);
     }
 }

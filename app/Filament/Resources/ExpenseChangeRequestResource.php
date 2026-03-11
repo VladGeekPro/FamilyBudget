@@ -26,6 +26,7 @@ use Filament\Support\Enums\Width;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
 use Illuminate\Support\HtmlString;
+use Illuminate\Support\Facades\Cache;
 
 class ExpenseChangeRequestResource extends BaseResource
 {
@@ -52,20 +53,21 @@ class ExpenseChangeRequestResource extends BaseResource
 
     public static function getNavigationBadge(): ?string
     {
+        return Cache::remember('nav_badge:ecr:unanswered', now()->addSeconds(120), function (): ?string {
+            $unansweredRecords = ExpenseChangeRequest::Unanswered()->get();
 
-        $unansweredRecords = ExpenseChangeRequest::Unanswered()->get();
+            if ($unansweredRecords->isEmpty()) {
+                return null;
+            }
 
-        if ($unansweredRecords->isEmpty()) {
-            return null;
-        }
+            $badgeMessage = '';
+            foreach ($unansweredRecords as $record) {
+                $icon = User::getIcon($record->email);
+                $badgeMessage .= "{$record->unanswered_count} {$icon} ";
+            }
 
-        $badgeMessage = "";
-        foreach ($unansweredRecords as $record) {
-            $icon = User::getIcon($record->email);
-            $badgeMessage .= "{$record->unanswered_count} {$icon} ";
-        }
-
-        return trim($badgeMessage);
+            return trim($badgeMessage);
+        });
     }
 
     public static function getNavigationBadgeColor(): ?string

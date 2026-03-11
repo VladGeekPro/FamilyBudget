@@ -96,22 +96,25 @@ class ExpensesByDayOfWeekChart extends ExpensesGroupedChartWidget
         $users = User::orderBy('name')->get();
         $userDatasets = [];
 
+        $driver = DB::connection()->getDriverName();
+        $dowExpression = match ($driver) {
+            'sqlite' => "CAST(strftime('%w', date) AS INTEGER)",
+            'mysql'  => "DAYOFWEEK(date)",
+            'pgsql'  => "EXTRACT(DOW FROM date)::integer",
+            default  => "DAYOFWEEK(date)",
+        };
+
+        $allUserRows = $this->expenseQuery()
+            ->selectRaw("user_id, {$dowExpression} as dow, SUM(sum) as total")
+            ->groupBy('user_id', 'dow')
+            ->get()
+            ->groupBy('user_id')
+            ->map(fn($rows) => $rows->keyBy('dow'));
+
         foreach ($users as $i => $user) {
             $color = $userColors[$i % count($userColors)];
 
-            $driver = DB::connection()->getDriverName();
-            $dowExpression = match ($driver) {
-                'sqlite' => "CAST(strftime('%w', date) AS INTEGER)",
-                'pgsql' => "EXTRACT(DOW FROM date)::integer",
-                default => "DAYOFWEEK(date)",
-            };
-
-            $userRows = $this->expenseQuery()
-                ->where('expenses.user_id', $user->id)
-                ->selectRaw("{$dowExpression} as dow, SUM(sum) as total")
-                ->groupBy('dow')
-                ->get()
-                ->keyBy('dow');
+            $userRows = $allUserRows->get($user->id) ?? collect();
 
             $values = array_fill(0, 7, 0.0);
             foreach ($userRows as $dbDow => $row) {

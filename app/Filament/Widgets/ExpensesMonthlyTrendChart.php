@@ -72,18 +72,18 @@ class ExpensesMonthlyTrendChart extends ExpensesGroupedChartWidget
         $start = now()->startOfMonth()->subMonths(5);
 
         $total = $this->expenseQuery(includeDateRange: false)
-            ->whereDate('date', '>=', $start->toDateString())
-            ->whereDate('date', '<=', $end->toDateString())
+            ->whereBetween('date', [$start->toDateString(), $end->toDateString()])
             ->sum('sum');
 
         $current = $this->expenseQuery(includeDateRange: false)
-            ->whereDate('date', '>=', now()->startOfMonth()->toDateString())
-            ->whereDate('date', '<=', $end->toDateString())
+            ->whereBetween('date', [now()->startOfMonth()->toDateString(), $end->toDateString()])
             ->sum('sum');
 
         $prev = $this->expenseQuery(includeDateRange: false)
-            ->whereDate('date', '>=', now()->subMonthNoOverflow()->startOfMonth()->toDateString())
-            ->whereDate('date', '<=', now()->subMonthNoOverflow()->endOfMonth()->toDateString())
+            ->whereBetween('date', [
+                now()->subMonthNoOverflow()->startOfMonth()->toDateString(),
+                now()->subMonthNoOverflow()->endOfMonth()->toDateString(),
+            ])
             ->sum('sum');
 
         return $this->cachedTrendMeta = [
@@ -143,19 +143,19 @@ class ExpensesMonthlyTrendChart extends ExpensesGroupedChartWidget
             ],
         ];
 
+        $allUserRows = $this->expenseQuery(includeDateRange: false)
+            ->whereBetween('date', [$start->toDateString(), $end->toDateString()])
+            ->selectRaw("user_id, strftime('%Y-%m', date) as month_key, SUM(sum) as total")
+            ->groupBy('user_id', 'month_key')
+            ->get()
+            ->groupBy('user_id')
+            ->map(fn($rows) => $rows->keyBy('month_key'));
+
         $users = User::orderBy('name')->get();
         foreach ($users as $i => $user) {
             $color = $userColors[$i % count($userColors)];
 
-            $rows = $this->expenseQuery(includeDateRange: false)
-                ->where('expenses.user_id', $user->id)
-                ->whereDate('date', '>=', $start->toDateString())
-                ->whereDate('date', '<=', $end->toDateString())
-                ->selectRaw("strftime('%Y-%m', date) as month_key, SUM(sum) as total")
-                ->groupBy('month_key')
-                ->orderBy('month_key')
-                ->get()
-                ->keyBy('month_key');
+            $rows = $allUserRows->get($user->id) ?? collect();
 
             $values = array_map(
                 fn($mk) => round(($rows->get($mk)?->total ?? 0), 2),
@@ -193,8 +193,7 @@ class ExpensesMonthlyTrendChart extends ExpensesGroupedChartWidget
         $start = now()->startOfMonth()->subMonths(5);
 
         return $this->expenseQuery(includeDateRange: false)
-            ->whereDate('date', '>=', $start->toDateString())
-            ->whereDate('date', '<=', $end->toDateString())
+            ->whereBetween('date', [$start->toDateString(), $end->toDateString()])
             ->selectRaw("strftime('%Y-%m', date) as month_key, SUM(sum) as total")
             ->groupBy('month_key')
             ->orderBy('month_key');
