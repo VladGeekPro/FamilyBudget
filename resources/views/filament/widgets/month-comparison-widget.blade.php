@@ -15,14 +15,19 @@ return '<span class="inline-flex ' . $size . ' items-center justify-center round
 @endphp
 
 <x-filament-widgets::widget>
-    <div x-data="{ isCollapsed: false }" class="rounded-2xl overflow-hidden shadow-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
+    <div x-data="{ isCollapsed: false }" class="hidden rounded-2xl overflow-hidden shadow-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
 
         {{-- ═══════════ HEADER ═══════════ --}}
         <div class="px-6 py-4 bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-700">
-            <div class="flex flex-wrap items-center gap-x-4 gap-y-3">
+            <div
+                x-data="{ isRightWrapped: false, syncRightWrap() { const row = this.$refs.headerRow; const right = this.$refs.headerRight; if (!row || !right) return; this.isRightWrapped = right.offsetTop > row.offsetTop + 1; } }"
+                x-init="$nextTick(() => { syncRightWrap(); const observer = new ResizeObserver(() => syncRightWrap()); observer.observe($refs.headerRow); observer.observe($refs.headerRight); window.addEventListener('resize', syncRightWrap); })"
+                x-ref="headerRow"
+                class="flex flex-wrap items-center gap-x-4 gap-y-3"
+            >
                 {{-- Icon: always first --}}
-                <div class="flex-shrink-0 order-1">
-                    <div class="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center shadow-lg">
+                <div class="flex-shrink-0 order-1 self-stretch">
+                    <div class="h-full min-h-[40px] aspect-square rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center shadow-lg">
                         <x-heroicon-o-chart-bar class="w-6 h-6 text-white" />
                     </div>
                 </div>
@@ -34,9 +39,13 @@ return '<span class="inline-flex ' . $size . ' items-center justify-center round
                 </div>
 
                 {{-- Actions: stay with icon on first line when wrapped --}}
-                <div class="flex order-2 sm:order-3 ml-auto sm:ml-0 rounded-xl border border-white/15 bg-white/10 backdrop-blur-md shadow-md overflow-hidden">
+                <div
+                    x-ref="headerRight"
+                    :class="isRightWrapped ? 'ml-0 basis-full justify-start' : 'ml-auto'"
+                    class="flex order-2 sm:order-3 rounded-xl border border-white/15 bg-white/10 backdrop-blur-md shadow-md overflow-hidden"
+                >
                     {{-- Progress Indicator --}}
-                    <div class="flex items-center gap-2 px-4 py-2">
+                    <div class="flex items-center gap-2 px-2 py-1">
                         <div class="text-right">
                             <div class="text-white text-[11px] font-semibold uppercase tracking-wider opacity-90">Прогресс</div>
                             <div class="text-blue-100 text-sm font-bold">{{ $daysElapsed }}/{{ $daysInMonth }}</div>

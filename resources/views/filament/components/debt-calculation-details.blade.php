@@ -1,98 +1,39 @@
 @php
-use App\Models\Expense;
-use App\Models\Overpayment;
 use App\Models\PaidDebts;
-use Carbon\Carbon;
+use App\Services\DebtCalculationService;
+use App\Models\Expense;
 
 $debt = $getRecord();
 $date = $debt->date;
 
 $isEditPage = $this instanceof \Filament\Resources\Pages\EditRecord;
 
-// Получаем затраты пользователей за месяц
-$expenses = Expense::selectRaw('user_id, SUM(sum) as total_sum')
-->whereMonth('date', $date->month)
-->whereYear('date', $date->year)
-->groupBy('user_id')
-->get();
-
-// Если нет затрат вообще или только один пользователь, добавляем недостающих пользователей с нулевыми затратами
-$allUsers = \App\Models\User::all();
-$existingUserIds = $expenses->pluck('user_id')->toArray();
-
-foreach ($allUsers as $user) {
-if (!in_array($user->id, $existingUserIds)) {
-$fakeExpense = (object) [
-'user_id' => $user->id,
-'total_sum' => 0,
-'user' => $user
-];
-$expenses->push($fakeExpense);
-}
-}
-
-// Ограничиваем до двух пользователей (берем первых двух)
-$expenses = $expenses->take(2);
+$result = DebtCalculationService::calculate($date->copy()->startOfMonth(), $date);
 
 $paidDebts = PaidDebts::where('debt_id', $debt->id)
-->whereIn('paid_by_user_id', $expenses->pluck('user_id'))
-->get();
+    ->whereIn('paid_by_user_id', $result['userTotals']->pluck('user_id'))
+    ->get();
 
-// Определяем кто больше/меньше потратил
-$sorted=$expenses->sortBy('total_sum');
+$sorted  = $result['userTotals']->sortBy('total_sum')->values();
 $minUser = $sorted->first();
 $maxUser = $sorted->last();
 
-// Расчёт БЕЗ переплаты (базовый)
-$baseDifference = ($maxUser->total_sum - $minUser->total_sum) / 2;
+$finalMinUser = $result['debtor'];
+$finalMaxUser = $result['creditor'];
 
-// Получаем переплату
-$overpayment = Overpayment::where('created_at', '<=', $date)
-    ->orderByDesc('created_at')
-    ->first();
+$minName = $minUser->user->name ?? 'Unknown';
+$maxName = $maxUser->user->name ?? 'Unknown';
+$minIcon = $minUser->user->image ?? null;
+$maxIcon = $maxUser->user->image ?? null;
+$finalMinName = $finalMinUser->user->name ?? 'Unknown';
+$finalMaxName = $finalMaxUser->user->name ?? 'Unknown';
 
-    // Расчёт С учетом переплаты
-    $finalDifference = $baseDifference;
-    $finalMinUser = $minUser;
-    $finalMaxUser = $maxUser;
-    $adjustmentNote = '';
-
-    if ($overpayment) {
-    $overpaymentSum = $overpayment->sum;
-
-    if ($minUser->user_id === $overpayment->user_id) {
-    // Должник - добавляем к его долгу
-    $finalDifference = $baseDifference + $overpaymentSum;
-    $adjustmentNote = "К долгу " . number_format($baseDifference, 2, ',', ' ') . " MDL пользователя {$minUser->user->name} добавлена обговоренная сумма переплаты " . number_format($overpaymentSum, 2, ',', ' ') . " MDL";
-    } else {
-    // Должник переплатил - вычитаем из долга
-    $finalDifference = $baseDifference - $overpaymentSum;
-
-    if ($finalDifference < 0) {
-        // Переплата превышает долг - меняем направление
-        $finalMinUser=$maxUser;
-        $finalMaxUser=$minUser;
-        $finalDifference=abs($finalDifference);
-        $adjustmentNote="{$overpayment->user->name} должен переплатить по договорённости " . number_format($overpaymentSum, 2, ',' , ' ' ) . " MDL — эта сумма превышает долг {$minUser->user->name} (" . number_format($baseDifference, 2, ',' , ' ' ) . " MDL), поэтому теперь {$finalMinUser->user->name} должен(на) {$finalMaxUser->user->name}" ;
-        }
-        else {
-        $adjustmentNote="Переплата " . number_format($overpaymentSum, 2, ',' , ' ' ) . " MDL пользователя {$overpayment->user->name} вычтена из его долга, " . (abs($finalDifference) < 0.01 ? "никто никому не должен" : "должником остаётся {$minUser->user->name}" );
-        }
-        }
-        }
-
-        // Форматирование для вывода
-        $minName=$minUser->user->name ?? 'Unknown';
-        $maxName = $maxUser->user->name ?? 'Unknown';
-        $minIcon = $minUser->user->image ?? null;
-        $maxIcon = $maxUser->user->image ?? null;
-        $finalMinName = $finalMinUser->user->name ?? 'Unknown';
-        $finalMaxName = $finalMaxUser->user->name ?? 'Unknown';
-
-        $minSum = number_format($minUser->total_sum, 2, ',', ' ');
-        $maxSum = number_format($maxUser->total_sum, 2, ',', ' ');
-        $baseDiffFormatted = number_format($baseDifference, 2, ',', ' ');
-        @endphp
+$minSum = number_format($minUser->total_sum, 2, ',', ' ');
+$maxSum = number_format($maxUser->total_sum, 2, ',', ' ');
+$baseDiffFormatted = number_format($result['baseDifference'], 2, ',', ' ');
+$adjustmentNote = $result['overpaymentNote'] ?? '';
+$finalDifference = $result['finalDifference'];
+@endphp
 
         <div class="w-full">
             <details {{ $isEditPage ? '' : 'open' }} class="bg-gradient-to-br from-white to-gray-50 dark:from-gray-900 dark:to-gray-800 rounded-lg border-2 border-gray-200 dark:border-gray-700 transition-all duration-300 overflow-hidden">
@@ -251,13 +192,13 @@ $overpayment = Overpayment::where('created_at', '<=', $date)
                                         $beforeMaxName = $finalMaxUser->user->name ?? 'Unknown';
                                         $paidSum = $paidDebt->paid_sum;
                                         $calculationSign = '−';
-                                        $calculationAction = 'уменьшение долга';
+                                        $calculationAction = 'Должник погасил(а) часть — остаток уменьшился';
 
                                         if ($finalMaxUser->user_id === $paidDebt->paid_by_user_id) {
                                             $finalDifference += $paidSum;
                                             $calculationSign = '+';
-                                            $calculationAction = 'увеличение долга (платит получатель)';
-                                        } elseif ($finalMinUser->user_id === $paidDebt->paid_by_user_id) {
+                                            $calculationAction = 'Получатель внёс оплату — задолженность выросла';}
+                                        elseif ($finalMinUser->user_id === $paidDebt->paid_by_user_id) {
                                             $finalDifference -= $paidSum;
                                         }
 
@@ -324,12 +265,12 @@ $overpayment = Overpayment::where('created_at', '<=', $date)
                                                 </p>
                                                 <p class="mt-1 text-[11px] sm:text-xs text-slate-500 dark:text-slate-400">{{ $calculationAction }}</p>
                                                 @if($swapOccurred)
-                                                <p class="mt-1 text-[11px] sm:text-xs text-orange-700 dark:text-orange-300 font-medium">Направление долга сменилось после пересчёта.</p>
+                                                <p class="mt-1 text-[11px] sm:text-xs text-orange-700 dark:text-orange-300 font-medium">После этой оплаты стороны поменялись местами — теперь другой человек стал должником.</p>
                                                 @endif
                                             </div>
 
                                             <div class="mt-2">
-                                                @if($afterDifference == 0)
+                                                @if($afterDifference === 0.0)
                                                 <div class="rounded-lg px-2.5 py-2 bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500 text-white shadow-md shadow-emerald-900/20">
                                                     <p class="text-[11px] uppercase tracking-wide opacity-90">После оплаты</p>
                                                     <p class="text-sm font-black leading-tight">Никто никому не должен</p>
@@ -372,7 +313,7 @@ $overpayment = Overpayment::where('created_at', '<=', $date)
         </div>
 
         <!-- Итоговая карточка -->
-        @if($finalDifference == 0)
+        @if($finalDifference === 0.0)
         <div class="relative bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500 rounded-lg p-3 text-white">
 
             <div class="relative z-10">
@@ -425,7 +366,7 @@ $overpayment = Overpayment::where('created_at', '<=', $date)
         </div>
 
         <!-- Детали затрат -->
-        <details class="group/expenses bg-white dark:bg-gray-800 rounded-lg border-2 border-gray-200 dark:border-gray-700 overflow-hidden">
+        <details {{ $isEditPage ? '' : 'open' }} class="group/expenses bg-white dark:bg-gray-800 rounded-lg border-2 border-gray-200 dark:border-gray-700 overflow-hidden">
             <summary class="font-bold text-gray-900 dark:text-white text-sm sm:text-base cursor-pointer px-3 py-3 bg-gradient-to-r from-gray-50 to-white dark:from-gray-800 dark:to-gray-900 hover:from-gray-100 hover:to-gray-50 dark:hover:from-gray-700 dark:hover:to-gray-800 transition-all duration-200 flex items-center gap-2 sm:gap-3 active:scale-[0.99]">
                 <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center shadow-md flex-shrink-0">
                     <svg class="w-4 h-4 sm:w-5 sm:h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -439,12 +380,12 @@ $overpayment = Overpayment::where('created_at', '<=', $date)
             </summary>
 
             <div class="p-3 space-y-2 sm:space-y-3 bg-gray-50 dark:bg-gray-900/30">
-                @foreach($expenses as $userExpense)
+                @foreach($result['userTotals'] as $userExpense)
                 @php
                 $userName = $userExpense->user->name ?? 'Unknown';
                 $userImage = $userExpense->user->image ?? null;
                 $userTotal = number_format($userExpense->total_sum, 2, ',', ' ');
-                $userExpenseDetails = Expense::where('user_id', $userExpense->user_id)
+                $userExpenseDetails = Expense::where('user_id', $userExpense->user->id)
                 ->whereMonth('date', $date->month)
                 ->whereYear('date', $date->year)
                 ->with('category:id,name', 'supplier:id,name')
@@ -481,7 +422,7 @@ $overpayment = Overpayment::where('created_at', '<=', $date)
                         <div class="sm:hidden p-3 space-y-2">
                             @foreach($userExpenseDetails as $expense)
                             @php
-                            $expDate = $expense->date instanceof Carbon ? $expense->date->format('d.m.Y') : $expense->date;
+                            $expDate = \Carbon\Carbon::parse($expense->date)->format('d.m.Y');
                             $expSum = number_format($expense->sum, 2, ',', ' ');
                             @endphp
                             <a href="{{ \App\Filament\Resources\ExpenseResource::getUrl('view', ['record' => $expense]) }}" class="block bg-white dark:bg-gray-800 rounded-lg p-3 border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md hover:border-amber-400 dark:hover:border-amber-600 transition-all duration-200 active:scale-[0.98]">
@@ -517,7 +458,7 @@ $overpayment = Overpayment::where('created_at', '<=', $date)
                                 <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
                                     @foreach($userExpenseDetails as $expense)
                                     @php
-                                    $expDate = $expense->date instanceof Carbon ? $expense->date->format('d.m.Y') : $expense->date;
+                                    $expDate = \Carbon\Carbon::parse($expense->date)->format('d.m.Y');
                                     $expSum = number_format($expense->sum, 2, ',', ' ');
                                     $expenseUrl = \App\Filament\Resources\ExpenseResource::getUrl('view', ['record' => $expense]);
                                     @endphp

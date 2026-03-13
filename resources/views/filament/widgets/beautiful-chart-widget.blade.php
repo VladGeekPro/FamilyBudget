@@ -31,11 +31,16 @@
                 role="button"
             @endif
         >
-            <div class="flex flex-wrap items-center gap-x-4 gap-y-3">
+            <div
+                x-data="{ isRightWrapped: false, syncRightWrap() { const row = this.$refs.headerRow; const right = this.$refs.headerRight; if (!row || !right) return; this.isRightWrapped = right.offsetTop > row.offsetTop + 1; } }"
+                x-init="$nextTick(() => { syncRightWrap(); const observer = new ResizeObserver(() => syncRightWrap()); observer.observe($refs.headerRow); observer.observe($refs.headerRight); window.addEventListener('resize', syncRightWrap); })"
+                x-ref="headerRow"
+                class="flex flex-wrap items-center gap-x-4 gap-y-3"
+            >
                 {{-- Icon: always first --}}
                 @if ($icon)
-                    <div class="flex-shrink-0 order-1">
-                        <div class="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center shadow-lg">
+                    <div class="flex-shrink-0 order-1 self-stretch">
+                        <div class="h-full min-h-[40px] aspect-square rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center shadow-lg">
                             <x-dynamic-component :component="$icon" class="w-6 h-6 text-white" />
                         </div>
                     </div>
@@ -50,7 +55,11 @@
                 </div>
 
                 {{-- Right section: stay with icon on first line when wrapped --}}
-                <div class="flex items-center gap-3 flex-shrink-0 order-2 sm:order-3 ml-auto sm:ml-0">
+                <div
+                    x-ref="headerRight"
+                    :class="isRightWrapped ? 'ml-0 basis-full justify-start' : 'ml-auto'"
+                    class="flex items-center gap-3 flex-shrink-0 order-2 sm:order-3"
+                >
                     @if ($pill && $isCollapsible)
                         <div class="flex items-stretch rounded-xl border border-white/15 bg-white/10 backdrop-blur-md shadow-md overflow-hidden max-w-[290px]">
                             <div class="px-4 py-2 min-w-0 flex items-center">

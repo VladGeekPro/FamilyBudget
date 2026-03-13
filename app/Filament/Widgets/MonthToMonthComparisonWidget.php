@@ -59,6 +59,8 @@ class MonthToMonthComparisonWidget extends Widget implements HasActions, HasSche
         $currentEnd    = now()->endOfDay();
         $previousStart = now()->subMonthNoOverflow()->startOfMonth();
         $previousEnd   = now()->subMonthNoOverflow()->endOfMonth();
+        $currentRange  = [$currentStart->toDateString(), $currentEnd->toDateString()];
+        $previousRange = [$previousStart->toDateString(), $previousEnd->toDateString()];
 
         $daysInMonth   = (int) $today->daysInMonth;
         $daysElapsed   = (int) $today->day;
@@ -69,13 +71,11 @@ class MonthToMonthComparisonWidget extends Widget implements HasActions, HasSche
 
         // ── Totals ──
         $currentTotal = (clone $baseQuery)
-            ->whereDate('date', '>=', $currentStart->toDateString())
-            ->whereDate('date', '<=', $currentEnd->toDateString())
+            ->whereBetween('date', $currentRange)
             ->sum('sum');
 
         $previousTotal = (clone $baseQuery)
-            ->whereDate('date', '>=', $previousStart->toDateString())
-            ->whereDate('date', '<=', $previousEnd->toDateString())
+            ->whereBetween('date', $previousRange)
             ->sum('sum');
 
         // ── Delta ──
@@ -88,8 +88,7 @@ class MonthToMonthComparisonWidget extends Widget implements HasActions, HasSche
         // ── Per-day current month ──
         $dailyRaw = $this->expenseQuery(includeDateRange: false)
             ->selectRaw('DATE(date) as d, SUM(sum) as t')
-            ->whereDate('date', '>=', $currentStart->toDateString())
-            ->whereDate('date', '<=', $currentEnd->toDateString())
+            ->whereBetween('date', $currentRange)
             ->groupBy('d')
             ->orderBy('d')
             ->get()
@@ -105,8 +104,7 @@ class MonthToMonthComparisonWidget extends Widget implements HasActions, HasSche
         // ── Per-day previous month ──
         $dailyPrevRaw = $this->expenseQuery(includeDateRange: false)
             ->selectRaw('DATE(date) as d, SUM(sum) as t')
-            ->whereDate('date', '>=', $previousStart->toDateString())
-            ->whereDate('date', '<=', $previousEnd->toDateString())
+            ->whereBetween('date', $previousRange)
             ->groupBy('d')
             ->orderBy('d')
             ->get()
@@ -133,15 +131,13 @@ class MonthToMonthComparisonWidget extends Widget implements HasActions, HasSche
 
         $currentByUser = $this->expenseQuery(includeDateRange: false)
             ->selectRaw('user_id, SUM(sum) as total')
-            ->whereDate('date', '>=', $currentStart->toDateString())
-            ->whereDate('date', '<=', $currentEnd->toDateString())
+            ->whereBetween('date', $currentRange)
             ->groupBy('user_id')
             ->pluck('total', 'user_id');
 
         $previousByUser = $this->expenseQuery(includeDateRange: false)
             ->selectRaw('user_id, SUM(sum) as total')
-            ->whereDate('date', '>=', $previousStart->toDateString())
-            ->whereDate('date', '<=', $previousEnd->toDateString())
+            ->whereBetween('date', $previousRange)
             ->groupBy('user_id')
             ->pluck('total', 'user_id');
 
@@ -158,15 +154,13 @@ class MonthToMonthComparisonWidget extends Widget implements HasActions, HasSche
         // ── Top categories comparison ──
         $currentByCat = $this->expenseQuery(includeDateRange: false)
             ->selectRaw('category_id, SUM(sum) as total')
-            ->whereDate('date', '>=', $currentStart->toDateString())
-            ->whereDate('date', '<=', $currentEnd->toDateString())
+            ->whereBetween('date', $currentRange)
             ->groupBy('category_id')
             ->pluck('total', 'category_id');
 
         $previousByCat = $this->expenseQuery(includeDateRange: false)
             ->selectRaw('category_id, SUM(sum) as total')
-            ->whereDate('date', '>=', $previousStart->toDateString())
-            ->whereDate('date', '<=', $previousEnd->toDateString())
+            ->whereBetween('date', $previousRange)
             ->groupBy('category_id')
             ->pluck('total', 'category_id');
 

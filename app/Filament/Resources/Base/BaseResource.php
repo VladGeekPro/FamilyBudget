@@ -139,11 +139,11 @@ protected static int    $defaultPerPage = 25;
             ->live(onBlur: true)
             ->afterStateUpdated(fn($livewire) => $livewire->validateOnly('data.' . $prefix . 'user_id'))
             ->allowHtml()
-            ->options(fn() => User::all()->mapWithKeys(function ($user) {
+            ->options(fn() => User::query()->orderBy('name')->limit(10)->get()->mapWithKeys(function ($user) {
                 return [$user->getKey() => static::formatOptionWithIcon($user->name, $user->image)];
             })->toArray())
             ->getSearchResultsUsing(function (string $search) {
-                $users = User::where('name', 'like', "%{$search}%")->limit(50)->get();
+                $users = User::where('name', 'like', "%{$search}%")->limit(10)->get();
                 return $users->mapWithKeys(function ($user) {
                     return [$user->getKey() => static::formatOptionWithIcon($user->name, $user->image)];
                 })->toArray();
@@ -152,9 +152,7 @@ protected static int    $defaultPerPage = 25;
                 $user = User::find($value);
                 return static::formatOptionWithIcon($user->name, $user->image);
             })
-            ->optionsLimit(10)
             ->searchable()
-            ->preload()
             ->selectablePlaceholder(false);
 
         static::applyFieldConditions($userField, $forExpense, $isCurrentField);
@@ -198,11 +196,11 @@ protected static int    $defaultPerPage = 25;
                 $livewire->validateOnly('data.' . $prefix . 'category_id');
             })
             ->allowHtml()
-            ->options(fn() => Category::all()->mapWithKeys(function ($category) {
+            ->options(fn() => Category::query()->orderBy('name')->limit(10)->get()->mapWithKeys(function ($category) {
                 return [$category->getKey() => static::formatOptionWithIcon($category->name, $category->image)];
             })->toArray())
             ->getSearchResultsUsing(function (string $search) {
-                $categories = Category::where('name', 'like', "%{$search}%")->limit(50)->get();
+                $categories = Category::where('name', 'like', "%{$search}%")->limit(10)->get();
                 return $categories->mapWithKeys(function ($category) {
                     return [$category->getKey() => static::formatOptionWithIcon($category->name, $category->image)];
                 })->toArray();
@@ -211,9 +209,7 @@ protected static int    $defaultPerPage = 25;
                 $category = Category::find($value);
                 return static::formatOptionWithIcon($category->name, $category->image);
             })
-            ->optionsLimit(10)
             ->searchable()
-            ->preload()
             ;
 
         static::applyFieldConditions($categoryField, $forExpense, $isCurrentField);
@@ -236,7 +232,7 @@ protected static int    $defaultPerPage = 25;
                     $query->where('category_id', $get($prefix . 'category_id'));
                 }
 
-                return $query->get()->mapWithKeys(function ($supplier) {
+                return $query->orderBy('name')->limit(10)->get()->mapWithKeys(function ($supplier) {
                     return [$supplier->getKey() => static::formatOptionWithIcon($supplier->name, $supplier->image)];
                 })->toArray();
             })
@@ -247,7 +243,7 @@ protected static int    $defaultPerPage = 25;
                     $query->where('category_id', $get($prefix . 'category_id'));
                 }
 
-                return $query->limit(50)->get()->mapWithKeys(function ($supplier) {
+                return $query->limit(10)->get()->mapWithKeys(function ($supplier) {
                     return [$supplier->getKey() => static::formatOptionWithIcon($supplier->name, $supplier->image)];
                 })->toArray();
             })
@@ -255,9 +251,7 @@ protected static int    $defaultPerPage = 25;
                 $supplier = Supplier::find($value);
                 return static::formatOptionWithIcon($supplier->name, $supplier->image);
             })
-            ->optionsLimit(10)
             ->searchable()
-            ->preload()
             ->selectablePlaceholder(false);
 
         static::applyFieldConditions($supplierField, $forExpense, $isCurrentField);
@@ -350,6 +344,7 @@ protected static int    $defaultPerPage = 25;
             ->relationship($relationship, $titleColumn)
             ->multiple()
             ->preload()
+            ->optionsLimit(10)
             ->placeholder('');
 
         if ($searchable) {
@@ -369,7 +364,7 @@ protected static int    $defaultPerPage = 25;
             ->label($label)
             ->options($options)
             ->multiple()
-            ->preload()
+            ->optionsLimit(10)
             ->placeholder('');
 
         if ($searchable) {

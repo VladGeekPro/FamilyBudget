@@ -113,11 +113,11 @@ class SuppliersRelationManager extends BaseRelationManager
                                         ->live(onBlur: true)
                                         ->afterStateUpdated(fn($livewire) => $livewire->validateOnly('data.category_id'))
                                         ->allowHtml()
-                                        ->options(fn() => Category::all()->mapWithKeys(function ($category) {
+                                        ->options(fn() => Category::query()->orderBy('name')->limit(10)->get()->mapWithKeys(function ($category) {
                                             return [$category->getKey() => BaseResource::formatOptionWithIcon($category->name, $category->image)];
                                         })->toArray())
                                         ->getSearchResultsUsing(function (string $search) {
-                                            $categories = Category::where('name', 'like', "%{$search}%")->limit(50)->get();
+                                            $categories = Category::where('name', 'like', "%{$search}%")->limit(10)->get();
                                             return $categories->mapWithKeys(function ($category) {
                                                 return [$category->getKey() => BaseResource::formatOptionWithIcon($category->name, $category->image)];
                                             })->toArray();
@@ -126,9 +126,7 @@ class SuppliersRelationManager extends BaseRelationManager
                                             $category = Category::find($value);
                                             return BaseResource::formatOptionWithIcon($category->name, $category->image);
                                         })
-                                        ->optionsLimit(10)
                                         ->searchable()
-                                        ->preload()
                                         ->selectablePlaceholder(false)
                                         ->columnSpanFull(),
                                 ])

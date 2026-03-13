@@ -3,8 +3,10 @@
 namespace App\Providers;
 
 use App\Models\Debt;
+use App\Models\Expense;
 use App\Models\ExpenseChangeRequest;
 use App\Models\ExpenseChangeRequestVote;
+use App\Models\Overpayment;
 use App\Models\User;
 use Filament\Forms\Components\Select;
 use Filament\Tables\Table;
@@ -78,10 +80,17 @@ public function boot(): void
         $clearBadgeCaches = static function (): void {
             Cache::forget('nav_badge:debts:unpaid');
             Cache::forget('nav_badge:ecr:unanswered');
+            Cache::forget('widget:debt_summary');
         };
+
+        Expense::saved($clearBadgeCaches);
+        Expense::deleted($clearBadgeCaches);
 
         Debt::saved($clearBadgeCaches);
         Debt::deleted($clearBadgeCaches);
+
+        Overpayment::saved($clearBadgeCaches);
+        Overpayment::deleted($clearBadgeCaches);
 
         ExpenseChangeRequest::saved($clearBadgeCaches);
         ExpenseChangeRequest::deleted($clearBadgeCaches);

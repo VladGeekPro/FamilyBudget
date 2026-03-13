@@ -303,10 +303,9 @@ class ExpenseChangeRequestResource extends BaseResource
                                 $livewire->validateOnly('expense_id');
                             })
                             ->searchable()
-                            ->preload()
                             ->options(fn() => Expense::previousMonthsExpenses()
                                 ->orderBy('id', 'desc')
-                                ->limit(100)
+                                ->limit(10)
                                 ->get()
                                 ->mapWithKeys(fn($expense) => [
                                     $expense->id => "#{$expense->id} - {$expense->supplier->name} - {$expense->sum} MDL ({$expense->date->format('d.m.Y')})",
@@ -323,7 +322,7 @@ class ExpenseChangeRequestResource extends BaseResource
                                             ->orWhere('sum', 'like', "%{$search}%")
                                             ->orWhere('id', $search);
                                     })
-                                    ->limit(50)
+                                    ->limit(10)
                                     ->get()
                                     ->mapWithKeys(function ($expense) {
                                         return [$expense->id => "#{$expense->id} - {$expense->supplier->name} - {$expense->sum} MDL ({$expense->date->format('d.m.Y')})"];
@@ -331,6 +330,11 @@ class ExpenseChangeRequestResource extends BaseResource
                             })
                             ->getOptionLabelUsing(function ($value): string {
                                 $expense = Expense::find($value);
+
+                                if (! $expense) {
+                                    return '';
+                                }
+
                                 return "#{$expense->id} - {$expense->supplier->name} - {$expense->sum} MDL ({$expense->date->format('d.m.Y')})";
                             })
                             ->prefixAction(

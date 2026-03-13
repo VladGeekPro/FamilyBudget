@@ -3,12 +3,11 @@
 namespace App\Console\Commands;
 
 use App\Models\Debt;
-use App\Models\Expense;
-use App\Models\Overpayment;
 use App\Models\PaidDebt;
 use App\Models\PaidDebts;
 use App\Models\User;
 use App\Notifications\DebtEditedNotification;
+use App\Services\DebtCalculationService;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
@@ -34,56 +33,26 @@ class CalculateMonthlyDebts extends Command
 
         $this->info("Выполняется расчет долгов за период: " . $date->translatedFormat('F Y'));
 
-        $users = User::all();
+        $result = DebtCalculationService::calculate($date->copy()->startOfMonth(), $date);
 
-        if ($users->count() < 2) {
+        if (! $result['hasEnoughUsers']) {
             $this->error('Недостаточно пользователей для расчета долгов');
             return;
         }
 
-        $expenses = [];
-        foreach ($users as $user) {
-            $sum = Expense::where('user_id', $user->id)
-                ->whereMonth('date', $date->month)
-                ->whereYear('date', $date->year)
-                ->sum('sum');
-
-            $expenses[$user->id] = [
-                'user' => $user,
-                'sum' => $sum
-            ];
-
-            $this->line("{$user->name}: {$sum} MDL");
+        foreach ($result['userTotals'] as $ut) {
+            $this->line("{$ut->user->name}: {$ut->total_sum} MDL");
         }
 
-        $collection = collect($expenses)
-            ->sortBy(fn($item, $key) => [$item['sum'], $key]);
-
-        $minExpenseUser = $collection->first();
-        $maxExpenseUser = $collection->last();
-
-        $difference = ($maxExpenseUser['sum'] - $minExpenseUser['sum']) / 2;
-
-        $overpayment = Overpayment::where('created_at', '<=', $date)
-            ->orderBy('created_at', 'desc')
-            ->first();
-
-        if ($overpayment) {
-            if ($minExpenseUser['user']->id === $overpayment->user_id) {
-                $difference += $overpayment->sum;
-            } else {
-                $difference = $difference - $overpayment->sum;
-                if ($difference < 0) {
-                    [$minExpenseUser, $maxExpenseUser] = [$maxExpenseUser, $minExpenseUser];
-                    $difference = abs($difference);
-                }
-            }
-        }
+        $finalDebtor     = $result['debtor'];
+        $finalCreditor   = $result['creditor'];
+        $finalDifference = $result['finalDifference'];
+        $overpayment     = $result['overpayment'];
 
         $existingDebt = Debt::where('date', $date)->first();
 
         if ($existingDebt) {
-            $this->warn("Долг за {$date->translatedFormat('d F Y')} уже существует для пользователя {$minExpenseUser['user']->name}❗");
+            $this->warn("Долг за {$date->translatedFormat('d F Y')} уже существует для пользователя {$finalDebtor->user->name}❗");
             if (in_array($existingDebt->payment_status, ['partial', 'paid']) && $existingDebt->user_id) {
                 $paidSum = $existingDebt->payment_status === 'partial' ? $existingDebt->partial_sum : $existingDebt->debt_sum;
                 PaidDebts::create([
@@ -95,7 +64,7 @@ class CalculateMonthlyDebts extends Command
                 ]);
             }
 
-            $debtTable = (new Debt)->getTable();
+            $debtTable     = (new Debt)->getTable();
             $paidDebtTable = (new PaidDebts)->getTable();
 
             $paidDebtsRecords = Debt::where($debtTable . '.id', $existingDebt->id)
@@ -108,19 +77,19 @@ class CalculateMonthlyDebts extends Command
                 ->get();
 
             foreach ($paidDebtsRecords as $paidDebt) {
-                if ($maxExpenseUser['user']->id === $paidDebt['user_id']) {
-                    $difference += $paidDebt['paid_sum'];
-                } elseif ($minExpenseUser['user']->id === $paidDebt['user_id']) {
-                    $difference -= $paidDebt['paid_sum'];
-                    if ($difference < 0) {
-                        [$minExpenseUser, $maxExpenseUser] = [$maxExpenseUser, $minExpenseUser];
-                        $difference = abs($difference);
+                if ($finalCreditor->user_id === $paidDebt['user_id']) {
+                    $finalDifference += $paidDebt['paid_sum'];
+                } elseif ($finalDebtor->user_id === $paidDebt['user_id']) {
+                    $finalDifference -= $paidDebt['paid_sum'];
+                    if ($finalDifference < 0) {
+                        [$finalDebtor, $finalCreditor] = [$finalCreditor, $finalDebtor];
+                        $finalDifference = abs($finalDifference);
                     }
                 }
             }
         }
 
-        if ($difference == 0) {
+        if ($finalDifference === 0.0) {
             $debtMessage = 'Расходы одинаковые, никто никому не должен.';
             $attributes = [
                 'date' => $date,
@@ -132,21 +101,21 @@ class CalculateMonthlyDebts extends Command
                 'notes' => $debtMessage,
             ];
         } else {
-            $formattedDifference = number_format($difference, 2, '.', ' ');
+            $formattedDifference = number_format($finalDifference, 2, '.', ' ');
             $debtMessage = __('resources.fields.notes_message.unpaid', [
-                'debtor' => $minExpenseUser['user']->name,
-                'creditor' => $maxExpenseUser['user']->name,
-                'sum' => $formattedDifference,
+                'debtor'   => $finalDebtor->user->name,
+                'creditor' => $finalCreditor->user->name,
+                'sum'      => $formattedDifference,
             ]);
 
             $attributes = [
                 'date' => $date,
-                'user_id' => $minExpenseUser['user']->id,
+                'user_id' => $finalDebtor->user->id,
                 'overpayment_id' => $overpayment?->id,
                 'payment_status' => 'unpaid',
                 'date_paid' => null,
                 'partial_sum' => 0,
-                'debt_sum' => $difference,
+                'debt_sum' => $finalDifference,
                 'notes' => $debtMessage,
             ];
         }

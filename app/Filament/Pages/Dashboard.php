@@ -258,18 +258,18 @@ class Dashboard extends BaseDashboard
                     Select::make('user_ids')
                         ->label(__('resources.fields.user'))
                         ->multiple()
-                        ->preload()
                         ->searchable()
-                        ->options(fn(): array => User::query()->orderBy('name')->pluck('name', 'id')->all())
+                        ->options(fn(): array => User::query()->orderBy('name')->limit(10)->pluck('name', 'id')->all())
+                        ->getSearchResultsUsing(fn(string $search): array => User::query()->where('name', 'like', "%{$search}%")->orderBy('name')->limit(10)->pluck('name', 'id')->all())
                         ->columnSpanFull(),
 
                     Select::make('category_ids')
                         ->label(__('resources.fields.category'))
                         ->multiple()
-                        ->preload()
                         ->searchable()
                         ->live()
-                        ->options(fn(): array => Category::query()->orderBy('name')->pluck('name', 'id')->all())
+                        ->options(fn(): array => Category::query()->orderBy('name')->limit(10)->pluck('name', 'id')->all())
+                        ->getSearchResultsUsing(fn(string $search): array => Category::query()->where('name', 'like', "%{$search}%")->orderBy('name')->limit(10)->pluck('name', 'id')->all())
                         ->afterStateUpdated(function ($state, $set, $get) {
                             $selectedCategories = $state ?? [];
                             $selectedSuppliers = $get('supplier_ids') ?? [];
@@ -291,26 +291,33 @@ class Dashboard extends BaseDashboard
                                 }
                             }
                         })
-                        ->optionsLimit(10)
                         ->columnSpanFull(),
 
                     Select::make('supplier_ids')
                         ->label(__('resources.fields.supplier'))
                         ->multiple()
-                        ->preload()
                         ->searchable()
                         ->options(function ($get) {
                             $categoryIds = $get('category_ids');
 
                             $query = Supplier::query()->orderBy('name');
 
-                            if (!empty($categoryIds)) {
+                            if (! empty($categoryIds)) {
                                 $query->whereIn('category_id', $categoryIds);
                             }
 
-                            return $query->pluck('name', 'id')->all();
+                            return $query->limit(10)->pluck('name', 'id')->all();
                         })
-                        ->optionsLimit(10)
+                        ->getSearchResultsUsing(function (string $search, $get): array {
+                            $query = Supplier::query()->where('name', 'like', "%{$search}%")->orderBy('name');
+                            $categoryIds = $get('category_ids');
+
+                            if (! empty($categoryIds)) {
+                                $query->whereIn('category_id', $categoryIds);
+                            }
+
+                            return $query->limit(10)->pluck('name', 'id')->all();
+                        })
                         ->columnSpanFull(),
 
                     Group::make([

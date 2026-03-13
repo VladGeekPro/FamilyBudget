@@ -2,11 +2,9 @@
 
 namespace App\Filament\Widgets;
 
-use App\Models\Expense;
-use App\Models\Overpayment;
-use App\Models\User;
-use Carbon\Carbon;
+use App\Services\DebtCalculationService;
 use Filament\Widgets\Widget;
+use Illuminate\Support\Facades\Cache;
 
 class DebtSummaryWidget extends Widget
 {
@@ -22,100 +20,58 @@ class DebtSummaryWidget extends Widget
         $end   = now()->endOfMonth();
         $today = now();
 
-        $daysInMonth   = (int) $end->day;
-        $daysElapsed   = (int) $today->day;
-        $daysRemaining = $daysInMonth - $daysElapsed;
-        $monthProgress = round(($daysElapsed / $daysInMonth) * 100);
+        return Cache::remember('widget:debt_summary', now()->addSeconds(120), function () use ($start, $end, $today): array {
+            $result = DebtCalculationService::calculate($start, $end);
 
-        // ---------- expenses per user ----------
-        $allUsers = User::orderBy('name')->get();
+            $daysInMonth   = (int) $end->day;
+            $daysElapsed   = (int) $today->day;
+            $daysRemaining = $daysInMonth - $daysElapsed;
+            $monthProgress = round(($daysElapsed / $daysInMonth) * 100);
+            $monthLabel    = $start->translatedFormat('F Y');
 
-        $rawExpenses = Expense::selectRaw('user_id, SUM(sum) as total_sum, COUNT(*) as tx_count')
-            ->whereDate('date', '>=', $start->toDateString())
-            ->whereDate('date', '<=', $end->toDateString())
-            ->groupBy('user_id')
-            ->get()
-            ->keyBy('user_id');
-
-        $userTotals = $allUsers->map(fn(User $u) => (object)[
-            'user_id'   => $u->id,
-            'user'      => $u,
-            'total_sum' => ($rawExpenses->get($u->id)?->total_sum ?? 0),
-            'tx_count'  => (int) ($rawExpenses->get($u->id)?->tx_count ?? 0),
-        ])->values();
-
-        if ($userTotals->count() < 2) {
-            return compact(
-                'start', 'end', 'today', 'daysInMonth',
-                'daysElapsed', 'daysRemaining', 'monthProgress',
-                'userTotals',
-            ) + [
-                'noData'         => true,
-                'finalDebtor'    => null,
-                'finalCreditor'  => null,
-                'finalDifference'=> 0.0,
-                'baseDifference' => 0.0,
-                'overpayment'    => null,
-                'overpaymentNote'=> null,
-                'isSettled'      => false,
-                'totalSpent'     => 0.0,
-                'monthLabel'     => now()->translatedFormat('F Y'),
-            ];
-        }
-
-        $sorted  = $userTotals->sortBy('total_sum')->values();
-        $minUser = $sorted->first(); // less spent → debtor
-        $maxUser = $sorted->last();  // more spent → creditor
-
-        $totalSpent    = $userTotals->sum('total_sum');
-        $baseDifference = ($maxUser->total_sum - $minUser->total_sum) / 2;
-
-        // ---------- overpayment ----------
-        $overpayment      = Overpayment::where('created_at', '<=', $end)->orderByDesc('created_at')->first();
-        $finalDebtor      = $minUser;
-        $finalCreditor    = $maxUser;
-        $finalDifference  = $baseDifference;
-        $overpaymentNote  = null;
-
-        if ($overpayment) {
-            $opSum = $overpayment->sum;
-            if ($minUser->user_id === $overpayment->user_id) {
-                $finalDifference = $baseDifference + $opSum;
-                $overpaymentNote = '+' . number_format($opSum, 2, ',', ' ') . ' MDL (переплата добавлена к долгу)';
-            } else {
-                $finalDifference = $baseDifference - $opSum;
-                if ($finalDifference < 0) {
-                    $finalDebtor     = $maxUser;
-                    $finalCreditor   = $minUser;
-                    $finalDifference = abs($finalDifference);
-                    $overpaymentNote = 'Направление долга изменилось (переплата ' . number_format($opSum, 2, ',', ' ') . ' MDL > базового долга)';
-                } else {
-                    $overpaymentNote = '–' . number_format($opSum, 2, ',', ' ') . ' MDL (переплата вычтена из долга)';
-                }
+            if (! $result['hasEnoughUsers']) {
+                return [
+                    'noData'          => true,
+                    'start'           => $start,
+                    'end'             => $end,
+                    'today'           => $today,
+                    'monthLabel'      => $monthLabel,
+                    'daysInMonth'     => $daysInMonth,
+                    'daysElapsed'     => $daysElapsed,
+                    'daysRemaining'   => $daysRemaining,
+                    'monthProgress'   => $monthProgress,
+                    'userTotals'      => $result['userTotals'],
+                    'finalDebtor'     => null,
+                    'finalCreditor'   => null,
+                    'finalDifference' => 0.0,
+                    'baseDifference'  => 0.0,
+                    'overpayment'     => null,
+                    'overpaymentNote' => null,
+                    'isSettled'       => false,
+                    'totalSpent'      => 0.0,
+                ];
             }
-        }
 
-        $isSettled = $finalDifference < 0.01;
-
-        return [
-            'noData'          => false,
-            'start'           => $start,
-            'end'             => $end,
-            'today'           => $today,
-            'monthLabel'      => $start->translatedFormat('F Y'),
-            'daysInMonth'     => $daysInMonth,
-            'daysElapsed'     => $daysElapsed,
-            'daysRemaining'   => $daysRemaining,
-            'monthProgress'   => $monthProgress,
-            'userTotals'      => $userTotals,
-            'totalSpent'      => $totalSpent,
-            'baseDifference'  => $baseDifference,
-            'overpayment'     => $overpayment,
-            'overpaymentNote' => $overpaymentNote,
-            'finalDebtor'     => $finalDebtor,
-            'finalCreditor'   => $finalCreditor,
-            'finalDifference' => $finalDifference,
-            'isSettled'       => $isSettled,
-        ];
+            return [
+                'noData'          => false,
+                'start'           => $start,
+                'end'             => $end,
+                'today'           => $today,
+                'monthLabel'      => $monthLabel,
+                'daysInMonth'     => $daysInMonth,
+                'daysElapsed'     => $daysElapsed,
+                'daysRemaining'   => $daysRemaining,
+                'monthProgress'   => $monthProgress,
+                'userTotals'      => $result['userTotals'],
+                'totalSpent'      => $result['totalSpent'],
+                'baseDifference'  => $result['baseDifference'],
+                'overpayment'     => $result['overpayment'],
+                'overpaymentNote' => $result['overpaymentNote'],
+                'finalDebtor'     => $result['debtor'],
+                'finalCreditor'   => $result['creditor'],
+                'finalDifference' => $result['finalDifference'],
+                'isSettled'       => $result['isSettled'],
+            ];
+        });
     }
 }

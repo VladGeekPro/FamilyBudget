@@ -102,17 +102,13 @@ class ExpensesTableWidget extends BaseWidget
 
     private function getMonthlySums(string $monthKey): array|float
     {
-        $this->cachedMonthlySums ??= $this->loadMonthlySums();
-        return $this->cachedMonthlySums[$monthKey];
-    }
-
-    private function loadMonthlySums(): array
-    {
-        return $this->expenseQuery()
+        $this->cachedMonthlySums ??= $this->expenseQuery()
             ->selectRaw("strftime('%Y-%m', date) as month_key, SUM(sum) as total")
             ->groupBy('month_key')
             ->get()
             ->mapWithKeys(fn($row) => [(string) $row->month_key => $row->total])
             ->all();
+
+        return $this->cachedMonthlySums[$monthKey];
     }
 }

@@ -16,14 +16,19 @@
 @endphp
 
 <x-filament-widgets::widget>
-    <div x-data="{ isCollapsed: false }" class="rounded-2xl overflow-hidden shadow-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
+    <div x-data="{ isCollapsed: false }" class="hidden rounded-2xl overflow-hidden shadow-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
 
         {{-- ═══════════ HEADER ═══════════ --}}
         <div class="px-6 py-4 bg-gradient-to-br from-violet-500 via-violet-600 to-purple-700">
-            <div class="flex flex-wrap items-center gap-x-4 gap-y-3">
+            <div
+                x-data="{ isRightWrapped: false, syncRightWrap() { const row = this.$refs.headerRow; const right = this.$refs.headerRight; if (!row || !right) return; this.isRightWrapped = right.offsetTop > row.offsetTop + 1; } }"
+                x-init="$nextTick(() => { syncRightWrap(); const observer = new ResizeObserver(() => syncRightWrap()); observer.observe($refs.headerRow); observer.observe($refs.headerRight); window.addEventListener('resize', syncRightWrap); })"
+                x-ref="headerRow"
+                class="flex flex-wrap items-center gap-x-4 gap-y-3"
+            >
                 {{-- Icon: always first --}}
-                <div class="flex-shrink-0 order-1">
-                    <div class="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center shadow-lg">
+                <div class="flex-shrink-0 order-1 self-stretch">
+                    <div class="h-full min-h-[40px] aspect-square rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center shadow-lg">
                         <x-heroicon-o-scale class="w-6 h-6 text-white" />
                     </div>
                 </div>
@@ -35,8 +40,12 @@
                 </div>
 
                 {{-- Progress Indicator: stay with icon on first line when wrapped --}}
-                <div class="flex items-stretch rounded-xl border border-white/15 bg-white/10 backdrop-blur-md shadow-md flex-shrink-0 order-2 sm:order-3 ml-auto sm:ml-0 overflow-hidden">
-                    <div class="flex items-center gap-2 px-4 py-2">
+                <div
+                    x-ref="headerRight"
+                    :class="isRightWrapped ? 'ml-0 basis-full justify-start' : 'ml-auto'"
+                    class="flex items-stretch rounded-xl border border-white/15 bg-white/10 backdrop-blur-md shadow-md flex-shrink-0 order-2 sm:order-3 overflow-hidden"
+                >
+                    <div class="flex items-center gap-2 px-2 py-1">
                         <div class="text-right">
                             <div class="text-white text-[11px] font-semibold uppercase tracking-wider opacity-90">Прогресс</div>
                             <div class="text-violet-100 text-sm font-bold">{{ $daysElapsed }}/{{ $daysInMonth }}</div>
@@ -192,7 +201,7 @@
                             <span class="font-bold text-gray-900 dark:text-white">{{ $fmt($totalSpent) }}</span>
                         </div>
                         <div class="flex flex-col gap-0.5">
-                            <span class="text-xs text-gray-400 dark:text-gray-500">Базовый долг (разница / 2)</span>
+                            <span class="text-xs text-gray-400 dark:text-gray-500">Половина разницы расходов</span>
                             <span class="font-bold text-gray-900 dark:text-white">{{ $fmt($baseDifference) }}</span>
                         </div>
                         @if($overpayment)

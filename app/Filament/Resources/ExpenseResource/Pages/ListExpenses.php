@@ -19,14 +19,14 @@ class ListExpenses extends ListRecords
 
     public function updated($propertyName): void
     {
-        if (str_starts_with($propertyName, 'tableFilters')) {
-            session(['tableFilters.user' => $this->tableFilters['user']['values']]);
-            session(['tableFilters.category' => $this->tableFilters['category']['values']]);
-            session(['tableFilters.supplier' => $this->tableFilters['supplier']['values']]);
-            session(['tableFilters.date' => $this->tableFilters['date']]);
-            session(['tableFilters.sum' => $this->tableFilters['sum']]);
+        if (str_starts_with($propertyName, 'tableDeferredFilters')) {
+            session(['tableDeferredFilters.user' => $this->tableDeferredFilters['user']['values']]);
+            session(['tableDeferredFilters.category' => $this->tableDeferredFilters['category']['values']]);
+            session(['tableDeferredFilters.supplier' => $this->tableDeferredFilters['supplier']['values']]);
+            session(['tableDeferredFilters.date' => $this->tableDeferredFilters['date']]);
+            session(['tableDeferredFilters.sum' => $this->tableDeferredFilters['sum']]);
         } elseif ($propertyName === 'tableSearch') {
-            session(['tableFilters.search' => trim($this->tableSearch)]);
+            session(['tableDeferredFilters.search' => trim($this->tableSearch)]);
         }
     }
 
@@ -35,13 +35,13 @@ class ListExpenses extends ListRecords
     {
         parent::resetTableFiltersForm();
 
-        // do not forget about tableFilters.search
+        // do not forget about tableDeferredFilters.search
         session()->forget([
-            'tableFilters.user',
-            'tableFilters.category',
-            'tableFilters.supplier',
-            'tableFilters.date',
-            'tableFilters.sum',
+            'tableDeferredFilters.user',
+            'tableDeferredFilters.category',
+            'tableDeferredFilters.supplier',
+            'tableDeferredFilters.date',
+            'tableDeferredFilters.sum',
         ]);
     }
 }

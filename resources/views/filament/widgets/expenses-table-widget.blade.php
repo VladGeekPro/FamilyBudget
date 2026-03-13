@@ -7,23 +7,33 @@
 
         {{-- ═══════════ HEADER ═══════════ --}}
         <div class="px-6 py-4 bg-gradient-to-br from-slate-600 via-slate-700 to-gray-800">
-            <div class="flex flex-wrap items-center gap-x-4 gap-y-3">
+            <div
+                x-data="{ isRightWrapped: false, syncRightWrap() { const row = this.$refs.headerRow; const right = this.$refs.headerRight; if (!row || !right) return; this.isRightWrapped = false; this.$nextTick(() => { this.isRightWrapped = right.offsetTop > row.offsetTop + 1; }); } }"
+                x-init="$nextTick(() => { syncRightWrap(); const observer = new ResizeObserver(() => syncRightWrap()); observer.observe($refs.headerRow); observer.observe($refs.headerRight); window.addEventListener('resize', syncRightWrap); })"
+                x-ref="headerRow"
+                class="flex flex-wrap gap-x-4 gap-y-3"
+            >
                 {{-- Icon: always first --}}
-                <div class="flex-shrink-0 order-1">
-                    <div class="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center shadow-lg">
-                        <x-heroicon-o-table-cells class="w-6 h-6 text-white" />
-                    </div>
+                <div class=" order-2 aspect-square min-h-[40px] rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center shadow-lg">
+                    <x-heroicon-o-table-cells class="w-6 h-6 text-white" />
                 </div>
 
                 {{-- Title & Subtitle: on mobile goes to new line, on desktop between icon and actions --}}
-                <div class="w-full sm:w-auto sm:flex-1 order-3 sm:order-2">
+                <div
+                    :class="isRightWrapped ? 'order-3' : 'order-4 sm:order-3'"
+                    class="sm:flex-1 self-center"
+                >
                     <h2 class="text-white font-bold text-xl leading-tight">{{ __('resources.widgets.expenses_table.title') }}</h2>
                     <p class="text-gray-300 text-sm mt-1">{{ __('resources.widgets.expenses_table.subtitle') }}</p>
                 </div>
 
                 {{-- Summary Stat: stay with icon on first line when wrapped --}}
-                <div class="flex items-stretch rounded-xl border border-white/15 bg-white/10 backdrop-blur-md shadow-md flex-shrink-0 order-2 sm:order-3 ml-auto sm:ml-0 overflow-hidden">
-                    <div class="px-4 py-2 min-w-[220px]">
+                <div
+                    x-ref="headerRight"
+                    :class="isRightWrapped ? 'order-1 ml-0 basis-full' : 'order-3 ml-auto sm:order-4'"
+                    class="flex items-stretch rounded-xl border border-white/15 bg-white/10 backdrop-blur-md shadow-md  overflow-hidden"
+                >
+                    <div class="px-2 py-1 w-full">
                         <div class="text-center text-gray-200 text-[11px] font-semibold uppercase tracking-wider opacity-90">
                             {{ __('resources.widgets.expenses_table.filtered_total') }}
                         </div>
@@ -42,7 +52,7 @@
                     <button
                         type="button"
                         x-on:click.stop="isCollapsed = !isCollapsed"
-                        class="inline-flex items-center justify-center px-3 text-white border-l border-white/20 hover:bg-white/20 hover:border-white/30 transition-all duration-200"
+                        class="px-3 text-white border-l border-white/20 hover:bg-white/20 hover:border-white/30 transition-all duration-200"
                         aria-label="Свернуть виджет"
                     >
                         <svg class="w-5 h-5 transition-transform duration-300" :class="isCollapsed && 'rotate-180'" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">

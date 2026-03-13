@@ -133,7 +133,7 @@ class ExpenseResource extends BaseResource
             ->defaultGroup(
                 TableGroup::make('date')
                     ->getTitleFromRecordUsing(function (Expense $record): string {
-                        $filters = session('tableFilters', []);
+                        $filters = session('tableDeferredFilters', []);
 
                         $filteredQuery = Expense::query();
 

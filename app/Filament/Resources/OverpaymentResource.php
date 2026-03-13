@@ -81,11 +81,11 @@ class OverpaymentResource extends BaseResource
                             ->live(onBlur: true)
                             ->afterStateUpdated(fn($livewire) => $livewire->validateOnly('data.user_id'))
                             ->allowHtml()
-                            ->options(fn() => User::all()->mapWithKeys(function ($user) {
+                            ->options(fn() => User::query()->orderBy('name')->limit(10)->get()->mapWithKeys(function ($user) {
                                 return [$user->getKey() => static::formatOptionWithIcon($user->name, $user->image)];
                             })->toArray())
                             ->getSearchResultsUsing(function (string $search) {
-                                $users = User::where('name', 'like', "%{$search}%")->limit(50)->get();
+                                $users = User::where('name', 'like', "%{$search}%")->limit(10)->get();
                                 return $users->mapWithKeys(function ($user) {
                                     return [$user->getKey() => static::formatOptionWithIcon($user->name, $user->image)];
                                 })->toArray();
@@ -94,9 +94,7 @@ class OverpaymentResource extends BaseResource
                                 $user = User::find($value);
                                 return static::formatOptionWithIcon($user->name, $user->image);
                             })
-                            ->optionsLimit(10)
                             ->searchable()
-                            ->preload()
                             ->selectablePlaceholder(false)
                             ->default(auth()->user()->id)
                             ->columnSpanFull(),
