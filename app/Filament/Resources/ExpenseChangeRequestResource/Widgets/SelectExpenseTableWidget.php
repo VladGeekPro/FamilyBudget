@@ -4,6 +4,7 @@ namespace App\Filament\Resources\ExpenseChangeRequestResource\Widgets;
 
 use App\Filament\Traits\HasExpenseCardTableLayout;
 use App\Models\Expense;
+use Filament\Support\Enums\Width;
 use Filament\Tables\Grouping\Group as TableGroup;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget as BaseWidget;
@@ -22,7 +23,7 @@ class SelectExpenseTableWidget extends BaseWidget
             ->searchPlaceHolder(__('resources.search_placeholder.resource.expense'))
             ->columns(static::getExpenseCardColumns())
             ->contentGrid(static::getExpenseCardContentGrid())
-            ->filters(\App\Filament\Resources\Base\BaseResource::getExpenseTableFilters(true))
+            ->filters(\App\Filament\Resources\Base\BaseResource::getExpenseTableFilters(true))->filtersFormWidth(Width::Small)
             ->defaultGroup(
                 TableGroup::make('date')
                     ->getTitleFromRecordUsing(function (Expense $record): string {

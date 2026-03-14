@@ -26,11 +26,11 @@ use Illuminate\Database\Eloquent\Model;
 abstract class BaseResource extends Resource
 {
     /** Можно переопределять в дочерних ресурсах */
-protected static ?string $defaultSortColumn = 'name';
+    protected static ?string $defaultSortColumn = 'name';
     protected static string  $defaultSortDirection = 'asc';
 
     /** Пагинация по умолчанию (можно переопределить в дочерних) */
-protected static int    $defaultPerPage = 25;
+    protected static int    $defaultPerPage = 25;
     protected static array  $defaultPerPageOptions = [10, 25, 50, 100, 'all'];
 
     protected static function getModelBase(): string
@@ -209,8 +209,7 @@ protected static int    $defaultPerPage = 25;
                 $category = Category::find($value);
                 return static::formatOptionWithIcon($category->name, $category->image);
             })
-            ->searchable()
-            ;
+            ->searchable();
 
         static::applyFieldConditions($categoryField, $forExpense, $isCurrentField);
 
@@ -494,8 +493,25 @@ protected static int    $defaultPerPage = 25;
                             ->mapWithKeys(fn($expense) => [
                                 $expense->id => "#{$expense->id} - {$expense->supplier->name} - {$expense->sum} MDL ({$expense->date->format('d.m.Y')})",
                             ]);
-                    }
-                ),
+                    },
+                    true
+                )->getSearchResultsUsing(function (string $search) {
+                    return Expense::previousMonthsExpenses()
+                        ->orderBy('id', 'desc')
+                        ->where(function ($query) use ($search) {
+                            $query->whereHas('supplier', function ($q) use ($search) {
+                                $q->where('name', 'like', "%{$search}%");
+                            })
+                                ->orWhere('notes', 'like', "%{$search}%")
+                                ->orWhere('sum', 'like', "%{$search}%")
+                                ->orWhere('id', $search);
+                        })
+                        ->limit(10)
+                        ->get()
+                        ->mapWithKeys(function ($expense) {
+                            return [$expense->id => "#{$expense->id} - {$expense->supplier->name} - {$expense->sum} MDL ({$expense->date->format('d.m.Y')})"];
+                        });
+                }),
                 static::makeRelationshipFilter('user', __('resources.fields.user'), 'user', 'name', true),
                 static::makeRelationshipFilter('category', __('resources.fields.category'), 'category', 'name', true),
                 static::makeRelationshipFilter('supplier', __('resources.fields.supplier'), 'supplier', 'name', true),

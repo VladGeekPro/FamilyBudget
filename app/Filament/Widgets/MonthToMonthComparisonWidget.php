@@ -59,8 +59,8 @@ class MonthToMonthComparisonWidget extends Widget implements HasActions, HasSche
         $currentEnd    = now()->endOfDay();
         $previousStart = now()->subMonthNoOverflow()->startOfMonth();
         $previousEnd   = now()->subMonthNoOverflow()->endOfMonth();
-        $currentRange  = [$currentStart->toDateString(), $currentEnd->toDateString()];
-        $previousRange = [$previousStart->toDateString(), $previousEnd->toDateString()];
+        $currentRange  = [$currentStart, $currentEnd];
+        $previousRange = [$previousStart, $previousEnd];
 
         $daysInMonth   = (int) $today->daysInMonth;
         $daysElapsed   = (int) $today->day;

@@ -20,13 +20,13 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $admin = User::factory()->create([
-            'name' => 'Admin User',
-            'email' => 'admin@example.com',
+            'name' => 'Влад',
+            'email' => 'vladret0@gmail.com',
             'password' => bcrypt('password'),
         ]);
 
         $demoUser = User::factory()->create([
-            'name' => 'Тестовый Пользователь',
+            'name' => 'Олечка',
             'email' => 'demo@example.com',
             'password' => bcrypt('password'),
         ]);
@@ -147,11 +147,11 @@ class DatabaseSeeder extends Seeder
             'Развлечения и отдых' => ['Кино', 'Семейный отдых', 'Билеты', 'Поездка выходного дня'],
         ];
 
-        $startDate = Carbon::now()->subMonths(120)->startOfDay();
-        $endDate = Carbon::now()->startOfDay();
+        $startDate = Carbon::now()->subMonths(12)->startOfDay();
+        $endDate = Carbon::now()->subMonth()->startOfDay();
 
         for ($date = $startDate->copy(); $date->lte($endDate); $date->addDays(1)) {
-            $entriesCount = random_int(5, 10);
+            $entriesCount = random_int(1, 5);
 
             for ($i = 0; $i < $entriesCount; $i++) {
                 $category = $categories->random();
@@ -170,7 +170,7 @@ class DatabaseSeeder extends Seeder
             }
         }
 
-        Overpayment::factory(20)->create();
+        // Overpayment::factory(1)->create();
 
         Debt::factory(12)->create();
 

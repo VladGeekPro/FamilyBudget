@@ -11,6 +11,7 @@ use Filament\Actions\Action;
 use Filament\Schemas\Components\Group;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
+use Filament\Support\Enums\Width;
 use Filament\Tables\Grouping\Group as TableGroup;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -128,7 +129,7 @@ class ExpenseResource extends BaseResource
             ->modifyQueryUsing(fn ($query) => $query->with('pendingChangeRequest'))
             ->columns(static::getExpenseCardColumns())
             ->contentGrid(static::getExpenseCardContentGrid())
-            ->filters(static::getExpenseTableFilters())
+            ->filters(static::getExpenseTableFilters())->filtersFormWidth(Width::Small)
             ->recordClasses('expense-record')
             ->defaultGroup(
                 TableGroup::make('date')

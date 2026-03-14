@@ -56,7 +56,13 @@ public function register(): void
                     ->replace('_id', '')
                     ->toString();
 
-                $name = __('resources.fields.' . $fieldKey);
+                // Inside SelectFilter, the Select name is "values" or "value" — use label instead
+                if (in_array($fieldKey, ['values', 'value'], true)) {
+                    $name = $component->getLabel();
+                } else {
+                    $name = __('resources.fields.' . $fieldKey);
+                }
+
                 return $resolveNotFoundMessage($name);
             };
 
