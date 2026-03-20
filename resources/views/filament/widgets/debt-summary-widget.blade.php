@@ -241,18 +241,30 @@ return '<span class="inline-flex h-14 w-14 items-center justify-center rounded-f
                         </div>
                     </div>
                     @else
-                    <div class="flex flex-wrap items-center gap-x-4 gap-y-3">
-                        {{-- Row 1: Icon + Amount --}}
+                    <div
+                        x-data="{ isAmountWrapped: false, syncAmountWrap() { const row = this.$refs.resultRow; const amount = this.$refs.resultAmount; if (!row || !amount) return; this.isAmountWrapped = false; this.$nextTick(() => { this.isAmountWrapped = amount.offsetTop > row.offsetTop + 1; }); } }"
+                        x-init="$nextTick(() => { syncAmountWrap(); const observer = new ResizeObserver(() => syncAmountWrap()); observer.observe($refs.resultRow); observer.observe($refs.resultAmount); window.addEventListener('resize', syncAmountWrap); })"
+                        x-ref="resultRow"
+                        class="flex flex-wrap items-center gap-x-4 gap-y-3"
+                    >
+                        {{-- Row 1: Icon + Debt info + Amount --}}
                         <div class="flex-shrink-0 w-12 h-12 rounded-full bg-white/20 flex items-center justify-center order-1">
                             <x-heroicon-m-arrow-right class="w-7 h-7" />
                         </div>
-                        <div class="flex-shrink-0 text-right order-2 ml-auto">
+
+                        {{-- If amount wraps, it moves next to icon and debt info goes to full-width next row --}}
+                        <div
+                            :class="isAmountWrapped ? 'order-2 ml-auto' : 'order-3 ml-auto'"
+                            x-ref="resultAmount"
+                            class="flex-shrink-0 text-right"
+                        >
                             <div class="text-2xl font-extrabold">{{ $fmt($finalDifference) }}</div>
                             <div class="text-red-200 text-xs">к переводу</div>
                         </div>
 
-                        {{-- Row 2: Full width debt info --}}
-                        <div class="w-full order-3">
+                        <div
+                            :class="isAmountWrapped ? 'order-3 w-full' : 'order-2 flex-1 min-w-0'"
+                        >
                             <div class="font-bold text-lg leading-tight">
                                 {{ $finalDebtor?->user->name }}
                                 <span class="font-normal text-red-100 mx-1">{{ $owed($finalDebtor?->user->name) }}</span>

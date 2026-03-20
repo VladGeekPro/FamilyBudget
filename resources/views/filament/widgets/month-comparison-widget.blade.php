@@ -96,7 +96,7 @@ return '<span class="inline-flex ' . $size . ' items-center justify-center round
             x-transition:leave="transition-all ease-in duration-200"
             x-transition:leave-start="opacity-100"
             x-transition:leave-end="opacity-0"
-            class="overflow-y-scroll h-150 px-6 py-5 space-y-5 overflow-hidden"
+            class="overflow-y-auto max-h-[45rem] sm:max-h-none px-6 py-5 space-y-5"
         >
 
             @if($sections['month_comparison'] ?? true)

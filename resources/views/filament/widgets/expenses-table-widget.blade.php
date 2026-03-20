@@ -96,7 +96,7 @@
 
         {{-- ═══════════ TABLE ═══════════ --}}
         
-        <div class="overflow-y-scroll h-150">
+        <div class="max-h-[45rem] overflow-y-auto sm:max-h-none">
             {{ $this->table ?? null }}
         </div>
         </div>
