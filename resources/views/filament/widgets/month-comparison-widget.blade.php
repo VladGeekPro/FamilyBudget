@@ -96,7 +96,7 @@ return '<span class="inline-flex ' . $size . ' items-center justify-center round
             x-transition:leave="transition-all ease-in duration-200"
             x-transition:leave-start="opacity-100"
             x-transition:leave-end="opacity-0"
-            class="px-6 py-5 space-y-5 overflow-hidden"
+            class="overflow-y-scroll h-150 px-6 py-5 space-y-5 overflow-hidden"
         >
 
             @if($sections['month_comparison'] ?? true)
@@ -472,7 +472,7 @@ return '<span class="inline-flex ' . $size . ' items-center justify-center round
             <div class="flex-1 min-w-0">
                 <div class="font-bold text-lg leading-tight">{{ __('resources.widgets.month_comparison.title_equal') }}</div>
                 <div class="text-slate-100 text-sm">{{ $monthLabel }}: без изменений по сравнению с {{ $prevMonthLabel }}</div>
-                <div class="text-slate-200 text-xs mt-1.5 opacity-85">💡 Отличная стабильность! Теперь попробуй снизить затраты в следующем месяце — это будет новой целью.</div>
+                <div class="text-slate-200 text-xs mt-1.5 opacity-85">💡 Отличная стабильность! Теперь попробуйте снизить затраты в следующем месяце — это будет новой целью.</div>
             </div>
             <div class="flex-shrink-0 text-right">
                 <div class="text-2xl font-extrabold">0%</div>
@@ -485,7 +485,7 @@ return '<span class="inline-flex ' . $size . ' items-center justify-center round
         <div class="flex-1 min-w-0">
             <div class="font-bold text-lg leading-tight">{{ __('resources.widgets.month_comparison.title_down') }}</div>
             <div class="text-green-100 text-sm">{{ $monthLabel }}: экономия {{ $fmt($deltaAbs) }} ({{ abs($deltaPercent) }}%) по сравнению с {{ $prevMonthLabel }}</div>
-            <div class="text-green-200 text-xs mt-1.5 opacity-85">🎉 Отличная работа! Продолжай в том же темпе — ты на правильном пути к финансовой дисциплине.</div>
+            <div class="text-green-200 text-xs mt-1.5 opacity-85">🎉 Отличная работа! Продолжайте в том же темпе — вы на правильном пути к финансовой дисциплине.</div>
         </div>
         @else
         <div class="flex-shrink-0 w-12 h-12 rounded-full bg-white/20 flex items-center justify-center">
@@ -494,7 +494,7 @@ return '<span class="inline-flex ' . $size . ' items-center justify-center round
         <div class="flex-1 min-w-0">
             <div class="font-bold text-lg leading-tight">{{ __('resources.widgets.month_comparison.title_up') }}</div>
             <div class="text-red-100 text-sm">{{ $monthLabel }}: {{ __('resources.widgets.month_comparison.overspending') }} {{ $fmt($deltaAbs) }} (+{{ $deltaPercent }}%) по сравнению с {{ $prevMonthLabel }}</div>
-            <div class="text-red-200 text-xs mt-1.5 opacity-85">⚠️ Обрати внимание на затраты! В следующем месяце попробуй вернуться к предыдущему уровню или ещё ниже.</div>
+            <div class="text-red-200 text-xs mt-1.5 opacity-85">⚠️ Обратите внимание на затраты! В следующем месяце попробуйте вернуться к предыдущему уровню или ещё ниже.</div>
         </div>
         <div class="flex-shrink-0 text-right">
             <div class="text-2xl font-extrabold">+{{ $deltaPercent }}%</div>

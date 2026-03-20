@@ -70,7 +70,6 @@ trait ConfigurableWidget
         \Filament\Notifications\Notification::make()
             ->title('Настройки сохранены')
             ->success()
-            ->persistent()
             ->send();
     }
 

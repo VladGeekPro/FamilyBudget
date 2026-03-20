@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\View\Compilers\LockedBladeCompiler;
 use App\Models\Debt;
 use App\Models\Expense;
 use App\Models\ExpenseChangeRequest;
@@ -13,6 +14,7 @@ use Filament\Tables\Table;
 use Illuminate\Support\ServiceProvider;
 use Filament\Facades\Filament;
 use Filament\Navigation\NavigationGroup;
+use Illuminate\View\DynamicComponent;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Cache;
@@ -22,6 +24,19 @@ class AppServiceProvider extends ServiceProvider
 public function register(): void
     {
         parent::register();
+
+        $this->app->singleton('blade.compiler', function ($app) {
+            return tap(new LockedBladeCompiler(
+                $app['files'],
+                $app['config']['view.compiled'],
+                $app['config']->get('view.relative_hash', false) ? $app->basePath() : '',
+                $app['config']->get('view.cache', true),
+                $app['config']->get('view.compiled_extension', 'php'),
+                $app['config']->get('view.check_cache_timestamps', true),
+            ), function ($blade) {
+                $blade->component('dynamic-component', DynamicComponent::class);
+            });
+        });
 
         \Filament\Tables\Columns\Layout\Component::mixin(
             new \App\Macros\Filament\Tables\Columns\Layout\ComponentMacros()

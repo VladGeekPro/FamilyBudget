@@ -95,7 +95,8 @@
         </div>
 
         {{-- ═══════════ TABLE ═══════════ --}}
-        <div>
+        
+        <div class="overflow-y-scroll h-150">
             {{ $this->table ?? null }}
         </div>
         </div>

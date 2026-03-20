@@ -18,7 +18,7 @@ class ExpensesMonthlyTrendChart extends ExpensesGroupedChartWidget
 
     protected bool $isCollapsible = true;
 
-    protected ?string $pollingInterval = '180s';
+    protected ?string $pollingInterval = '30s';
 
     protected static ?int $sort = 8;
 
