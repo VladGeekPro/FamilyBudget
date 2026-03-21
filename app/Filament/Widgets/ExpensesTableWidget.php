@@ -39,7 +39,6 @@ class ExpensesTableWidget extends BaseWidget
         $totalExpenses = (clone $baseQuery)->sum('sum');
         $totalCount = (int) (clone $baseQuery)->count();
 
-        // Top 3 categories
         $topCategories = $this->expenseQuery()
             ->selectRaw('category_id, SUM(sum) as total, COUNT(*) as cnt')
             ->groupBy('category_id')

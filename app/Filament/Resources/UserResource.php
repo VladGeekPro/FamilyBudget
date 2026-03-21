@@ -226,6 +226,26 @@ class UserResource extends BaseResource
             ->bulkActions([]);
     }
 
+    public static function configureDeleteAction(\Filament\Actions\DeleteAction $action): \Filament\Actions\DeleteAction
+    {
+        return $action
+            ->modalHeading('Удаление пользователя')
+            ->modalDescription('При удалении пользователя будут каскадно удалены все привязанные к нему записи: затраты, долги, переплаты и другие связанные данные. Это действие необратимо. Вы уверены, что хотите продолжить?');
+    }
+
+    protected static function getTableActions(): array
+    {
+        $actions = parent::getTableActions();
+
+        foreach ($actions as $action) {
+            if ($action instanceof \Filament\Actions\DeleteAction) {
+                static::configureDeleteAction($action);
+            }
+        }
+
+        return $actions;
+    }
+
     public static function getRelations(): array
     {
         return [

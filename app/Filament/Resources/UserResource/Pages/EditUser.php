@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\UserResource\Pages;
 
 use App\Filament\Resources\UserResource;
+use Filament\Actions;
 use Filament\Actions\Action;
 use App\Filament\Resources\Base\EditBase;
 
@@ -12,7 +13,17 @@ class EditUser extends EditBase
     protected static string $resource = UserResource::class;
 
     public bool $changePasswordMode = false;
-  
+
+    protected function getHeaderActions(): array
+    {
+        return [
+            UserResource::configureDeleteAction(
+                Actions\DeleteAction::make()
+                    ->successNotificationTitle(fn () => $this->getDeletedNotificationTitle())
+            ),
+        ];
+    }
+
     protected function getFormActions(): array
     {
         return [

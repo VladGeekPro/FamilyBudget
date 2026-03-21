@@ -2,7 +2,8 @@
     $fmt = fn(float $v): string => number_format($v, 2, ',', ' ') . ' MDL';
 @endphp
 
-<x-filament-widgets::widget class="fi-wi-table">
+<x-filament-widgets::widget class="fi-wi-table expenses-table-widget">
+
     <div x-data="{ isCollapsed: false }" class="rounded-2xl overflow-hidden shadow-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
 
         {{-- ═══════════ HEADER ═══════════ --}}
