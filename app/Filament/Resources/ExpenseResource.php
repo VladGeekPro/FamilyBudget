@@ -3,6 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\Base\BaseResource;
+use App\Filament\Resources\ExpenseResource\Concerns\HasExpenseFormSchema;
 use App\Filament\Resources\ExpenseResource\Pages;
 use App\Filament\Traits\HasExpenseCardTableLayout;
 use App\Models\Expense;
@@ -18,6 +19,7 @@ use Illuminate\Database\Eloquent\Builder;
 
 class ExpenseResource extends BaseResource
 {
+    use HasExpenseFormSchema;
     use HasExpenseCardTableLayout;
 
     protected static ?string $model = Expense::class;
@@ -112,6 +114,9 @@ class ExpenseResource extends BaseResource
                 Section::make(__('resources.sections.main'))
                     ->icon('heroicon-o-document-text')
                     ->iconColor('primary')
+                    ->headerActions([
+                        static::makeExpenseVoiceAction(),
+                    ])
                     ->columnSpanFull()
                     ->schema([
                         Group::make(

@@ -23,7 +23,10 @@ class AdminPanelProvider extends PanelProvider
     public function panel(Panel $panel): Panel
     {
         return $panel
-            ->viteTheme('resources/css/filament/admin/theme.css')
+            ->viteTheme([
+                'resources/css/filament/admin/theme.css',
+                'resources/js/expense-voice.js',
+            ])
             ->default()
             ->id('admin')
             ->path('admin')

@@ -6,7 +6,7 @@ export default defineConfig({
     plugins: [
         tailwindcss(),
         laravel({
-            input: ["resources/css/filament/admin/theme.css", "resources/js/app.js"],
+            input: ["resources/css/filament/admin/theme.css", "resources/js/app.js", "resources/js/expense-voice.js"],
             refresh: true,
         }),
     ],

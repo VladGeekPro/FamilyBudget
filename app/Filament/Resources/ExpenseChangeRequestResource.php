@@ -3,6 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\ExpenseChangeRequestResource\Pages;
+use App\Filament\Resources\ExpenseResource\Concerns\HasExpenseFormSchema;
 use App\Models\Expense;
 use App\Models\ExpenseChangeRequest;
 use App\Models\ExpenseChangeRequestVote;
@@ -30,6 +31,8 @@ use Illuminate\Support\Facades\Cache;
 
 class ExpenseChangeRequestResource extends BaseResource
 {
+    use HasExpenseFormSchema;
+
     protected static ?string $model = ExpenseChangeRequest::class;
 
     public static function getNavigationGroup(): string|\UnitEnum|null
