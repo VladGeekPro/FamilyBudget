@@ -20,7 +20,7 @@ class ExpenseVoiceTranscriptionRequest extends FormRequest
             'audio' => [
                 'required',
                 File::types(['webm', 'wav', 'mp3', 'm4a', 'ogg'])
-                    ->max(config('expense_voice.max_upload_kb')),
+                    ->max(12288),
             ],
         ];
     }

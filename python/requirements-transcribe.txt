@@ -1,9 +1,0 @@
-faster-whisper
-pymorphy3
-rapidfuzz
-sentence-transformers
-scikit-learn
-gliner
-dateparser
-iuliia
-torch

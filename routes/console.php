@@ -11,3 +11,8 @@ Artisan::command('inspire', function () {
 Schedule::command('calculate:monthly-debts')
     ->monthlyOn(1, '00:00')
     ->timezone('Europe/Chisinau');
+
+Schedule::command('ping')
+    ->everyFiveMinutes()
+    ->between('8:00', '22:00')
+    ->timezone('Europe/Chisinau');

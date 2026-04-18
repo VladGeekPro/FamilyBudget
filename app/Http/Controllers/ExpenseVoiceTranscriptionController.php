@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ExpenseVoiceTranscriptionRequest;
-use App\Services\ExpenseVoiceTranscriptionService;
+use App\Services\PythonApiService;
 use Illuminate\Http\JsonResponse;
 use RuntimeException;
 use Throwable;
@@ -12,7 +12,7 @@ class ExpenseVoiceTranscriptionController extends Controller
 {
     public function __invoke(
         ExpenseVoiceTranscriptionRequest $request,
-        ExpenseVoiceTranscriptionService $service,
+        PythonApiService $service,
     ): JsonResponse {
         try {
             $result = $service->transcribe(
