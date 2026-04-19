@@ -178,15 +178,17 @@ const createExpenseVoiceRecorder = (config) => {
                 const body = await response.json().catch(() => ({}))
 
                 if (!response.ok) {
-                    throw new Error(body.message || this.failedTitle)
+                    const error = new Error(body.message || this.failedTitle)
+                    error.title = body.title || this.failedTitle
+                    throw error
                 }
 
                 this.transcript = body.transcript || ''
                 this.applyFieldUpdates(body.field_updates || {})
-                this.notify('success', this.appliedTitle, this.appliedBody)
+                this.notify('success', body.title || this.appliedTitle, body.body || this.appliedBody)
                 this.closeModal()
             } catch (error) {
-                this.notify('danger', this.failedTitle, error?.message || this.failedTitle)
+                this.notify('danger', error?.title || this.failedTitle, error?.message || this.failedTitle)
             } finally {
                 this.isSaving = false
             }
@@ -201,7 +203,6 @@ const createExpenseVoiceRecorder = (config) => {
             }
 
             if (fieldUpdates.supplier_id) {
-                component.set('data.category_id', null)
                 component.set('data.supplier_id', fieldUpdates.supplier_id)
             }
 

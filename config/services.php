@@ -40,10 +40,7 @@ return [
         'process_audio_url' => env('PYTHON_API_PROCESS_AUDIO_URL'),
         'health_url' => env('PYTHON_API_HEALTH_URL'),
         'token' => env('PYTHON_API_TOKEN'),
-        'connect_timeout' => (int) env('PYTHON_API_CONNECT_TIMEOUT', 5),
         'timeout' => (int) env('PYTHON_API_TIMEOUT', 120),
-        'retries' => (int) env('PYTHON_API_RETRIES', 2),
-        'retry_sleep_ms' => (int) env('PYTHON_API_RETRY_SLEEP_MS', 250),
         'verify_ssl' => filter_var(env('PYTHON_API_VERIFY_SSL', true), FILTER_VALIDATE_BOOLEAN),
     ],
 

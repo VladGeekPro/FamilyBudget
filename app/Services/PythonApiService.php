@@ -5,13 +5,15 @@ namespace App\Services;
 use App\Models\Supplier;
 use App\Models\User;
 use Carbon\Carbon;
+use GuzzleHttp\Handler\StreamHandler;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use JsonException;
 use RuntimeException;
+use Throwable;
 
 class PythonApiService
 {
@@ -42,19 +44,7 @@ class PythonApiService
 
     public function ping(): bool
     {
-        if (blank($this->healthUrl())) {
-            return false;
-        }
-
-        try {
-            return $this->client()->get($this->healthUrl())->successful();
-        } catch (\Throwable $exception) {
-            Log::warning('Python API ping failed.', [
-                'message' => $exception->getMessage(),
-            ]);
-
-            return false;
-        }
+        return $this->warmUpApi();
     }
 
     protected function sendAudioRequest(UploadedFile $audioFile, string $mode, array $context): array
@@ -64,6 +54,8 @@ class PythonApiService
         if (blank($url)) {
             throw new RuntimeException(__('resources.voice.notifications.fastapi_url_missing'));
         }
+
+        $this->warmUpApi();
 
         try {
             $contextJson = json_encode($context, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
@@ -80,26 +72,47 @@ class PythonApiService
 
         $fileName = $audioFile->getClientOriginalName() ?: 'voice.webm';
 
-        try {
-            $response = $this->client()
-                ->attach('audio', $audioContent, $fileName)
-                ->post($url, [
-                    'mode' => $mode,
-                    'context' => $contextJson,
-                ]);
-        } catch (\Throwable $exception) {
+        $response = null;
+        $lastException = null;
+
+        for ($attempt = 1; $attempt <= 4; $attempt++) {
+            try {
+                $response = $this->client()
+                    ->attach('audio', $audioContent, $fileName)
+                    ->post($url, [
+                        'mode' => $mode,
+                        'context' => $contextJson,
+                    ]);
+
+                break;
+            } catch (ConnectionException $exception) {
+                $lastException = $exception;
+
+                if ($attempt === 4) {
+                    throw new RuntimeException($this->mapFastApiExceptionMessage($exception), previous: $exception);
+                }
+
+                usleep(1000000);
+            } catch (\Throwable $exception) {
+                throw new RuntimeException($this->mapFastApiExceptionMessage($exception), previous: $exception);
+            }
+        }
+
+        if (! $response) {
             throw new RuntimeException(
-                __('resources.voice.notifications.fastapi_failed').' '.$exception->getMessage(),
-                previous: $exception,
+                $this->mapFastApiExceptionMessage($lastException ?? new RuntimeException('Unknown FastAPI error')),
+                previous: $lastException,
             );
         }
 
         if (! $response->successful()) {
-            throw new RuntimeException(
+            $message = (string) (
                 $response->json('message')
-                    ?? $response->body()
-                    ?? __('resources.voice.notifications.fastapi_failed')
+                ?? $response->body()
+                ?? __('resources.voice.notifications.fastapi_failed')
             );
+
+            throw new RuntimeException($this->mapFastApiResponseMessage($message));
         }
 
         $decoded = $response->json();
@@ -109,10 +122,36 @@ class PythonApiService
         }
 
         if (($decoded['status'] ?? 'ok') !== 'ok') {
-            throw new RuntimeException($decoded['message'] ?? __('resources.voice.notifications.fastapi_failed'));
+            $message = (string) ($decoded['message'] ?? __('resources.voice.notifications.fastapi_failed'));
+
+            throw new RuntimeException($this->mapFastApiResponseMessage($message));
         }
 
         return $decoded;
+    }
+
+    protected function warmUpApi(): bool
+    {
+        $healthUrl = $this->healthUrl();
+
+        if (blank($healthUrl)) {
+            return false;
+        }
+
+        for ($attempt = 1; $attempt <= 3; $attempt++) {
+            try {
+                if ($this->client()->get($healthUrl)->successful()) {
+                    return true;
+                }
+            } catch (\Throwable) {
+            }
+
+            if ($attempt < 3) {
+                usleep(1000000);
+            }
+        }
+
+        return false;
     }
 
     protected function buildContext(): array
@@ -156,7 +195,6 @@ class PythonApiService
             'date' => $this->normalizeDate($pythonResult['date'] ?? null),
             'supplier_id' => $this->matchEntityId($pythonResult['supplier'] ?? null, $context['suppliers']),
             'sum' => $this->normalizeAmount($pythonResult['sum'] ?? null),
-            'notes' => $this->normalizeNotesText($pythonResult['notes'] ?? $pythonResult['text'] ?? null),
         ]);
     }
 
@@ -247,6 +285,33 @@ class PythonApiService
             ->squish();
     }
 
+    protected function mapFastApiExceptionMessage(Throwable $exception): string
+    {
+        $message = Str::lower($exception->getMessage());
+
+        if (
+            str_contains($message, 'could not resolve host')
+            || str_contains($message, 'ssl certificate problem')
+            || str_contains($message, 'connection refused')
+            || str_contains($message, 'timed out')
+        ) {
+            return __('resources.voice.notifications.fastapi_unreachable');
+        }
+
+        return __('resources.voice.notifications.fastapi_failed');
+    }
+
+    protected function mapFastApiResponseMessage(string $message): string
+    {
+        $normalized = Str::lower($message);
+
+        if (str_contains($normalized, 'speech-to-text backend is unavailable')) {
+            return __('resources.voice.notifications.fastapi_backend_unavailable');
+        }
+
+        return $message !== '' ? $message : __('resources.voice.notifications.fastapi_failed');
+    }
+
     protected function filterEmptyValues(array $values): array
     {
         return array_filter($values, static fn ($value) => filled($value) || $value === 0 || $value === '0');
@@ -255,14 +320,10 @@ class PythonApiService
     protected function client(): PendingRequest
     {
         $client = Http::acceptJson()
-            ->connectTimeout((int) config('services.python_api.connect_timeout', 5))
             ->timeout((int) config('services.python_api.timeout', 120))
-            ->retry(
-                (int) config('services.python_api.retries', 2),
-                (int) config('services.python_api.retry_sleep_ms', 250),
-            )
             ->withOptions([
                 'verify' => (bool) config('services.python_api.verify_ssl', true),
+                'handler' => new StreamHandler(),
             ]);
 
         $token = config('services.python_api.token');
