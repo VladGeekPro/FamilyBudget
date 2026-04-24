@@ -38,6 +38,7 @@ return [
     'python_api' => [
         'url' => env('PYTHON_API_URL'),
         'process_audio_url' => env('PYTHON_API_PROCESS_AUDIO_URL'),
+        'predict_expenses_url' => env('PYTHON_API_PREDICT_EXPENSES_URL'),
         'health_url' => env('PYTHON_API_HEALTH_URL'),
         'token' => env('PYTHON_API_TOKEN'),
         'timeout' => (int) env('PYTHON_API_TIMEOUT', 120),

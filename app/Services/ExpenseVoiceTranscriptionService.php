@@ -5,17 +5,14 @@ namespace App\Services;
 use App\Models\Supplier;
 use App\Models\User;
 use Carbon\Carbon;
-use GuzzleHttp\Handler\StreamHandler;
 use Illuminate\Http\Client\ConnectionException;
-use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 use JsonException;
 use RuntimeException;
 use Throwable;
 
-class PythonApiService
+class ExpenseVoiceTranscriptionService extends BasePythonApiService
 {
     public function transcribe(UploadedFile $audioFile, string $mode): array
     {
@@ -128,30 +125,6 @@ class PythonApiService
         }
 
         return $decoded;
-    }
-
-    protected function warmUpApi(): bool
-    {
-        $healthUrl = $this->healthUrl();
-
-        if (blank($healthUrl)) {
-            return false;
-        }
-
-        for ($attempt = 1; $attempt <= 3; $attempt++) {
-            try {
-                if ($this->client()->get($healthUrl)->successful()) {
-                    return true;
-                }
-            } catch (\Throwable) {
-            }
-
-            if ($attempt < 3) {
-                usleep(1000000);
-            }
-        }
-
-        return false;
     }
 
     protected function buildContext(): array
@@ -317,31 +290,6 @@ class PythonApiService
         return array_filter($values, static fn ($value) => filled($value) || $value === 0 || $value === '0');
     }
 
-    protected function client(): PendingRequest
-    {
-        $client = Http::acceptJson()
-            ->timeout((int) config('services.python_api.timeout', 120))
-            ->withOptions([
-                'verify' => (bool) config('services.python_api.verify_ssl', true),
-                'handler' => new StreamHandler(),
-            ]);
-
-        $token = config('services.python_api.token');
-
-        if (filled($token)) {
-            $client = $client->withToken($token);
-        }
-
-        return $client;
-    }
-
-    protected function baseUrl(): ?string
-    {
-        $url = config('services.python_api.url');
-
-        return filled($url) ? rtrim((string) $url, '/') : null;
-    }
-
     protected function processAudioUrl(): ?string
     {
         $url = config('services.python_api.process_audio_url');
@@ -353,18 +301,5 @@ class PythonApiService
         $baseUrl = $this->baseUrl();
 
         return filled($baseUrl) ? $baseUrl.'/process-audio' : null;
-    }
-
-    protected function healthUrl(): ?string
-    {
-        $url = config('services.python_api.health_url');
-
-        if (filled($url)) {
-            return rtrim((string) $url, '/');
-        }
-
-        $baseUrl = $this->baseUrl();
-
-        return filled($baseUrl) ? $baseUrl.'/health' : null;
     }
 }

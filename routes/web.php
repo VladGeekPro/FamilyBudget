@@ -1,14 +1,19 @@
 <?php
 
-use App\Http\Controllers\ExpenseVoiceTranscriptionDebugController;
+use App\Http\Controllers\ExpenseRecommendationController;
 use App\Http\Controllers\ExpenseVoiceTranscriptionController;
 use Illuminate\Support\Facades\Route;
 
 Route::redirect('/', '/admin/login');
 
-Route::get('/debug/expense-voice/transcribe', ExpenseVoiceTranscriptionDebugController::class)
-    ->name('debug.expense-voice.transcribe');
+Route::middleware('auth')->group(function (): void {
 
-Route::middleware('auth')->post('/expense-voice/transcriptions', ExpenseVoiceTranscriptionController::class)
-    ->name('expense-voice.transcribe');
+    Route::post('/expense-voice/transcriptions', ExpenseVoiceTranscriptionController::class)
+        ->name('expense-voice.transcribe');
 
+    Route::post('/expense-recommendations/predict', [ExpenseRecommendationController::class, 'predict'])
+        ->name('expense-recommendations.predict');
+
+    Route::post('/expense-recommendations/expenses', [ExpenseRecommendationController::class, 'store'])
+        ->name('expense-recommendations.expenses.store');
+});

@@ -36,61 +36,61 @@ class DatabaseSeeder extends Seeder
                 'name' => 'Продукты',
                 'slug' => 'produkty',
                 'notes' => 'Ежедневные продукты и бытовые покупки.',
-                'suppliers' => ['Linella', 'Kaufland', 'Green Hills', 'Nr1', 'Family Market', 'Local Market'],
+                'suppliers' => ['Alimentara', 'Cleber', 'Curtea Macelar', 'Davidan', 'Felicia', 'Fidesco', 'Franzeluța', 'IarmarEco', 'Jardi Market', 'Kaufland', 'Linella', 'Linella 115', 'Local', 'Merci', 'Metro', 'Mikof', 'Nanu Market', 'Nr 1', 'Ocean Fish', 'Peon Farm', 'Piața Centrală', 'Primul Discounter', 'Rogob', 'Salamer', 'Valconi', 'Vasconi', 'Vatsak', 'Velmart'],
             ],
             [
                 'name' => 'Кафе и рестораны',
                 'slug' => 'kafe-restorany',
                 'notes' => 'Питание вне дома.',
-                'suppliers' => ['Andys Pizza', 'La Placinte', 'McDonalds', 'KFC', 'CoffeeVarka', 'Sensi Bar'],
+                'suppliers' => ["Andy's Pizza", 'Berăria Costin', 'Coffee Dealer', 'Döner Kebab', 'Fast Food', 'Filetti', 'Granier', 'Katana Sushi', 'Kebab', 'Maestro', 'Maestro Delice', 'Mozza', 'Pizza9', 'Samurai', 'Takumi'],
             ],
             [
                 'name' => 'Транспорт',
                 'slug' => 'transport',
                 'notes' => 'Такси, топливо, общественный транспорт.',
-                'suppliers' => ['Yandex Go', 'iTaxi', 'Rompetrol', 'Lukoil', 'Moldcell Parking', 'Autogara'],
+                'suppliers' => ['Startur'],
             ],
             [
                 'name' => 'Коммунальные услуги',
                 'slug' => 'kommunalnye-uslugi',
                 'notes' => 'Свет, вода, газ, интернет.',
-                'suppliers' => ['Premier Energy', 'Apa Canal', 'Moldovagaz', 'Orange Home', 'Moldtelecom'],
+                'suppliers' => ['Energocom', 'Eurotelecom', 'Giganet', 'Moldovagaz', 'Oldcom', 'Premier Energy', 'Telemarket Cricova', 'Volta'],
             ],
             [
                 'name' => 'Здоровье',
                 'slug' => 'zdorove',
                 'notes' => 'Аптеки, анализы, приёмы врачей.',
-                'suppliers' => ['Farmacia Felicia', 'Farmacia Familiei', 'Synevo', 'Medpark', 'Repromed'],
+                'suppliers' => ['Beauty Factory', 'Farmacia Familia', 'Herb', 'Hippocrates', 'iHerb', 'Kiss Beauty Salon', 'Medical Market', 'Sancos', 'Stomatologia Familiei'],
             ],
             [
                 'name' => 'Дом и ремонт',
                 'slug' => 'dom-remont',
                 'notes' => 'Покупки для дома, мебель, ремонт.',
-                'suppliers' => ['Supraten', 'Bomba', 'Enter', 'Maximum', 'Jysk', 'Casa Curata'],
+                'suppliers' => ['Casa Curată', 'Danjan Lux SRL', 'Elica', 'Global Store', 'Maximum', 'Supraten', 'Temix'],
             ],
             [
                 'name' => 'Одежда и обувь',
                 'slug' => 'odezhda-obuv',
                 'notes' => 'Одежда, обувь, аксессуары.',
-                'suppliers' => ['Zara', 'LC Waikiki', 'New Yorker', 'Sportlandia', 'Deichmann', 'Mango'],
+                'suppliers' => ['Joom', 'KatShop', 'Letz', 'Modus Vivendi', 'Pandashop', 'Peach Girl', 'Tagaer', 'Temu'],
             ],
             [
                 'name' => 'Подписки и сервисы',
                 'slug' => 'podpiski-servisy',
                 'notes' => 'Онлайн-сервисы и подписки.',
-                'suppliers' => ['Netflix', 'YouTube Premium', 'Spotify', 'Google One', 'iCloud', 'ChatGPT'],
+                'suppliers' => ['Avandion SRL', 'Iute Credit', 'IuteCredit', 'Moldovapresa', 'Moldpresa', 'Яндекс Подписка'],
             ],
             [
                 'name' => 'Дети и образование',
                 'slug' => 'deti-obrazovanie',
                 'notes' => 'Сад, школа, кружки, учебные материалы.',
-                'suppliers' => ['Bimboland', 'Librarius', 'Artico', 'SmartyKids', 'Kangaroo Club'],
+                'suppliers' => ['Belsug Toys S.R.L.', 'Chibox', 'Crafti'],
             ],
             [
                 'name' => 'Развлечения и отдых',
                 'slug' => 'razvlecheniya-otdyh',
                 'notes' => 'Кино, поездки, досуг.',
-                'suppliers' => ['Patria Cinema', 'Aqua Magic', 'Booking', 'Airbnb', 'Wizz Air', 'Railway MD'],
+                'suppliers' => ['Atlantis Alexandri', 'Megapolis', 'Ovația', 'Wellness & Spa Thermal'],
             ],
         ];
 
@@ -170,7 +170,7 @@ class DatabaseSeeder extends Seeder
             }
         }
 
-        // Overpayment::factory(1)->create();
+        Overpayment::factory(1)->create();
 
         Debt::factory(12)->create();
 

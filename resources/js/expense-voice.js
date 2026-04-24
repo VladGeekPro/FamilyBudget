@@ -188,7 +188,7 @@ const createExpenseVoiceRecorder = (config) => {
                 this.notify('success', body.title || this.appliedTitle, body.body || this.appliedBody)
                 this.closeModal()
             } catch (error) {
-                this.notify('danger', error?.title || this.failedTitle, error?.message || this.failedTitle)
+                this.notify('danger', error?.title || this.failedTitle, error?.message || '')
             } finally {
                 this.isSaving = false
             }

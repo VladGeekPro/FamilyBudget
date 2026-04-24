@@ -2,7 +2,7 @@
 
 namespace App\Console\Commands;
 
-use App\Services\PythonApiService;
+use App\Services\ExpenseVoiceTranscriptionService;
 use Illuminate\Console\Command;
 
 class PingHuggingFace extends Command
@@ -11,7 +11,7 @@ class PingHuggingFace extends Command
 
     protected $description = 'Ping the Hugging Face Python API during daytime hours';
 
-    public function handle(PythonApiService $pythonApi): int
+    public function handle(ExpenseVoiceTranscriptionService $pythonApi): int
     {
         if ($pythonApi->ping()) {
             $this->info('Hugging Face is reachable.');

@@ -26,6 +26,7 @@ class AdminPanelProvider extends PanelProvider
             ->viteTheme([
                 'resources/css/filament/admin/theme.css',
                 'resources/js/expense-voice.js',
+                'resources/js/expense-predictions.js',
             ])
             ->default()
             ->id('admin')
