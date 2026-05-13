@@ -42,17 +42,46 @@ const createPredictedExpensesWidget = (config) => {
         },
 
         notify(status, title, body = '') {
+            
+            // Полифилл для crypto.randomUUID
+            if (!globalThis.crypto?.randomUUID) {
+                if (!globalThis.crypto) globalThis.crypto = {}
+                globalThis.crypto.randomUUID = () => {
+                    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+                        const r = (Math.random() * 16) | 0
+                        const v = c === 'x' ? r : (r & 0x3) | 0x8
+                        return v.toString(16)
+                    })
+                }
+            }
+            
             if (!window.FilamentNotification) {
+                this.showFallbackNotification(status, title, body)
                 return
             }
 
-            const notification = new window.FilamentNotification().title(title)
+            try {
+                const notification = new window.FilamentNotification().title(title)
 
-            if (body) {
-                notification.body(body)
+                if (body) {
+                    notification.body(body)
+                }
+
+                notification[status]().send()
+            } catch (error) {
+                this.showFallbackNotification(status, title, body)
             }
+        },
 
-            notification[status]().send()
+        showFallbackNotification(status, title, body = '') {
+            const message = body ? `${title}\n${body}` : title
+            if (status === 'danger' || status === 'error') {
+                alert(`❌ ${message}`)
+            } else if (status === 'success') {
+                alert(`✅ ${message}`)
+            } else {
+                alert(`ℹ️ ${message}`)
+            }
         },
 
         normalizePredictions(payload) {
@@ -152,6 +181,7 @@ const createPredictedExpensesWidget = (config) => {
             this.isLoading = true
 
             try {
+                
                 const response = await fetch(this.predictUrl, {
                     method: 'POST',
                     headers: {
@@ -161,9 +191,11 @@ const createPredictedExpensesWidget = (config) => {
                 })
 
                 const payload = await response.json().catch(() => ({}))
+                
 
                 if (!response.ok) {
-                    throw new Error(payload?.message || 'Не удалось получить прогноз.')
+                    const errorMsg = payload?.message || payload?.errors ? JSON.stringify(payload) : `Ошибка ${response.status}: ${response.statusText}`
+                    throw new Error(errorMsg)
                 }
 
                 const normalized = this.normalizePredictions(payload)
@@ -194,6 +226,14 @@ const createPredictedExpensesWidget = (config) => {
             this.isCreating = true
 
             try {
+                const payload = {
+                    date: item.date,
+                    sum: item.sum,
+                    supplier_id: item.supplier_id,
+                    user_id: item.user_id,
+                }
+                
+                
                 const response = await fetch(this.storeUrl, {
                     method: 'POST',
                     headers: {
@@ -201,18 +241,15 @@ const createPredictedExpensesWidget = (config) => {
                         'Accept': 'application/json',
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({
-                        date: item.date,
-                        sum: item.sum,
-                        supplier_id: item.supplier_id,
-                        user_id: item.user_id,
-                    }),
+                    body: JSON.stringify(payload),
                 })
 
-                const payload = await response.json().catch(() => ({}))
+                const responsePayload = await response.json().catch(() => ({}))
+                
 
                 if (!response.ok) {
-                    throw new Error(payload?.message || 'Не удалось создать затрату.')
+                    const errorMsg = responsePayload?.message || responsePayload?.errors ? JSON.stringify(responsePayload) : `Ошибка ${response.status}: ${response.statusText}`
+                    throw new Error(errorMsg)
                 }
 
                 this.createdKeys.push(item.key)

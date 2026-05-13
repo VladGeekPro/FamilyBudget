@@ -37,10 +37,12 @@ class ExpensePredictionService extends BasePythonApiService
         $this->warmUpApi();
 
         try {
-            $response = $this->client()->post($predictUrl, [
+            $payload = [
                 'expenses' => $expenses,
                 'user_id' => $userId,
-            ]);
+            ];
+            
+            $response = $this->client()->post($predictUrl, $payload);
         } catch (ConnectionException $exception) {
             throw new RuntimeException('Prediction API is unavailable.', previous: $exception);
         }
